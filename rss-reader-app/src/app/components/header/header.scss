@@ -1,0 +1,268 @@
+.app-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.app-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 5px;
+  background: rgba(255,255,255,0.15);
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.view-btn {
+  background: transparent;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s;
+
+  &:hover {
+    background: rgba(255,255,255,0.15);
+  }
+
+  &.active {
+    background: rgba(255,255,255,0.3);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+}
+
+.filter-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s;
+  white-space: nowrap;
+
+  &:hover {
+    background: rgba(255,255,255,0.25);
+  }
+
+  &.active {
+    background: rgba(255,255,255,0.3);
+    border-color: rgba(255,255,255,0.5);
+  }
+}
+
+.feed-filter {
+  position: relative;
+
+  .dropdown-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .arrow {
+      font-size: 10px;
+      transition: transform 0.3s;
+    }
+  }
+
+  &:hover .feed-dropdown {
+    display: block;
+  }
+
+  &:hover .dropdown-toggle .arrow {
+    transform: rotate(180deg);
+  }
+}
+
+.feed-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  min-width: 220px;
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+
+  .clear-btn {
+    background: none;
+    border: none;
+    color: #2196F3;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 0;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.feed-list {
+  max-height: 300px;
+  overflow-y: auto;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+  }
+}
+
+.feed-checkbox {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+  color: #333;
+  font-size: 13px;
+
+  &:hover {
+    background: #f9f9f9;
+  }
+
+  input[type="checkbox"] {
+    margin-right: 10px;
+    cursor: pointer;
+  }
+}
+
+.feed-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+.feed-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.action-btn {
+  background: rgba(76, 175, 80, 0.9);
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.3s;
+
+  &:hover {
+    background: rgba(76, 175, 80, 1);
+    transform: translateY(-1px);
+  }
+}
+
+@media (max-width: 968px) {
+  .header-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-left {
+    justify-content: space-between;
+  }
+
+  .header-right {
+    justify-content: center;
+  }
+
+  .filter-controls {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-title {
+    font-size: 20px;
+  }
+
+  .view-toggle {
+    flex-direction: column;
+    padding: 2px;
+  }
+
+  .view-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .filter-controls {
+    width: 100%;
+    
+    button {
+      flex: 1;
+      font-size: 12px;
+    }
+  }
+}

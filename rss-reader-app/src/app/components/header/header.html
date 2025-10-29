@@ -1,0 +1,77 @@
+<header class="app-header">
+  <div class="header-container">
+    <div class="header-left">
+      <h1 class="app-title">RSS Reader</h1>
+      <div class="view-toggle">
+        <button 
+          class="view-btn"
+          [class.active]="currentView === 'list'"
+          (click)="switchView('list')"
+          title="List View">
+          ☰ List
+        </button>
+        <button 
+          class="view-btn"
+          [class.active]="currentView === 'grid'"
+          (click)="switchView('grid')"
+          title="Grid View">
+          ⊞ Grid
+        </button>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="filter-controls">
+        <button 
+          class="filter-btn"
+          [class.active]="preferences.showOnlyUnread"
+          (click)="toggleUnreadFilter()"
+          title="Show only unread items">
+          {{ preferences.showOnlyUnread ? '● Unread Only' : '○ All Items' }}
+        </button>
+
+        <div class="feed-filter" *ngIf="feeds.length > 0">
+          <button class="filter-btn dropdown-toggle">
+            {{ preferences.selectedFeeds.length === 0 ? 'All Feeds' : preferences.selectedFeeds.length + ' Selected' }}
+            <span class="arrow">▼</span>
+          </button>
+          
+          <div class="feed-dropdown">
+            <div class="dropdown-header">
+              <span>Filter by Feed</span>
+              <button 
+                class="clear-btn"
+                (click)="clearFeedFilter()"
+                *ngIf="preferences.selectedFeeds.length > 0">
+                Clear
+              </button>
+            </div>
+            <div class="feed-list">
+              <label 
+                class="feed-checkbox"
+                *ngFor="let feed of feeds">
+                <input 
+                  type="checkbox"
+                  [checked]="isFeedSelected(feed.id)"
+                  (change)="toggleFeedFilter(feed.id)"
+                />
+                <span 
+                  class="feed-color-dot"
+                  [style.background-color]="feed.color">
+                </span>
+                <span class="feed-name">{{ feed.title }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          class="action-btn"
+          (click)="markAllAsRead()"
+          title="Mark all as read">
+          ✓ Mark All Read
+        </button>
+      </div>
+    </div>
+  </div>
+</header>

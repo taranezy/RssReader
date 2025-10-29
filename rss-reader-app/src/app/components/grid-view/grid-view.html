@@ -1,0 +1,54 @@
+<div class="grid-view">
+  <!-- Article viewer -->
+  <div class="article-viewer" *ngIf="currentUrl">
+    <div class="viewer-header">
+      <button class="back-btn" (click)="closeArticle()">
+        ← Back to Grid
+      </button>
+    </div>
+    <iframe [src]="currentUrl | safeUrl" class="article-iframe"></iframe>
+  </div>
+
+  <!-- Grid view -->
+  <div class="widgets-grid" *ngIf="!currentUrl">
+    <div *ngIf="widgets.length === 0" class="no-widgets">
+      <p>No active feeds. Add and activate some RSS feeds!</p>
+    </div>
+
+    <div class="widget" *ngFor="let widget of widgets">
+      <div class="widget-header" [style.background-color]="widget.feed.color">
+        <h3 class="widget-title">{{ widget.feed.title }}</h3>
+        <span class="unread-badge" *ngIf="getUnreadCount(widget) > 0">
+          {{ getUnreadCount(widget) }}
+        </span>
+      </div>
+
+      <div class="widget-content">
+        <div *ngIf="widget.items.length === 0" class="no-items">
+          No items yet. Refresh this feed!
+        </div>
+
+        <div class="widget-item"
+             *ngFor="let item of widget.items"
+             [class.read]="item.isRead"
+             (click)="openArticle(item)">
+          
+          <div class="item-header">
+            <span class="read-indicator" *ngIf="!item.isRead">●</span>
+            <h4 class="item-title">{{ item.title }}</h4>
+          </div>
+
+          <div class="item-meta">
+            <span class="item-date">{{ item.pubDate | date:'short' }}</span>
+            <button 
+              class="read-toggle"
+              (click)="toggleRead(item, $event)"
+              [title]="item.isRead ? 'Mark as unread' : 'Mark as read'">
+              {{ item.isRead ? '✓' : '○' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

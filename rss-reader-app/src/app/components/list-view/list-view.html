@@ -1,0 +1,63 @@
+<div class="list-view">
+  <!-- Article viewer -->
+  <div class="article-viewer" *ngIf="currentUrl">
+    <div class="viewer-header">
+      <button class="back-btn" (click)="closeArticle()">
+        ← Back to List
+      </button>
+    </div>
+    <iframe [src]="currentUrl | safeUrl" class="article-iframe"></iframe>
+  </div>
+
+  <!-- List view -->
+  <div class="items-list" *ngIf="!currentUrl">
+    <div *ngIf="items.length === 0" class="no-items">
+      <p>No items to display. Add some RSS feeds and refresh them!</p>
+    </div>
+
+    <div class="item-card" 
+         *ngFor="let item of items"
+         [class.read]="item.isRead"
+         (click)="openArticle(item)">
+      
+      <div class="item-indicator" [style.background-color]="getFeedColor(item)"></div>
+      
+      <div class="item-content">
+        <div class="item-header">
+          <div class="feed-badge" [style.background-color]="getFeedColor(item)">
+            {{ item.feedTitle }}
+          </div>
+          <div class="item-date">{{ item.pubDate | date:'short' }}</div>
+        </div>
+
+        <h3 class="item-title">
+          <span class="read-indicator" *ngIf="!item.isRead">●</span>
+          {{ item.title }}
+        </h3>
+
+        <p class="item-description">{{ getExcerpt(item.description) }}</p>
+
+        <div class="item-footer">
+          <span class="item-author" *ngIf="item.author">
+            By {{ item.author }}
+          </span>
+          <div class="item-categories" *ngIf="item.categories && item.categories.length > 0">
+            <span class="category" *ngFor="let cat of item.categories.slice(0, 3)">
+              {{ cat }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="item-actions">
+        <button 
+          class="read-toggle-btn"
+          [class.read]="item.isRead"
+          (click)="toggleRead(item, $event)"
+          [title]="item.isRead ? 'Mark as unread' : 'Mark as read'">
+          {{ item.isRead ? '✓' : '○' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

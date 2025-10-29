@@ -1,0 +1,97 @@
+<div class="feed-manager">
+  <button class="toggle-btn" (click)="toggleManager()">
+    {{ showManager ? 'Hide' : 'Manage Feeds' }}
+  </button>
+
+  <div class="manager-content" [class.show]="showManager">
+    <div class="add-feed-section">
+      <h3>Add New RSS Feed</h3>
+      <div class="add-feed-form">
+        <input
+          type="url"
+          [(ngModel)]="newFeedUrl"
+          placeholder="RSS Feed URL"
+          class="feed-input"
+          [disabled]="isAddingFeed"
+        />
+        <input
+          type="text"
+          [(ngModel)]="newFeedTitle"
+          placeholder="Feed Title (optional)"
+          class="feed-input"
+          [disabled]="isAddingFeed"
+        />
+        <button
+          (click)="addFeed()"
+          [disabled]="!newFeedUrl || isAddingFeed"
+          class="add-btn"
+        >
+          {{ isAddingFeed ? 'Adding...' : 'Add Feed' }}
+        </button>
+      </div>
+    </div>
+
+    <div class="feeds-list-section">
+      <div class="section-header">
+        <h3>My Feeds ({{ feeds.length }})</h3>
+        <button
+          (click)="refreshAllFeeds()"
+          [disabled]="isRefreshing || feeds.length === 0"
+          class="refresh-all-btn"
+        >
+          {{ isRefreshing ? 'Refreshing...' : 'Refresh All' }}
+        </button>
+      </div>
+
+      <div class="feeds-list" *ngIf="feeds.length > 0; else noFeeds">
+        <div *ngFor="let feed of feeds" class="feed-item">
+          <div class="feed-color" [style.background-color]="feed.color">
+            <input
+              type="color"
+              [value]="feed.color"
+              (change)="updateFeedColor(feed.id, $any($event.target).value)"
+              class="color-picker"
+            />
+          </div>
+          
+          <div class="feed-info">
+            <div class="feed-title">{{ feed.title }}</div>
+            <div class="feed-url">{{ feed.url }}</div>
+            <div class="feed-meta" *ngIf="feed.lastFetched">
+              Last updated: {{ feed.lastFetched | date:'short' }}
+            </div>
+          </div>
+
+          <div class="feed-actions">
+            <button
+              (click)="toggleFeedActive(feed)"
+              [class.active]="feed.isActive"
+              class="toggle-active-btn"
+              [title]="feed.isActive ? 'Deactivate' : 'Activate'"
+            >
+              {{ feed.isActive ? '✓' : '✗' }}
+            </button>
+            <button
+              (click)="refreshFeed(feed.id)"
+              class="refresh-btn"
+              title="Refresh this feed"
+            >
+              ↻
+            </button>
+            <button
+              (click)="removeFeed(feed.id, feed.title)"
+              class="remove-btn"
+              title="Remove feed"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #noFeeds>
+        <p class="no-feeds-message">No feeds added yet. Add your first feed above!</p>
+      </ng-template>
+    </div>
+  </div>
+</div>

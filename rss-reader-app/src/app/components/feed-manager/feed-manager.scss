@@ -1,0 +1,267 @@
+.feed-manager {
+  margin-bottom: 20px;
+}
+
+.toggle-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.3s;
+
+  &:hover {
+    background: #45a049;
+  }
+}
+
+.manager-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+  background: #f9f9f9;
+  border-radius: 8px;
+  margin-top: 10px;
+
+  &.show {
+    max-height: 1000px;
+    padding: 20px;
+  }
+}
+
+.add-feed-section {
+  margin-bottom: 30px;
+
+  h3 {
+    margin-top: 0;
+    color: #333;
+  }
+}
+
+.add-feed-form {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  .feed-input {
+    flex: 1;
+    min-width: 200px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+
+    &:focus {
+      outline: none;
+      border-color: #4CAF50;
+    }
+
+    &:disabled {
+      background: #f5f5f5;
+      cursor: not-allowed;
+    }
+  }
+
+  .add-btn {
+    padding: 10px 20px;
+    background: #2196F3;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.3s;
+
+    &:hover:not(:disabled) {
+      background: #0b7dda;
+    }
+
+    &:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.feeds-list-section {
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+
+    h3 {
+      margin: 0;
+      color: #333;
+    }
+  }
+
+  .refresh-all-btn {
+    padding: 8px 16px;
+    background: #FF9800;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.3s;
+
+    &:hover:not(:disabled) {
+      background: #e68900;
+    }
+
+    &:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.feeds-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feed-item {
+  display: flex;
+  align-items: center;
+  background: white;
+  padding: 15px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: box-shadow 0.3s;
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  }
+}
+
+.feed-color {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  margin-right: 15px;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  .color-picker {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.feed-info {
+  flex: 1;
+  min-width: 0;
+
+  .feed-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .feed-url {
+    font-size: 12px;
+    color: #666;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .feed-meta {
+    font-size: 11px;
+    color: #999;
+    margin-top: 4px;
+  }
+}
+
+.feed-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+
+  button {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+  }
+
+  .toggle-active-btn {
+    background: #f44336;
+    color: white;
+
+    &.active {
+      background: #4CAF50;
+    }
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+
+  .refresh-btn {
+    background: #2196F3;
+    color: white;
+
+    &:hover {
+      background: #0b7dda;
+      transform: rotate(180deg);
+    }
+  }
+
+  .remove-btn {
+    background: #f44336;
+    color: white;
+
+    &:hover {
+      background: #da190b;
+    }
+  }
+}
+
+.no-feeds-message {
+  text-align: center;
+  color: #999;
+  padding: 20px;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .add-feed-form {
+    flex-direction: column;
+
+    .feed-input {
+      width: 100%;
+    }
+  }
+
+  .feed-item {
+    flex-wrap: wrap;
+  }
+
+  .feed-info {
+    width: 100%;
+    margin-top: 10px;
+    order: 3;
+  }
+
+  .feed-actions {
+    margin-left: auto;
+  }
+}
