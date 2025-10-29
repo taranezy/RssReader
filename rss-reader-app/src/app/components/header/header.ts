@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
+import { AuthService, User } from '../../services/auth.service';
 
 @Component({
   selector: 'app-header',
@@ -20,9 +21,12 @@ export class HeaderComponent implements OnInit {
   };
   
   currentView: 'list' | 'grid' = 'list';
+  currentUser: User | null = null;
+  showUserMenu = false;
 
   constructor(
     private feedService: RssFeedService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
@@ -34,6 +38,10 @@ export class HeaderComponent implements OnInit {
     this.feedService.preferences$.subscribe(prefs => {
       this.preferences = prefs;
       this.currentView = prefs.viewType;
+    });
+
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
     });
   }
 
@@ -76,6 +84,18 @@ export class HeaderComponent implements OnInit {
         ? this.preferences.selectedFeeds[0] 
         : undefined;
       this.feedService.markAllAsRead(feedId);
+    }
+  }
+
+  toggleUserMenu(): void {
+    this.showUserMenu = !this.showUserMenu;
+  }
+
+  logout(): void {
+    if (confirm('Are you sure you want to logout?')) {
+      this.authService.logout().subscribe(() => {
+        this.router.navigate(['/login']);
+      });
     }
   }
 }

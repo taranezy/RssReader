@@ -72,6 +72,25 @@
           ✓ Mark All Read
         </button>
       </div>
+
+      <!-- User Menu -->
+      <div class="user-menu" *ngIf="currentUser">
+        <button class="user-btn" (click)="toggleUserMenu()" title="User menu">
+          <span class="user-icon">👤</span>
+          <span class="user-name">{{ currentUser.username }}</span>
+        </button>
+        
+        <div class="user-dropdown" *ngIf="showUserMenu">
+          <div class="user-info">
+            <div class="user-email">{{ currentUser.email }}</div>
+          </div>
+          <div class="user-actions">
+            <button class="logout-btn" (click)="logout()">
+              <span>🚪</span> Logout
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </header>
