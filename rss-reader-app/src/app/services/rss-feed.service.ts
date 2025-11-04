@@ -38,12 +38,13 @@ export class RssFeedService {
   }
 
   // Feed Management
-  addFeed(url: string, title?: string): Observable<boolean> {
+  addFeed(url: string, title?: string, category?: string): Observable<boolean> {
     const newFeed: RssFeed = {
       id: this.generateFeedId(),
       url: url,
       title: title || 'New Feed',
       color: this.getRandomColor(),
+      category: category,
       isActive: true,
       addedDate: new Date(),
       lastFetched: undefined

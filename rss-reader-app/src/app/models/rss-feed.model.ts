@@ -7,6 +7,7 @@ export interface RssFeed {
   isActive: boolean;
   lastFetched?: Date;
   addedDate: Date;
+  category?: string; // Folder/category name
 }
 
 export interface RssItem {

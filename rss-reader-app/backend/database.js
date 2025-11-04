@@ -32,6 +32,7 @@ class DatabaseService {
         title TEXT NOT NULL,
         description TEXT,
         color TEXT NOT NULL,
+        category TEXT,
         is_active INTEGER NOT NULL DEFAULT 1,
         last_fetched TEXT,
         added_date TEXT NOT NULL,
@@ -41,7 +42,13 @@ class DatabaseService {
         UNIQUE(user_id, url)
       );
     `);
-
+    
+    // Add category column if it doesn't exist (migration for existing databases)
+    try {
+      this.db.exec(`ALTER TABLE rss_feeds ADD COLUMN category TEXT;`);
+    } catch (err) {
+      // Column already exists, ignore error
+    }
     // Create items table with user_id
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS rss_items (
@@ -139,8 +146,8 @@ class DatabaseService {
 
   createFeed(feed, userId) {
     const stmt = this.db.prepare(`
-      INSERT INTO rss_feeds (id, user_id, url, title, description, color, is_active, last_fetched, added_date)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO rss_feeds (id, user_id, url, title, description, color, category, is_active, last_fetched, added_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     return stmt.run(
@@ -150,6 +157,7 @@ class DatabaseService {
       feed.title,
       feed.description || null,
       feed.color,
+      feed.category || null,
       feed.isActive ? 1 : 0,
       feed.lastFetched || null,
       feed.addedDate
@@ -171,6 +179,10 @@ class DatabaseService {
     if (updates.color !== undefined) {
       fields.push('color = ?');
       values.push(updates.color);
+    }
+    if (updates.category !== undefined) {
+      fields.push('category = ?');
+      values.push(updates.category || null);
     }
     if (updates.isActive !== undefined) {
       fields.push('is_active = ?');
@@ -344,6 +356,7 @@ class DatabaseService {
       title: dbFeed.title,
       description: dbFeed.description,
       color: dbFeed.color,
+      category: dbFeed.category,
       isActive: dbFeed.is_active === 1,
       lastFetched: dbFeed.last_fetched,
       addedDate: dbFeed.added_date

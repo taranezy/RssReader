@@ -1,17 +1,19 @@
 <div class="app-container">
   <ng-container *ngIf="isAuthenticated$ | async; else loginView">
-    <app-header></app-header>
+    <!-- Left Sidebar -->
+    <app-feed-manager (sidebarToggled)="onSidebarToggled($event)"></app-feed-manager>
     
-    <main class="main-content">
-      <div class="content-wrapper">
-        <app-feed-manager></app-feed-manager>
+    <!-- Main Content Area -->
+    <div class="main-layout" [class.sidebar-collapsed]="isSidebarCollapsed">
+      <app-header></app-header>
+      
+      <main class="content">
         <router-outlet></router-outlet>
-      </div>
-    </main>
+      </main>
+    </div>
   </ng-container>
 
   <ng-template #loginView>
     <app-login></app-login>
   </ng-template>
 </div>
-

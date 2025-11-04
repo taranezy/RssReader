@@ -10,6 +10,7 @@ import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-root',
+  standalone: true,
   imports: [CommonModule, RouterOutlet, HeaderComponent, FeedManagerComponent, LoginComponent],
   templateUrl: './app.html',
   styleUrl: './app.scss'
@@ -17,6 +18,7 @@ import { Observable } from 'rxjs';
 export class App implements OnInit {
   title = 'RSS Reader';
   isAuthenticated$: Observable<boolean>;
+  isSidebarCollapsed = false;
 
   constructor(
     private authService: AuthService,
@@ -39,5 +41,9 @@ export class App implements OnInit {
     ).subscribe(() => {
       this.authService.checkAuthStatus().subscribe();
     });
+  }
+  
+  onSidebarToggled(collapsed: boolean): void {
+    this.isSidebarCollapsed = collapsed;
   }
 }
