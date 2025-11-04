@@ -20,7 +20,8 @@
     "deploy:remote": "powershell -File ./deploy-remote.ps1",
     "deploy:bash": "bash ./deploy.sh",
     "deploy:test": "powershell -File ./test-deployment.ps1",
-    "health-check": "powershell -File ./health-check.ps1"
+    "health-check": "powershell -File ./health-check.ps1",
+    "setup:ssh": "powershell -File ./setup-ssh-key.ps1"
   },
   "prettier": {
     "printWidth": 100,

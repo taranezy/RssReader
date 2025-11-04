@@ -6,6 +6,7 @@ import { tap } from 'rxjs/operators';
 export interface UserSettings {
   font: string;
   showLeftMenu: boolean;
+  showFeedImages: boolean;
 }
 
 // Font family mappings
@@ -23,7 +24,8 @@ export const FONT_FAMILIES: { [key: string]: string } = {
 export class UserSettingsService {
   private settingsSubject = new BehaviorSubject<UserSettings>({
     font: 'default',
-    showLeftMenu: true
+    showLeftMenu: true,
+    showFeedImages: true
   });
 
   public settings$ = this.settingsSubject.asObservable();
@@ -50,6 +52,11 @@ export class UserSettingsService {
   updateShowLeftMenu(showLeftMenu: boolean): Observable<UserSettings> {
     const current = this.settingsSubject.value;
     return this.updateSettings({ ...current, showLeftMenu });
+  }
+
+  updateShowFeedImages(showFeedImages: boolean): Observable<UserSettings> {
+    const current = this.settingsSubject.value;
+    return this.updateSettings({ ...current, showFeedImages });
   }
 
   getCurrentSettings(): UserSettings {

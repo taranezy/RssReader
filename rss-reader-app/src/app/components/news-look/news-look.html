@@ -1,0 +1,54 @@
+<div class="news-look">
+  <div class="newspaper-grid" *ngIf="items.length > 0">
+    <div 
+      *ngFor="let item of items; let i = index"
+      class="news-article"
+      [ngClass]="[getItemSize(i), item.isRead ? 'read' : 'unread']"
+      (click)="openArticle(item)">
+      
+      <!-- Article Image -->
+      <div class="article-image" *ngIf="showFeedImages && item.imageUrl">
+        <img [src]="item.imageUrl" [alt]="item.title" (error)="$any($event.target).style.display='none'">
+        <div class="image-overlay"></div>
+      </div>
+
+      <!-- Article Content -->
+      <div class="article-content">
+        <!-- Feed Badge -->
+        <div class="article-header">
+          <span class="feed-badge" [style.background-color]="getFeedColor(item.feedId)">
+            {{ item.feedTitle }}
+          </span>
+          <span class="article-date">{{ formatDate(item.pubDate) }}</span>
+        </div>
+
+        <!-- Title -->
+        <h2 class="article-title">
+          <span class="read-indicator" *ngIf="!item.isRead">●</span>
+          {{ item.title }}
+        </h2>
+
+        <!-- Description (only for larger articles) -->
+        <p class="article-description" *ngIf="getItemSize(i) === 'large' || getItemSize(i) === 'wide'">
+          {{ item.description }}
+        </p>
+
+        <!-- Meta Info -->
+        <div class="article-meta">
+          <button 
+            class="read-toggle"
+            (click)="toggleRead($event, item)"
+            [title]="item.isRead ? 'Mark as unread' : 'Mark as read'">
+            <span *ngIf="item.isRead">✓</span>
+            <span *ngIf="!item.isRead">○</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="no-items" *ngIf="items.length === 0">
+    <p>No articles to display</p>
+    <p class="hint">Add some feeds to get started</p>
+  </div>
+</div>

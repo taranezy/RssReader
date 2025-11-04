@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RssFeed, RssItem } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
-import { SafeUrlPipe } from '../../pipes/safe-url.pipe';
+import { UserSettingsService } from '../../services/user-settings.service';
 
 interface FeedWidget {
   feed: RssFeed;
@@ -12,16 +12,20 @@ interface FeedWidget {
 @Component({
   selector: 'app-grid-view',
   standalone: true,
-  imports: [CommonModule, SafeUrlPipe],
+  imports: [CommonModule],
   templateUrl: './grid-view.html',
   styleUrl: './grid-view.scss'
 })
 export class GridViewComponent implements OnInit {
   widgets: FeedWidget[] = [];
   currentUrl: string | null = null;
+  showFeedImages = true;
   private allItems: RssItem[] = [];
 
-  constructor(private feedService: RssFeedService) {}
+  constructor(
+    private feedService: RssFeedService,
+    private userSettingsService: UserSettingsService
+  ) {}
 
   ngOnInit(): void {
     this.feedService.items$.subscribe(items => {
@@ -33,6 +37,10 @@ export class GridViewComponent implements OnInit {
 
     this.feedService.feeds$.subscribe(feeds => {
       this.updateWidgets(feeds);
+    });
+
+    this.userSettingsService.settings$.subscribe(settings => {
+      this.showFeedImages = settings.showFeedImages;
     });
   }
 
@@ -54,7 +62,8 @@ export class GridViewComponent implements OnInit {
 
   openArticle(item: RssItem): void {
     this.feedService.markAsRead(item.id);
-    this.currentUrl = item.link;
+    // Open in new tab instead of iframe to avoid X-Frame-Options issues
+    window.open(item.link, '_blank', 'noopener,noreferrer');
   }
 
   closeArticle(): void {

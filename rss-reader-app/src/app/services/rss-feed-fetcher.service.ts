@@ -9,8 +9,8 @@ import { IRssFeedFetcher } from '../interfaces/rss-parser.interface';
 })
 export class RssFeedFetcherService implements IRssFeedFetcher {
   
-  // Using a CORS proxy to fetch RSS feeds (you can change this to your own proxy)
-  private corsProxyUrl = 'https://api.allorigins.win/raw?url=';
+  // Using our backend CORS proxy instead of external service
+  private corsProxyUrl = 'http://localhost:3000/api/proxy/fetch-feed?url=';
   
   constructor(private http: HttpClient) {}
 
@@ -20,6 +20,7 @@ export class RssFeedFetcherService implements IRssFeedFetcher {
     
     return this.http.get(proxyUrl, {
       responseType: 'text',
+      withCredentials: true, // Important: send session cookies for authentication
       headers: new HttpHeaders({
         'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml'
       })

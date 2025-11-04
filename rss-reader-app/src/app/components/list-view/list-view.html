@@ -1,16 +1,6 @@
 <div class="list-view">
-  <!-- Article viewer -->
-  <div class="article-viewer" *ngIf="currentUrl">
-    <div class="viewer-header">
-      <button class="back-btn" (click)="closeArticle()">
-        ← Back to List
-      </button>
-    </div>
-    <iframe [src]="currentUrl | safeUrl" class="article-iframe"></iframe>
-  </div>
-
   <!-- List view -->
-  <div class="items-list" *ngIf="!currentUrl">
+  <div class="items-list">
     <div *ngIf="items.length === 0" class="no-items">
       <p>No items to display. Add some RSS feeds and refresh them!</p>
     </div>
@@ -21,6 +11,10 @@
          (click)="openArticle(item)">
       
       <div class="item-indicator" [style.background-color]="getFeedColor(item)"></div>
+      
+      <div class="item-image" *ngIf="showFeedImages && item.imageUrl">
+        <img [src]="item.imageUrl" [alt]="item.title" (error)="$any($event.target).style.display='none'">
+      </div>
       
       <div class="item-content">
         <div class="item-header">

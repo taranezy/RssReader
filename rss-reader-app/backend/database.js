@@ -64,6 +64,7 @@ class DatabaseService {
         author TEXT,
         categories TEXT,
         content TEXT,
+        image_url TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -91,6 +92,7 @@ class DatabaseService {
         user_id INTEGER NOT NULL UNIQUE,
         font TEXT NOT NULL DEFAULT 'default',
         show_left_menu INTEGER NOT NULL DEFAULT 1,
+        show_feed_images INTEGER NOT NULL DEFAULT 1,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
@@ -246,8 +248,8 @@ class DatabaseService {
   createItem(item, userId) {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO rss_items 
-      (id, user_id, feed_id, feed_title, title, link, description, pub_date, is_read, author, categories, content)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, user_id, feed_id, feed_title, title, link, description, pub_date, is_read, author, categories, content, image_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     return stmt.run(
@@ -262,15 +264,16 @@ class DatabaseService {
       item.isRead ? 1 : 0,
       item.author || null,
       item.categories ? JSON.stringify(item.categories) : null,
-      item.content || null
+      item.content || null,
+      item.imageUrl || null
     );
   }
 
   createItems(items, userId) {
     const insert = this.db.prepare(`
       INSERT OR REPLACE INTO rss_items 
-      (id, user_id, feed_id, feed_title, title, link, description, pub_date, is_read, author, categories, content)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (id, user_id, feed_id, feed_title, title, link, description, pub_date, is_read, author, categories, content, image_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertMany = this.db.transaction((items) => {
@@ -287,7 +290,8 @@ class DatabaseService {
           item.isRead ? 1 : 0,
           item.author || null,
           item.categories ? JSON.stringify(item.categories) : null,
-          item.content || null
+          item.content || null,
+          item.imageUrl || null
         );
       }
     });
@@ -367,28 +371,30 @@ class DatabaseService {
     if (!settings) {
       // Create default settings if not found
       this.db.prepare(`
-        INSERT INTO user_settings (user_id, font, show_left_menu)
-        VALUES (?, ?, ?)
-      `).run(userId, 'default', 1);
-      return { font: 'default', showLeftMenu: true };
+        INSERT INTO user_settings (user_id, font, show_left_menu, show_feed_images)
+        VALUES (?, ?, ?, ?)
+      `).run(userId, 'default', 1, 1);
+      return { font: 'default', showLeftMenu: true, showFeedImages: true };
     }
 
     return {
       font: settings.font,
-      showLeftMenu: settings.show_left_menu === 1
+      showLeftMenu: settings.show_left_menu === 1,
+      showFeedImages: settings.show_feed_images === 1
     };
   }
 
   updateUserSettings(userId, settings) {
     const stmt = this.db.prepare(`
       UPDATE user_settings 
-      SET font = ?, show_left_menu = ?, updated_at = CURRENT_TIMESTAMP
+      SET font = ?, show_left_menu = ?, show_feed_images = ?, updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ?
     `);
 
     return stmt.run(
       settings.font || 'default',
       settings.showLeftMenu ? 1 : 0,
+      settings.showFeedImages ? 1 : 0,
       userId
     );
   }
@@ -427,7 +433,8 @@ class DatabaseService {
       isRead: dbItem.is_read === 1,
       author: dbItem.author,
       categories: dbItem.categories ? JSON.parse(dbItem.categories) : undefined,
-      content: dbItem.content
+      content: dbItem.content,
+      imageUrl: dbItem.image_url
     };
   }
 }

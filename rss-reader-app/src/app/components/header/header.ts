@@ -24,7 +24,7 @@ export class HeaderComponent implements OnInit {
     showOnlyUnread: false
   };
   
-  currentView: 'list' | 'grid' | 'suggested' = 'list';
+  currentView: 'list' | 'grid' | 'news' | 'suggested' = 'list';
   currentUser: User | null = null;
   showUserMenu = false;
   showFeedDropdown = false;
@@ -32,7 +32,8 @@ export class HeaderComponent implements OnInit {
 
   userSettings = {
     font: 'default',
-    showLeftMenu: true
+    showLeftMenu: true,
+    showFeedImages: true
   };
 
   availableFonts = [
@@ -78,12 +79,15 @@ export class HeaderComponent implements OnInit {
     }
   }
 
-  switchView(viewType: 'list' | 'grid' | 'suggested'): void {
+  switchView(viewType: 'list' | 'grid' | 'news' | 'suggested'): void {
     this.currentView = viewType;
     if (viewType !== 'suggested') {
-      this.feedService.updatePreferences({ viewType });
+      this.feedService.updatePreferences({ viewType: viewType === 'news' ? 'grid' : viewType });
     }
-    const route = viewType === 'list' ? '/list' : viewType === 'grid' ? '/grid' : '/suggested';
+    const route = viewType === 'list' ? '/list' : 
+                  viewType === 'grid' ? '/grid' : 
+                  viewType === 'news' ? '/news' : 
+                  '/suggested';
     this.router.navigate([route]);
   }
 
@@ -197,6 +201,25 @@ export class HeaderComponent implements OnInit {
           localStorage.setItem('userSettings', JSON.stringify(this.userSettings));
         }
         this.leftMenuToggled.emit(checkbox.checked);
+      }
+    );
+  }
+
+  toggleFeedImages(event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    this.userSettings.showFeedImages = checkbox.checked;
+    
+    // Save to database via API
+    this.userSettingsService.updateShowFeedImages(checkbox.checked).subscribe(
+      () => {
+        console.log('Feed images setting updated successfully');
+      },
+      error => {
+        console.error('Error updating feed images setting:', error);
+        // Fall back to localStorage if API fails
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('userSettings', JSON.stringify(this.userSettings));
+        }
       }
     );
   }

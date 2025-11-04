@@ -19,6 +19,13 @@
         </button>
         <button 
           class="view-btn"
+          [class.active]="currentView === 'news'"
+          (click)="switchView('news')"
+          title="News Look">
+          📰 News
+        </button>
+        <button 
+          class="view-btn"
           [class.active]="currentView === 'suggested'"
           (click)="switchView('suggested')"
           title="Suggested Feeds">
@@ -140,6 +147,20 @@
               [checked]="userSettings.showLeftMenu"
               (change)="toggleLeftMenu($event)">
             <span>Show Left Menu</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Feed Images Toggle -->
+      <div class="settings-section">
+        <label>Feed Images:</label>
+        <div class="toggle-option">
+          <label class="toggle-label">
+            <input 
+              type="checkbox" 
+              [checked]="userSettings.showFeedImages"
+              (change)="toggleFeedImages($event)">
+            <span>Show Feed Pictures</span>
           </label>
         </div>
       </div>

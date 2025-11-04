@@ -22,6 +22,7 @@ export interface RssItem {
   author?: string;
   categories?: string[];
   content?: string;
+  imageUrl?: string;
 }
 
 export interface FeedViewPreference {

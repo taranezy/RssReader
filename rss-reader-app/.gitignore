@@ -50,8 +50,60 @@ backend/.env.local
 .env
 .env.local
 .env.production
+.env.*.local
 
 # Docker
 rss-reader-*.tar.gz
 *.tar.gz
+
+# Sensitive deployment files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+authorized_keys
+known_hosts
+
+# Deployment credentials and configs
+deploy-config.json
+secrets.json
+credentials.json
+*.secret
+*.private
+
+# SSH and security
+.ssh/
+*.ppk
+
+# Temporary deployment files
+rss-reader-source-*.zip
+*.tmp
+*.temp
+
+# Log files with potentially sensitive data
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Password and credential files
+passwords.txt
+credentials.txt
+tokens.txt
+api-keys.txt
+
+# Google OAuth secrets
+google-oauth-*.json
+client_secret*.json
+
+# Session secrets
+session-secret.txt
+jwt-secret.txt
 

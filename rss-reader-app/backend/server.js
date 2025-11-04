@@ -30,8 +30,9 @@ app.use(cors({
   origin: isProduction ? false : 'http://localhost:4200',
   credentials: true
 }));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+// Increase body parser limit to handle feed items with images
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
 // Session configuration
@@ -151,6 +152,105 @@ app.post('/api/auth/logout', (req, res) => {
     }
     res.json({ message: 'Logged out successfully' });
   });
+});
+
+// ==================== CORS PROXY ENDPOINT ====================
+
+// CORS Proxy for fetching RSS feeds
+app.get('/api/proxy/fetch-feed', isAuthenticated, async (req, res) => {
+  try {
+    const { url } = req.query;
+    
+    if (!url) {
+      return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
+    // Validate URL
+    let feedUrl;
+    try {
+      feedUrl = new URL(url);
+      if (!['http:', 'https:'].includes(feedUrl.protocol)) {
+        return res.status(400).json({ error: 'Invalid URL protocol. Only http and https are allowed.' });
+      }
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid URL format' });
+    }
+
+    console.log(`Fetching RSS feed from: ${url}`);
+
+    // Use Node.js native fetch (available in Node 18+) or require node-fetch
+    const https = require('https');
+    const http = require('http');
+    
+    const client = feedUrl.protocol === 'https:' ? https : http;
+
+    const fetchPromise = new Promise((resolve, reject) => {
+      const request = client.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+          'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml, */*'
+        },
+        timeout: 15000 // 15 second timeout
+      }, (response) => {
+        let data = '';
+
+        // Handle redirects
+        if (response.statusCode === 301 || response.statusCode === 302) {
+          const redirectUrl = response.headers.location;
+          console.log(`Following redirect to: ${redirectUrl}`);
+          
+          // Recursive call for redirect
+          const redirectClient = redirectUrl.startsWith('https') ? https : http;
+          redirectClient.get(redirectUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+              'Accept': 'application/rss+xml, application/xml, text/xml, application/atom+xml, */*'
+            }
+          }, (redirectResponse) => {
+            let redirectData = '';
+            redirectResponse.on('data', chunk => redirectData += chunk);
+            redirectResponse.on('end', () => resolve({ data: redirectData, statusCode: redirectResponse.statusCode }));
+          }).on('error', reject);
+          return;
+        }
+
+        response.on('data', (chunk) => {
+          data += chunk;
+        });
+
+        response.on('end', () => {
+          resolve({ data, statusCode: response.statusCode });
+        });
+      });
+
+      request.on('error', (error) => {
+        reject(error);
+      });
+
+      request.on('timeout', () => {
+        request.destroy();
+        reject(new Error('Request timeout'));
+      });
+    });
+
+    const { data, statusCode } = await fetchPromise;
+
+    if (statusCode >= 400) {
+      return res.status(statusCode).json({ error: `Feed server returned status ${statusCode}` });
+    }
+
+    // Set appropriate headers
+    res.setHeader('Content-Type', 'text/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(data);
+
+  } catch (error) {
+    console.error('Error fetching RSS feed:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch RSS feed',
+      message: error.message 
+    });
+  }
 });
 
 // ==================== FEEDS ENDPOINTS ====================

@@ -1,16 +1,6 @@
 <div class="grid-view">
-  <!-- Article viewer -->
-  <div class="article-viewer" *ngIf="currentUrl">
-    <div class="viewer-header">
-      <button class="back-btn" (click)="closeArticle()">
-        ← Back to Grid
-      </button>
-    </div>
-    <iframe [src]="currentUrl | safeUrl" class="article-iframe"></iframe>
-  </div>
-
   <!-- Grid view -->
-  <div class="widgets-grid" *ngIf="!currentUrl">
+  <div class="widgets-grid">
     <div *ngIf="widgets.length === 0" class="no-widgets">
       <p>No active feeds. Add and activate some RSS feeds!</p>
     </div>
@@ -33,6 +23,10 @@
              [class.read]="item.isRead"
              (click)="openArticle(item)">
           
+          <div class="item-image" *ngIf="showFeedImages && item.imageUrl">
+            <img [src]="item.imageUrl" [alt]="item.title" (error)="$any($event.target).style.display='none'">
+          </div>
+
           <div class="item-header">
             <span class="read-indicator" *ngIf="!item.isRead">●</span>
             <h4 class="item-title">{{ item.title }}</h4>
