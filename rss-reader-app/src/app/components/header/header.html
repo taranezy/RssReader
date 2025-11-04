@@ -31,17 +31,17 @@
         </button>
 
         <div class="feed-filter" *ngIf="feeds.length > 0">
-          <button class="filter-btn dropdown-toggle">
+          <button class="filter-btn dropdown-toggle" (click)="toggleFeedDropdown()">
             {{ preferences.selectedFeeds.length === 0 ? 'All Feeds' : preferences.selectedFeeds.length + ' Selected' }}
-            <span class="arrow">▼</span>
+            <span class="arrow" [class.rotated]="showFeedDropdown">▼</span>
           </button>
           
-          <div class="feed-dropdown">
+          <div class="feed-dropdown" [class.show]="showFeedDropdown">
             <div class="dropdown-header">
               <span>Filter by Feed</span>
               <button 
                 class="clear-btn"
-                (click)="clearFeedFilter()"
+                (click)="clearFeedFilter(); $event.stopPropagation()"
                 *ngIf="preferences.selectedFeeds.length > 0">
                 Clear
               </button>
@@ -49,7 +49,8 @@
             <div class="feed-list">
               <label 
                 class="feed-checkbox"
-                *ngFor="let feed of feeds">
+                *ngFor="let feed of feeds"
+                (click)="$event.stopPropagation()">
                 <input 
                   type="checkbox"
                   [checked]="isFeedSelected(feed.id)"

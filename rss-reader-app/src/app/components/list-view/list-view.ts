@@ -6,6 +6,7 @@ import { SafeUrlPipe } from '../../pipes/safe-url.pipe';
 
 @Component({
   selector: 'app-list-view',
+  standalone: true,
   imports: [CommonModule, SafeUrlPipe],
   templateUrl: './list-view.html',
   styleUrl: './list-view.scss'

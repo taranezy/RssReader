@@ -11,6 +11,7 @@ interface FeedWidget {
 
 @Component({
   selector: 'app-grid-view',
+  standalone: true,
   imports: [CommonModule, SafeUrlPipe],
   templateUrl: './grid-view.html',
   styleUrl: './grid-view.scss'

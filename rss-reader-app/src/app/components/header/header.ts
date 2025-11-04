@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -23,6 +23,7 @@ export class HeaderComponent implements OnInit {
   currentView: 'list' | 'grid' = 'list';
   currentUser: User | null = null;
   showUserMenu = false;
+  showFeedDropdown = false;
 
   constructor(
     private feedService: RssFeedService,
@@ -78,6 +79,14 @@ export class HeaderComponent implements OnInit {
     return this.preferences.selectedFeeds.includes(feedId);
   }
 
+  toggleFeedDropdown(): void {
+    this.showFeedDropdown = !this.showFeedDropdown;
+  }
+
+  closeFeedDropdown(): void {
+    this.showFeedDropdown = false;
+  }
+
   markAllAsRead(): void {
     if (confirm('Mark all visible items as read?')) {
       const feedId = this.preferences.selectedFeeds.length === 1 
@@ -89,6 +98,9 @@ export class HeaderComponent implements OnInit {
 
   toggleUserMenu(): void {
     this.showUserMenu = !this.showUserMenu;
+    if (this.showUserMenu) {
+      this.showFeedDropdown = false;
+    }
   }
 
   logout(): void {
@@ -96,6 +108,21 @@ export class HeaderComponent implements OnInit {
       this.authService.logout().subscribe(() => {
         this.router.navigate(['/login']);
       });
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    
+    // Close feed dropdown if clicking outside
+    if (this.showFeedDropdown && !target.closest('.feed-filter')) {
+      this.showFeedDropdown = false;
+    }
+    
+    // Close user menu if clicking outside
+    if (this.showUserMenu && !target.closest('.user-menu')) {
+      this.showUserMenu = false;
     }
   }
 }
