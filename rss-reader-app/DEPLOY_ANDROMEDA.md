@@ -43,10 +43,10 @@ docker-compose -f docker-compose.prod.yml ps
 Set these on Andromeda in `~/rss-reader/.env`:
 
 ```
-GOOGLE_CLIENT_ID=472330909903-282fumc6gasbh56aic7rk3abja3905h5.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=your-secret-here
+GOOGLE_CLIENT_ID=your-google-client-id-here
+GOOGLE_CLIENT_SECRET=your-google-client-secret-here
 GOOGLE_CALLBACK_URL=https://taranezy.ddns.net:8444/api/auth/google/callback
-SESSION_SECRET=Babangida82@
+SESSION_SECRET=your-session-secret-here
 NODE_ENV=production
 PORT=3000
 ```
