@@ -1,6 +1,6 @@
 <div class="sidebar" [class.collapsed]="isSidebarCollapsed">
   <div class="sidebar-header">
-    <h2>RSS Reader</h2>
+    <h2>Feeds</h2>
     <button class="add-feed-btn" (click)="toggleAddFeed()" title="Add new feed">
       +
     </button>
@@ -163,7 +163,7 @@
 
 <!-- Sidebar Toggle Button -->
 <button class="sidebar-toggle-btn" (click)="toggleSidebar()" [class.collapsed]="isSidebarCollapsed" title="Toggle sidebar">
-  {{ isSidebarCollapsed ? '☰' : '×' }}
+  {{ isSidebarCollapsed ? '☰' : '☰' }}
 </button>
 
 <!-- Edit Feed Modal -->

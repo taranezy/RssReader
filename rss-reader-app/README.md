@@ -1,54 +1,33 @@
-# RSS Reader Application# RssReaderApp
+# RSS Reader Application
 
+A modern, self-hosted RSS reader web application built with Angular, inspired by Netvibes. Features multi-user authentication via Google OAuth, feed organization, and a beautiful interface with list, grid, and suggested feeds views.
 
+## 🌟 Features
 
-A modern RSS reader web application built with Angular, inspired by Netvibes. This application allows you to manage RSS feed subscriptions, read news articles, and organize your content with a clean and intuitive interface.This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.5.
-
-
-
-## Features## Development server
-
-
-
-### Core FunctionalityTo start a local development server, run:
-
+### Core Functionality
+- **Multi-User Support**: Google OAuth authentication with session management
 - **Add RSS Feeds**: Subscribe to any RSS/Atom feed by URL
-
-- **Two View Modes**:```bash
-
-  - **List View**: Traditional list showing all news items ordered by dateng serve
-
-  - **Grid View**: Netvibes-style widget layout with colored boxes for each feed```
-
+- **Three View Modes**:
+  - **List View**: Traditional list showing all news items ordered by date
+  - **Grid View**: Netvibes-style widget layout with colored boxes
+  - **Suggested Feeds**: Discover 100+ curated RSS feeds with smart recommendations
+- **Feed Organization**: 
+  - Organize feeds into folders/categories
+  - Drag & drop to reorder and categorize
+  - Collapsible sidebar navigation
 - **Read/Unread Tracking**: Mark articles as read/unread
-
-- **Feed Management**: Add, remove, activate/deactivate feedsOnce the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
-
+- **Feed Management**: Add, edit, move, delete feeds with custom modals
 - **Color Coding**: Each feed has a unique color for easy identification
-
-- **Filtering**: ## Code scaffolding
-
-  - Filter by specific feeds
-
-  - Show only unread itemsAngular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-  - Mark all as read
-
-- **Article Viewer**: Read articles in embedded iframe with easy back navigation```bash
-
-- **Data Persistence**: All data stored in browser localStorage (file-based simulation)ng generate component component-name
-
-```
+- **Filtering**: Filter by feeds, show unread only, mark all as read
+- **Article Viewer**: Read articles in embedded iframe
 
 ### Technical Features
-
-- Built with **Angular 19** (latest version)For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-- **SOLID Principles** implementation:
-
-  - Single Responsibility Principle (SRP)```bash
-
-  - Open/Closed Principle (OCP)ng generate --help
+- Built with **Angular 19** (standalone components)
+- **Backend**: Node.js/Express with Passport.js
+- **Database**: SQLite for data persistence
+- **Authentication**: Google OAuth 2.0 with session cookies
+- **Docker**: Full containerization support
+- **Deployment**: Automated deployment scripts for Linux servers  - Open/Closed Principle (OCP)ng generate --help
 
   - Liskov Substitution Principle (LSP)```
 
@@ -68,118 +47,218 @@ A modern RSS reader web application built with Angular, inspired by Netvibes. Th
 
 ```
 
-## Getting Started
+## 🚀 Quick Start
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### Development (Local)
 
-### Prerequisites
+```bash
+# Install dependencies
+npm install
 
-- Node.js (v18 or higher)## Running unit tests
+# Start both frontend and backend
+npm start
+```
 
+The app will be available at:
+- Frontend: http://localhost:4200
+- Backend API: http://localhost:3000
+
+### Production (Docker on Andromeda Server)
+
+See detailed guides:
+- **[QUICKSTART.md](./QUICKSTART.md)** - Fast deployment guide
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Complete documentation
+- **[DEPLOYMENT_OVERVIEW.md](./DEPLOYMENT_OVERVIEW.md)** - Feature overview
+
+**Quick Deploy:**
+```powershell
+# 1. Configure environment
+Copy-Item .env.example .env
+notepad .env  # Update with your settings
+
+# 2. Test deployment
+npm run deploy:test
+
+# 3. Deploy to andromeda
+npm run deploy
+```
+
+## 📦 Prerequisites
+
+### Development
+- Node.js (v18 or higher)
 - npm (comes with Node.js)
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+### Production Deployment
+- Docker Desktop (Windows)
+- SSH access to andromeda server
+- Docker & Docker Compose installed on andromeda
 
-### Installation
+## 🎯 Usage
 
-```bash
-
-1. Navigate to the project directory:ng test
-
-```bash```
-
-cd rss-reader-app
-
-```## Running end-to-end tests
-
-
-
-2. Install dependencies (if not already installed):For end-to-end (e2e) testing, run:
-
-```bash
-
-npm install```bash
-
-```ng e2e
-
-```
-
-3. Start the development server:
-
-```bashAngular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-npm start
-
-```## Additional Resources
-
-or
-
-```bashFor more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
-
-ng serve
-```
-
-4. Open your browser and navigate to:
-```
-http://localhost:4200
-```
-
-## Usage
-
-### Adding a Feed
-
-1. Click the "Manage Feeds" button at the top
-2. Enter the RSS feed URL
-3. Optionally enter a custom title
-4. Click "Add Feed"
-
-### Popular RSS Feeds to Try
-
-- **New York Times**: https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
-- **BBC News**: http://feeds.bbci.co.uk/news/rss.xml
-- **TechCrunch**: https://techcrunch.com/feed/
-- **Reddit r/programming**: https://www.reddit.com/r/programming/.rss
-- **Hacker News**: https://news.ycombinator.com/rss
-
-### Viewing Articles
-
-#### List View
-- Click on any article to open it in the embedded viewer
-- Use the "Back to List" button to return
-- Click the circle button to mark as read/unread
-
-#### Grid View
-- Each feed has its own colored widget showing the last 10 items
-- Click on any article title to open it
-- Unread count badge shows on each widget
+### Authentication
+1. Navigate to the application
+2. Click "Sign in with Google"
+3. Authorize with your Google account
 
 ### Managing Feeds
+- **Add Feed**: Click + button in sidebar, enter RSS URL
+- **Edit Feed**: Right-click feed → Edit
+- **Move to Folder**: Right-click feed → Move to Folder
+- **Drag & Drop**: Drag feeds between categories
+- **Delete**: Right-click feed → Delete
 
-- **Refresh**: Click the refresh button on individual feeds or use "Refresh All"
-- **Activate/Deactivate**: Toggle feeds on/off
-- **Change Color**: Click on the colored square to choose a new color
-- **Delete**: Click the ✕ button to remove a feed
+### Viewing Content
+- **List View**: All articles in chronological order
+- **Grid View**: Feed widgets in customizable grid
+- **Suggested Feeds**: Discover 100+ curated feeds
 
-## Architecture (SOLID Principles)
+### Feed Discovery
+1. Click "✨ Suggested" tab
+2. Browse by category or search
+3. Click + button to add feed
+4. Feed appears in your sidebar
 
-### Services
-1. **LocalStorageService**: Handles data persistence (SRP)
-2. **RssParserService**: Parses RSS/Atom feeds (SRP)
-3. **RssFeedFetcherService**: Fetches RSS feeds via HTTP (SRP)
-4. **RssFeedService**: Main service orchestrating feed management (DIP)
+## 🛠️ Available Commands
 
-### Components
-1. **HeaderComponent**: Navigation and filtering controls
-2. **FeedManagerComponent**: Add, edit, and manage RSS subscriptions
-3. **ListViewComponent**: Traditional list view of all articles
-4. **GridViewComponent**: Netvibes-style grid/widget view
-
-## Building for Production
-
+### Development
 ```bash
-ng build
+npm start              # Start dev servers (frontend + backend)
+npm run start:frontend # Angular dev server only
+npm run start:backend  # Express server only
+npm run build          # Build Angular app
+npm run build:prod     # Production build
 ```
+
+### Docker & Deployment
+```bash
+npm run docker:build   # Build Docker image
+npm run docker:run     # Start container locally
+npm run docker:stop    # Stop container
+npm run docker:logs    # View container logs
+npm run deploy:test    # Test deployment setup
+npm run deploy         # Deploy to andromeda
+npm run health-check   # Check application health
+```
+
+### Using Make (Optional)
+```bash
+make build             # Build Docker image
+make run               # Run container
+make deploy            # Deploy to andromeda
+make logs              # View logs
+make backup            # Backup database
+make clean             # Clean Docker resources
+```
+
+## 📖 Documentation
+
+- **[DEPLOYMENT_OVERVIEW.md](./DEPLOYMENT_OVERVIEW.md)** - Complete deployment feature overview
+- **[QUICKSTART.md](./QUICKSTART.md)** - Quick deployment guide
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Detailed deployment documentation
+- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Common issues and solutions
+- **[.github/ACTIONS.md](./.github/ACTIONS.md)** - GitHub Actions CI/CD setup
+
+## 🏗️ Architecture
+
+### Frontend (Angular 19)
+- Standalone components
+- RxJS for reactive state management
+- Custom modals and drag & drop
+- Three view modes: List, Grid, Suggested
+
+### Backend (Node.js/Express)
+- REST API
+- Passport.js authentication (Google OAuth)
+- Session-based cookies
+- SQLite database
+
+### Database Schema
+- **users**: User accounts from OAuth
+- **rss_feeds**: Feed subscriptions (per user)
+- **rss_items**: Cached articles
+- **user_preferences**: User settings
+
+### Services (SOLID Principles)
+1. **AuthService**: Authentication and user management
+2. **RssFeedService**: Feed management and CRUD
+3. **RssParserService**: RSS/Atom feed parsing
+4. **ApiStorageService**: Backend API communication
+5. **DatabaseService**: SQLite operations
+
+## 🐳 Docker Deployment
+
+### Local Testing
+```powershell
+# Build and test locally
+npm run docker:build
+npm run docker:run
+
+# Verify
+npm run health-check
+
+# Stop
+npm run docker:stop
+```
+
+### Deploy to Andromeda
+```powershell
+# One-command deployment
+npm run deploy
+
+# Or with custom parameters
+.\deploy.ps1 -RemoteServer "andromeda" -RemoteUser "your-username"
+```
+
+The deployment script will:
+1. ✅ Build optimized Docker image
+2. ✅ Save to compressed archive
+3. ✅ Upload to andromeda
+4. ✅ Deploy with docker-compose
+5. ✅ Verify deployment
+6. ✅ Clean up temporary files
+
+## 🔒 Security
+
+- Google OAuth 2.0 authentication
+- Session-based security with httpOnly cookies
+- SQL injection protection
+- CORS configuration
+- Environment variable protection
+
+**Important**: Update `.env` with secure values before production deployment!
+
+## 📊 Popular RSS Feeds
+
+Add these popular feeds to get started:
+
+**News:**
+- New York Times: https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml
+- BBC News: http://feeds.bbci.co.uk/news/rss.xml
+- The Guardian: https://www.theguardian.com/world/rss
+
+**Technology:**
+- TechCrunch: https://techcrunch.com/feed/
+- Hacker News: https://news.ycombinator.com/rss
+- The Verge: https://www.theverge.com/rss/index.xml
+
+**Programming:**
+- DEV Community: https://dev.to/feed
+- CSS-Tricks: https://css-tricks.com/feed
+- Smashing Magazine: https://www.smashingmagazine.com/feed
+
+Or explore 100+ curated feeds in the **Suggested Feeds** tab!
+
+## 🤝 Contributing
+
+This is a personal project, but feel free to fork and customize for your needs.
+
+## 📝 License
+
+This project is for personal use.
 
 ---
 
-Built with ❤️ using Angular and following SOLID principles
+**Built with ❤️ using Angular 19, Node.js, and Docker**
+
+For deployment questions, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)

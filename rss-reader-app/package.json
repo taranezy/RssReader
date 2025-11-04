@@ -8,9 +8,19 @@
     "start:backend": "node backend/server.js",
     "start:backend:dev": "nodemon backend/server.js",
     "build": "ng build",
+    "build:prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:rss-reader-app": "node dist/rss-reader-app/server/server.mjs"
+    "serve:ssr:rss-reader-app": "node dist/rss-reader-app/server/server.mjs",
+    "docker:build": "docker build -t rss-reader:latest .",
+    "docker:run": "docker-compose up -d",
+    "docker:stop": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "deploy": "powershell -File ./deploy.ps1",
+    "deploy:remote": "powershell -File ./deploy-remote.ps1",
+    "deploy:bash": "bash ./deploy.sh",
+    "deploy:test": "powershell -File ./test-deployment.ps1",
+    "health-check": "powershell -File ./health-check.ps1"
   },
   "prettier": {
     "printWidth": 100,

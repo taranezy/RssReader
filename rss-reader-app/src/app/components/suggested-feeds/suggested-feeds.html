@@ -1,0 +1,83 @@
+<div class="suggested-feeds-container">
+  <div class="header">
+    <h2>Suggested Feeds</h2>
+    <p class="subtitle">Discover new RSS feeds based on your interests</p>
+  </div>
+
+  <!-- Search and Filter Bar -->
+  <div class="toolbar">
+    <div class="search-box">
+      <input 
+        type="text" 
+        [(ngModel)]="searchQuery"
+        (input)="searchFeeds(searchQuery)"
+        placeholder="Search feeds..." 
+        class="search-input"
+      />
+      <span class="search-icon">🔍</span>
+    </div>
+
+    <div class="category-filter">
+      <button 
+        *ngFor="let category of categories"
+        [class.active]="selectedCategory === category"
+        (click)="filterByCategory(category)"
+        class="category-btn">
+        {{ category }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading suggested feeds...</p>
+  </div>
+
+  <!-- Feed Grid -->
+  <div class="feeds-grid" *ngIf="!isLoading">
+    <div class="feed-card" *ngFor="let feed of filteredFeeds">
+      <div class="feed-card-header">
+        <div class="feed-icon">
+          <span class="category-badge">{{ feed.category }}</span>
+        </div>
+        <button class="add-btn" (click)="addFeed(feed)" title="Add this feed">
+          <span class="plus-icon">+</span>
+        </button>
+      </div>
+      
+      <div class="feed-card-body">
+        <h3 class="feed-title">{{ feed.title }}</h3>
+        <p class="feed-description">{{ feed.description }}</p>
+        
+        <div class="feed-meta">
+          <span class="language-tag">{{ feed.language }}</span>
+          <span class="subscribers" *ngIf="feed.subscribers">
+            {{ formatSubscribers(feed.subscribers) }}
+          </span>
+          <span class="relevance" *ngIf="feed.relevanceScore && feed.relevanceScore > 10">
+            ⭐ Recommended
+          </span>
+        </div>
+        
+        <div class="feed-url">
+          <a [href]="feed.url" target="_blank" rel="noopener noreferrer" (click)="$event.stopPropagation()">
+            {{ feed.url }}
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!isLoading && filteredFeeds.length === 0">
+    <div class="empty-icon">📭</div>
+    <h3>No feeds found</h3>
+    <p>Try adjusting your search or filter criteria</p>
+  </div>
+
+  <!-- Results Count -->
+  <div class="results-info" *ngIf="!isLoading && filteredFeeds.length > 0">
+    <p>Showing {{ filteredFeeds.length }} feed{{ filteredFeeds.length !== 1 ? 's' : '' }}</p>
+  </div>
+</div>

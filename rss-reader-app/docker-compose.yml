@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  rss-reader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rss-reader-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SESSION_SECRET=${SESSION_SECRET:-your-secret-key-change-in-production}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL:-http://localhost:3000/api/auth/google/callback}
+    volumes:
+      # Persist database
+      - rss-data:/app/backend/data
+      # Mount .env file for configuration
+      - ./.env:/app/.env:ro
+    networks:
+      - rss-network
+
+volumes:
+  rss-data:
+    driver: local
+
+networks:
+  rss-network:
+    driver: bridge

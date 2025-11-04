@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  rss-reader:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rss-reader-app
+    restart: unless-stopped
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SESSION_SECRET=${SESSION_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+    volumes:
+      - rss-data:/app/backend/data
+      - ./.env:/app/.env:ro
+    networks:
+      - rss-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: rss-reader-nginx
+    restart: unless-stopped
+    ports:
+      - "8444:8444"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - rss-reader
+    networks:
+      - rss-network
+
+  certbot:
+    image: certbot/certbot
+    container_name: rss-reader-certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $$$${!}; done;'
+
+volumes:
+  rss-data:
+    driver: local
+
+networks:
+  rss-network:
+    driver: bridge

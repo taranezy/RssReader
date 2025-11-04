@@ -84,6 +84,18 @@ class DatabaseService {
       );
     `);
 
+    // Create user settings table
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS user_settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL UNIQUE,
+        font TEXT NOT NULL DEFAULT 'default',
+        show_left_menu INTEGER NOT NULL DEFAULT 1,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+    `);
+
     // Create indexes for better performance
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -95,6 +107,7 @@ class DatabaseService {
       CREATE INDEX IF NOT EXISTS idx_items_is_read ON rss_items(is_read);
       CREATE INDEX IF NOT EXISTS idx_feeds_is_active ON rss_feeds(is_active);
       CREATE INDEX IF NOT EXISTS idx_prefs_user_id ON user_preferences(user_id);
+      CREATE INDEX IF NOT EXISTS idx_settings_user_id ON user_settings(user_id);
     `);
   }
 
@@ -123,6 +136,12 @@ class DatabaseService {
       INSERT INTO user_preferences (user_id, view_type, selected_feeds, show_only_unread)
       VALUES (?, ?, ?, ?)
     `).run(result.lastInsertRowid, 'list', '[]', 0);
+    
+    // Create default settings for new user
+    this.db.prepare(`
+      INSERT INTO user_settings (user_id, font, show_left_menu)
+      VALUES (?, ?, ?)
+    `).run(result.lastInsertRowid, 'default', 1);
     
     return result.lastInsertRowid;
   }
@@ -338,6 +357,38 @@ class DatabaseService {
       preferences.viewType || 'list',
       JSON.stringify(preferences.selectedFeeds || []),
       preferences.showOnlyUnread ? 1 : 0,
+      userId
+    );
+  }
+
+  // User settings operations
+  getUserSettings(userId) {
+    const settings = this.db.prepare('SELECT * FROM user_settings WHERE user_id = ?').get(userId);
+    if (!settings) {
+      // Create default settings if not found
+      this.db.prepare(`
+        INSERT INTO user_settings (user_id, font, show_left_menu)
+        VALUES (?, ?, ?)
+      `).run(userId, 'default', 1);
+      return { font: 'default', showLeftMenu: true };
+    }
+
+    return {
+      font: settings.font,
+      showLeftMenu: settings.show_left_menu === 1
+    };
+  }
+
+  updateUserSettings(userId, settings) {
+    const stmt = this.db.prepare(`
+      UPDATE user_settings 
+      SET font = ?, show_left_menu = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE user_id = ?
+    `);
+
+    return stmt.run(
+      settings.font || 'default',
+      settings.showLeftMenu ? 1 : 0,
       userId
     );
   }

@@ -1,10 +1,11 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { AuthService, User } from '../../services/auth.service';
+import { UserSettingsService } from '../../services/user-settings.service';
 
 @Component({
   selector: 'app-header',
@@ -13,6 +14,9 @@ import { AuthService, User } from '../../services/auth.service';
   styleUrl: './header.scss'
 })
 export class HeaderComponent implements OnInit {
+  @Output() sidebarToggleRequested = new EventEmitter<void>();
+  @Output() leftMenuToggled = new EventEmitter<boolean>();
+  
   feeds: RssFeed[] = [];
   preferences: FeedViewPreference = {
     viewType: 'list',
@@ -20,36 +24,67 @@ export class HeaderComponent implements OnInit {
     showOnlyUnread: false
   };
   
-  currentView: 'list' | 'grid' = 'list';
+  currentView: 'list' | 'grid' | 'suggested' = 'list';
   currentUser: User | null = null;
   showUserMenu = false;
   showFeedDropdown = false;
+  showSettings = false;
+
+  userSettings = {
+    font: 'default',
+    showLeftMenu: true
+  };
+
+  availableFonts = [
+    { id: 'default', name: 'Default', family: 'system-ui' },
+    { id: 'serif', name: 'Serif', family: 'Georgia, serif' },
+    { id: 'monospace', name: 'Monospace', family: 'Courier New, monospace' },
+    { id: 'comic', name: 'Comic Sans', family: 'Comic Sans MS, cursive' },
+    { id: 'verdana', name: 'Verdana', family: 'Verdana, sans-serif' }
+  ];
 
   constructor(
     private feedService: RssFeedService,
     private authService: AuthService,
+    private userSettingsService: UserSettingsService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.loadUserSettings();
+    
     this.feedService.feeds$.subscribe(feeds => {
       this.feeds = feeds.filter(f => f.isActive);
     });
 
     this.feedService.preferences$.subscribe(prefs => {
       this.preferences = prefs;
-      this.currentView = prefs.viewType;
+      if (this.router.url !== '/suggested') {
+        this.currentView = prefs.viewType;
+      }
     });
 
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
+    
+    // Detect current route
+    if (this.router.url.includes('/suggested')) {
+      this.currentView = 'suggested';
+    } else if (this.router.url.includes('/grid')) {
+      this.currentView = 'grid';
+    } else {
+      this.currentView = 'list';
+    }
   }
 
-  switchView(viewType: 'list' | 'grid'): void {
+  switchView(viewType: 'list' | 'grid' | 'suggested'): void {
     this.currentView = viewType;
-    this.feedService.updatePreferences({ viewType });
-    this.router.navigate([viewType === 'list' ? '/list' : '/grid']);
+    if (viewType !== 'suggested') {
+      this.feedService.updatePreferences({ viewType });
+    }
+    const route = viewType === 'list' ? '/list' : viewType === 'grid' ? '/grid' : '/suggested';
+    this.router.navigate([route]);
   }
 
   toggleUnreadFilter(): void {
@@ -109,6 +144,81 @@ export class HeaderComponent implements OnInit {
         this.router.navigate(['/login']);
       });
     }
+  }
+
+  toggleSidebar(): void {
+    this.sidebarToggleRequested.emit();
+  }
+
+  openSettings(): void {
+    this.showSettings = true;
+    this.showUserMenu = false;
+  }
+
+  closeSettings(): void {
+    this.showSettings = false;
+  }
+
+  changeFont(fontId: string): void {
+    this.userSettings.font = fontId;
+    
+    // Apply font immediately to entire application
+    this.userSettingsService.applyFontImmediately(fontId);
+    
+    // Save to database via API (fire and forget, but with error handling)
+    this.userSettingsService.updateFont(fontId).subscribe(
+      () => {
+        console.log('Font setting updated successfully');
+      },
+      error => {
+        console.error('Error updating font setting:', error);
+        // Fall back to localStorage if API fails
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('userSettings', JSON.stringify(this.userSettings));
+        }
+      }
+    );
+  }
+
+  toggleLeftMenu(event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    this.userSettings.showLeftMenu = checkbox.checked;
+    
+    // Save to database via API
+    this.userSettingsService.updateShowLeftMenu(checkbox.checked).subscribe(
+      () => {
+        this.leftMenuToggled.emit(checkbox.checked);
+        console.log('Left menu setting updated successfully');
+      },
+      error => {
+        console.error('Error updating left menu setting:', error);
+        // Fall back to localStorage if API fails
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('userSettings', JSON.stringify(this.userSettings));
+        }
+        this.leftMenuToggled.emit(checkbox.checked);
+      }
+    );
+  }
+
+  loadUserSettings(): void {
+    this.userSettingsService.getSettings().subscribe(
+      settings => {
+        this.userSettings = settings;
+        this.userSettingsService.applyFontImmediately(settings.font);
+      },
+      error => {
+        console.error('Error loading user settings:', error);
+        // Fall back to localStorage if API fails
+        if (typeof localStorage !== 'undefined') {
+          const saved = localStorage.getItem('userSettings');
+          if (saved) {
+            this.userSettings = JSON.parse(saved);
+            this.userSettingsService.applyFontImmediately(this.userSettings.font);
+          }
+        }
+      }
+    );
   }
 
   @HostListener('document:click', ['$event'])

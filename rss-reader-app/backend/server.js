@@ -24,8 +24,10 @@ if (!fs.existsSync(dataDir)) {
 const db = new DatabaseService();
 
 // Middleware
+const isProduction = process.env.NODE_ENV === 'production';
+
 app.use(cors({
-  origin: 'http://localhost:4200',
+  origin: isProduction ? false : 'http://localhost:4200',
   credentials: true
 }));
 app.use(bodyParser.json());
@@ -325,11 +327,47 @@ app.put('/api/preferences', isAuthenticated, (req, res) => {
   }
 });
 
+// ==================== USER SETTINGS ENDPOINTS ====================
+
+// Get user settings
+app.get('/api/user-settings', isAuthenticated, (req, res) => {
+  try {
+    const settings = db.getUserSettings(req.user.id);
+    res.json(settings);
+  } catch (error) {
+    console.error('Error getting user settings:', error);
+    res.status(500).json({ error: 'Failed to get user settings' });
+  }
+});
+
+// Update user settings
+app.put('/api/user-settings', isAuthenticated, (req, res) => {
+  try {
+    const settings = req.body;
+    db.updateUserSettings(req.user.id, settings);
+    res.json(settings);
+  } catch (error) {
+    console.error('Error updating user settings:', error);
+    res.status(500).json({ error: 'Failed to update user settings' });
+  }
+});
+
 // ==================== HEALTH CHECK ====================
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Serve static files from Angular build in production
+if (isProduction) {
+  const distPath = path.join(__dirname, '../dist/rss-reader-app/browser');
+  app.use(express.static(distPath));
+  
+  // Serve index.html for all other routes (Angular routing)
+  app.use((req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 // Error handling middleware
 app.use((err, req, res, next) => {

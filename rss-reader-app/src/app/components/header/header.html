@@ -17,6 +17,13 @@
           title="Grid View">
           ⊞ Grid
         </button>
+        <button 
+          class="view-btn"
+          [class.active]="currentView === 'suggested'"
+          (click)="switchView('suggested')"
+          title="Suggested Feeds">
+          ✨ Suggested
+        </button>
       </div>
     </div>
 
@@ -86,6 +93,9 @@
             <div class="user-email">{{ currentUser.email }}</div>
           </div>
           <div class="user-actions">
+            <button class="settings-btn" (click)="openSettings()">
+              <span>⚙️</span> Settings
+            </button>
             <button class="logout-btn" (click)="logout()">
               <span>🚪</span> Logout
             </button>
@@ -95,3 +105,48 @@
     </div>
   </div>
 </header>
+
+<!-- Settings Modal -->
+<div class="settings-modal-overlay" *ngIf="showSettings" (click)="closeSettings()">
+  <div class="settings-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>User Settings</h2>
+      <button class="close-btn" (click)="closeSettings()">✕</button>
+    </div>
+
+    <div class="modal-content">
+      <!-- Font Selection -->
+      <div class="settings-section">
+        <label>Font:</label>
+        <div class="font-options">
+          <button 
+            *ngFor="let font of availableFonts"
+            class="font-btn"
+            [class.active]="userSettings.font === font.id"
+            [style.fontFamily]="font.family"
+            (click)="changeFont(font.id)">
+            {{ font.name }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Left Menu Toggle -->
+      <div class="settings-section">
+        <label>Left Menu:</label>
+        <div class="toggle-option">
+          <label class="toggle-label">
+            <input 
+              type="checkbox" 
+              [checked]="userSettings.showLeftMenu"
+              (change)="toggleLeftMenu($event)">
+            <span>Show Left Menu</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-primary" (click)="closeSettings()">Done</button>
+    </div>
+  </div>
+</div>
