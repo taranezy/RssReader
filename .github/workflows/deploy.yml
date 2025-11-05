@@ -1,5 +1,4 @@
 name: CI/CD Pipeline - Build & Deploy
-# Updated: Fixed Slack notification condition syntax
 
 on:
   push:
