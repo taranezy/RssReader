@@ -86,8 +86,13 @@ jobs:
             echo "ERROR: SSH key file is empty!"
             exit 1
           fi
-          head -1 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          # Add host to known_hosts to skip verification
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>&1
+          # Configure SSH to trust the host
+          echo "Host *" >> ~/.ssh/config
+          echo "  StrictHostKeyChecking no" >> ~/.ssh/config
+          echo "  UserKnownHostsFile=/dev/null" >> ~/.ssh/config
+          chmod 600 ~/.ssh/config
       
       - name: Pull latest code on remote
         run: |
