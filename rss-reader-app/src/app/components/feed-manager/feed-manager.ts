@@ -213,6 +213,27 @@ export class FeedManagerComponent implements OnInit {
     } else {
       this.expandedCategories.add(category);
     }
+    
+    // Automatically select all feeds in this folder
+    this.selectFolderFeeds(category);
+  }
+  
+  selectFolderFeeds(category: string): void {
+    const categoryFeeds = this.getCategoryFeeds(category);
+    const feedIds = categoryFeeds.map(feed => feed.id);
+    
+    if (feedIds.length > 0) {
+      this.feedService.updatePreferences({ selectedFeeds: feedIds });
+    }
+  }
+  
+  selectUncategorizedFeeds(): void {
+    const uncategorizedFeeds = this.getUncategorizedFeeds();
+    const feedIds = uncategorizedFeeds.map(feed => feed.id);
+    
+    if (feedIds.length > 0) {
+      this.feedService.updatePreferences({ selectedFeeds: feedIds });
+    }
   }
 
   isCategoryExpanded(category: string): boolean {

@@ -71,8 +71,14 @@
     </div>
 
     <!-- Uncategorized Feeds -->
-    <div class="section-subheader" *ngIf="getUncategorizedFeeds().length > 0 || draggedFeed">
+    <div class="section-subheader clickable" 
+         *ngIf="getUncategorizedFeeds().length > 0 || draggedFeed"
+         (click)="selectUncategorizedFeeds()"
+         title="Click to filter by uncategorized feeds">
       <span class="title">No Folder</span>
+      <span class="feed-count-badge" *ngIf="getUncategorizedFeeds().length > 0">
+        {{ getUncategorizedFeeds().length }}
+      </span>
     </div>
     <div class="category-group uncategorized-drop-zone" 
          *ngIf="getUncategorizedFeeds().length > 0"
@@ -122,7 +128,8 @@
            (dragover)="onDragOver($event)"
            (dragenter)="onDragEnterCategory($event, category)"
            (dragleave)="onDragLeaveCategory($event)"
-           (drop)="onDropOnCategory($event, category)">
+           (drop)="onDropOnCategory($event, category)"
+           title="Click to filter by this folder">
         <span class="arrow">{{ isCategoryExpanded(category) ? '▼' : '▶' }}</span>
         <span class="category-name">📁 {{ category }}</span>
         <span class="category-count">{{ getCategoryFeeds(category).length }}</span>
