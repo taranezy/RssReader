@@ -15,7 +15,8 @@ export class RssFeedService {
   private preferencesSubject = new BehaviorSubject<FeedViewPreference>({
     viewType: 'list',
     selectedFeeds: [],
-    showOnlyUnread: false
+    showOnlyUnread: false,
+    openInNewTab: true // Default to current behavior (open in new tab)
   });
 
   public feeds$ = this.feedsSubject.asObservable();

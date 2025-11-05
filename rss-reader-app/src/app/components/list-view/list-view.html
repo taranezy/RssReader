@@ -1,6 +1,17 @@
-<div class="list-view">
+<div class="list-view" [class.has-preview]="isLargeScreen && showPreviewPane">
+  <!-- Toggle Preview Pane Button (only visible on large screens) -->
+  <button 
+    *ngIf="isLargeScreen"
+    class="toggle-preview-btn"
+    (click)="togglePreviewPane()"
+    [title]="showPreviewPane ? 'Hide Preview Pane' : 'Show Preview Pane'">
+    {{ showPreviewPane ? '⋮⋮' : '⋮⋮⋮' }}
+  </button>
+
   <!-- List view -->
-  <div class="items-list">
+  <div class="items-list" 
+       [class.with-preview]="isLargeScreen && showPreviewPane"
+       [style.width.px]="(isLargeScreen && showPreviewPane) ? feedColumnWidth : null">
     <div *ngIf="items.length === 0" class="no-items">
       <p>No items to display. Add some RSS feeds and refresh them!</p>
     </div>
@@ -8,6 +19,7 @@
     <div class="item-card" 
          *ngFor="let item of items"
          [class.read]="item.isRead"
+         [class.selected]="selectedArticleForPreview?.id === item.id"
          (click)="openArticle(item)">
       
       <div class="item-indicator" [style.background-color]="getFeedColor(item)"></div>
@@ -54,4 +66,59 @@
       </div>
     </div>
   </div>
+
+  <!-- Resizable Divider (only on large screens with preview) -->
+  <div class="resize-divider" 
+       *ngIf="isLargeScreen && showPreviewPane"
+       (mousedown)="startResize($event)"
+       title="Drag to resize columns">
+  </div>
+
+  <!-- Preview Pane (only on large screens) -->
+  <div class="preview-pane" 
+       *ngIf="isLargeScreen && showPreviewPane && selectedArticleForPreview">
+    <div class="preview-header">
+      <div class="preview-actions">
+        <button class="preview-btn" (click)="openPreviewInFullscreen()" title="Open in Fullscreen">
+          ⛶ Fullscreen
+        </button>
+        <button class="preview-btn" (click)="openPreviewInNewTab()" title="Open in New Tab">
+          🔗 New Tab
+        </button>
+        <button class="preview-close-btn" (click)="closePreviewPane()" title="Close Preview">
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <div class="preview-content">
+      <h1 class="preview-title">{{ selectedArticleForPreview.title }}</h1>
+      
+      <div class="preview-meta">
+        <span class="preview-source" [style.color]="getFeedColor(selectedArticleForPreview)">
+          {{ selectedArticleForPreview.feedTitle }}
+        </span>
+        <span class="preview-date">{{ selectedArticleForPreview.pubDate | date:'medium' }}</span>
+      </div>
+
+      <div class="preview-image" *ngIf="selectedArticleForPreview.imageUrl">
+        <img [src]="selectedArticleForPreview.imageUrl" [alt]="selectedArticleForPreview.title" />
+      </div>
+
+      <div class="preview-body" [innerHTML]="selectedArticleForPreview.content || selectedArticleForPreview.description"></div>
+
+      <div class="preview-footer">
+        <a [href]="selectedArticleForPreview.link" target="_blank" rel="noopener noreferrer" class="preview-source-link">
+          View Original Article →
+        </a>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- Article Reader -->
+<app-article-reader 
+  *ngIf="selectedArticle"
+  [article]="selectedArticle"
+  (closeReader)="closeArticleReader()">
+</app-article-reader>

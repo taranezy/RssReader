@@ -24,7 +24,10 @@
 .content {
   flex: 1;
   padding: 20px;
-  overflow-y: auto;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 @media (max-width: 768px) {

@@ -3,7 +3,10 @@
     <!-- Left Sidebar -->
     <app-feed-manager 
       *ngIf="showLeftMenu"
-      (sidebarToggled)="onSidebarToggled($event)"></app-feed-manager>
+      [isSidebarCollapsed]="isSidebarCollapsed"
+      (sidebarToggled)="onSidebarToggled($event)"
+      (mouseenter)="onMenuMouseEnter()"
+      (mouseleave)="onMenuMouseLeave()"></app-feed-manager>
     
     <!-- Main Content Area -->
     <div class="main-layout" [class.sidebar-collapsed]="isSidebarCollapsed" [class.menu-hidden]="!showLeftMenu">

@@ -93,7 +93,8 @@ export class ApiStorageService {
         return of({
           viewType: 'list' as 'list' | 'grid',
           selectedFeeds: [],
-          showOnlyUnread: false
+          showOnlyUnread: false,
+          openInNewTab: true
         } as FeedViewPreference);
       })
     );

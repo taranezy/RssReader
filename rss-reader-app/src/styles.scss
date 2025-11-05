@@ -3,10 +3,12 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  cursor: inherit; /* Inherit cursor from parent */
 }
 
 html {
   font-family: system-ui; /* Default font, will be overridden by JavaScript */
+  cursor: default; /* Set default cursor at root */
 }
 
 body {
@@ -14,6 +16,7 @@ body {
   background: #f5f7fa;
   color: #333;
   line-height: 1.6;
+  cursor: default; /* Ensure default cursor */
 }
 
 html, body {

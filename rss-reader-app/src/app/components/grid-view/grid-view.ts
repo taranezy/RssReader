@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RssFeed, RssItem } from '../../models/rss-feed.model';
+import { RssFeed, RssItem, FeedViewPreference } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { UserSettingsService } from '../../services/user-settings.service';
+import { ArticleReaderComponent } from '../article-reader/article-reader';
 
 interface FeedWidget {
   feed: RssFeed;
@@ -12,7 +13,7 @@ interface FeedWidget {
 @Component({
   selector: 'app-grid-view',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ArticleReaderComponent],
   templateUrl: './grid-view.html',
   styleUrl: './grid-view.scss'
 })
@@ -21,6 +22,13 @@ export class GridViewComponent implements OnInit {
   currentUrl: string | null = null;
   showFeedImages = true;
   private allItems: RssItem[] = [];
+  preferences: FeedViewPreference = {
+    viewType: 'grid',
+    selectedFeeds: [],
+    showOnlyUnread: false,
+    openInNewTab: true
+  };
+  selectedArticle: RssItem | null = null;
 
   constructor(
     private feedService: RssFeedService,
@@ -38,6 +46,10 @@ export class GridViewComponent implements OnInit {
 
     this.feedService.feeds$.subscribe(feeds => {
       this.updateWidgets(feeds);
+    });
+
+    this.feedService.preferences$.subscribe(prefs => {
+      this.preferences = prefs;
     });
 
     this.userSettingsService.settings$.subscribe(settings => {
@@ -64,12 +76,18 @@ export class GridViewComponent implements OnInit {
 
   openArticle(item: RssItem): void {
     this.feedService.markAsRead(item.id);
-    // Open in new tab instead of iframe to avoid X-Frame-Options issues
-    window.open(item.link, '_blank', 'noopener,noreferrer');
+    
+    if (this.preferences.openInNewTab) {
+      // Open in new tab
+      window.open(item.link, '_blank', 'noopener,noreferrer');
+    } else {
+      // Open in article reader within the app
+      this.selectedArticle = item;
+    }
   }
 
-  closeArticle(): void {
-    this.currentUrl = null;
+  closeArticleReader(): void {
+    this.selectedArticle = null;
   }
 
   toggleRead(item: RssItem, event: Event): void {

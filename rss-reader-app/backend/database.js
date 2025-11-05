@@ -106,6 +106,13 @@ class DatabaseService {
       // Column already exists, ignore error
     }
 
+    // Add open_in_new_tab column if it doesn't exist (migration for existing databases)
+    try {
+      this.db.exec(`ALTER TABLE user_preferences ADD COLUMN open_in_new_tab INTEGER NOT NULL DEFAULT 1;`);
+    } catch (err) {
+      // Column already exists, ignore error
+    }
+
     // Create indexes for better performance
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -143,9 +150,9 @@ class DatabaseService {
     
     // Create default preferences for new user
     this.db.prepare(`
-      INSERT INTO user_preferences (user_id, view_type, selected_feeds, show_only_unread)
-      VALUES (?, ?, ?, ?)
-    `).run(result.lastInsertRowid, 'list', '[]', 0);
+      INSERT INTO user_preferences (user_id, view_type, selected_feeds, show_only_unread, open_in_new_tab)
+      VALUES (?, ?, ?, ?, ?)
+    `).run(result.lastInsertRowid, 'list', '[]', 0, 1);
     
     // Create default settings for new user
     this.db.prepare(`
@@ -354,14 +361,15 @@ class DatabaseService {
     return {
       viewType: prefs.view_type,
       selectedFeeds: JSON.parse(prefs.selected_feeds || '[]'),
-      showOnlyUnread: prefs.show_only_unread === 1
+      showOnlyUnread: prefs.show_only_unread === 1,
+      openInNewTab: prefs.open_in_new_tab === 1
     };
   }
 
   updatePreferences(userId, preferences) {
     const stmt = this.db.prepare(`
       UPDATE user_preferences 
-      SET view_type = ?, selected_feeds = ?, show_only_unread = ?, updated_at = CURRENT_TIMESTAMP
+      SET view_type = ?, selected_feeds = ?, show_only_unread = ?, open_in_new_tab = ?, updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ?
     `);
 
@@ -369,6 +377,7 @@ class DatabaseService {
       preferences.viewType || 'list',
       JSON.stringify(preferences.selectedFeeds || []),
       preferences.showOnlyUnread ? 1 : 0,
+      preferences.openInNewTab !== undefined ? (preferences.openInNewTab ? 1 : 0) : 1,
       userId
     );
   }

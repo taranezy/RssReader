@@ -1,48 +1,65 @@
 <header class="app-header" [style.background]="getHeaderGradient()">
   <div class="header-container">
-    <div class="header-left">
-      <h1 class="app-title">Streamlet</h1>
-      <div class="view-toggle">
-        <button 
-          class="view-btn"
-          [class.active]="currentView === 'list'"
-          (click)="switchView('list')"
-          title="List View">
-          ☰ List
-        </button>
-        <button 
-          class="view-btn"
-          [class.active]="currentView === 'grid'"
-          (click)="switchView('grid')"
-          title="Grid View">
-          ⊞ Grid
-        </button>
-        <button 
-          class="view-btn"
-          [class.active]="currentView === 'news'"
-          (click)="switchView('news')"
-          title="News Look">
-          📰 News
-        </button>
-        <button 
-          class="view-btn"
-          [class.active]="currentView === 'suggested'"
-          (click)="switchView('suggested')"
-          title="Suggested Feeds">
-          ✨ Suggested
-        </button>
-      </div>
+    <!-- Mobile Layout -->
+    <div class="mobile-header" *ngIf="isMobile">
+      <button class="mobile-menu-btn" (click)="toggleSidebar()" title="Toggle Menu">
+        ☰
+      </button>
+      <h1 class="app-title-mobile">Streamlet</h1>
+      <button 
+        class="mobile-action-btn"
+        [class.active]="preferences.showOnlyUnread"
+        (click)="toggleUnreadFilter()"
+        title="Unread Filter">
+        ●
+      </button>
     </div>
 
-    <div class="header-right">
-      <div class="filter-controls">
-        <button 
-          class="filter-btn"
-          [class.active]="preferences.showOnlyUnread"
-          (click)="toggleUnreadFilter()"
-          title="Show only unread items">
-          {{ preferences.showOnlyUnread ? '● Unread Only' : '○ All Items' }}
-        </button>
+    <!-- Desktop Layout -->
+    <div class="desktop-header" *ngIf="!isMobile">
+      <div class="header-left">
+        <h1 class="app-title">Streamlet</h1>
+        <div class="view-toggle">
+          <button 
+            class="view-btn"
+            [class.active]="currentView === 'list'"
+            (click)="switchView('list')"
+            title="List View">
+            ☰ List
+          </button>
+          <button 
+            class="view-btn"
+            [class.active]="currentView === 'grid'"
+            (click)="switchView('grid')"
+            title="Grid View">
+            ⊞ Grid
+          </button>
+          <button 
+            class="view-btn"
+            [class.active]="currentView === 'news'"
+            (click)="switchView('news')"
+            title="News Look">
+            📰 News
+          </button>
+          <button 
+            class="view-btn"
+            [class.active]="currentView === 'suggested'"
+            (click)="switchView('suggested')"
+            title="Suggested Feeds">
+            ✨ Suggested
+          </button>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="filter-controls">
+          <button 
+            class="filter-btn"
+            [class.active]="preferences.showOnlyUnread"
+            (click)="toggleUnreadFilter()"
+            title="Show only unread items">
+            {{ preferences.showOnlyUnread ? '● Unread Only' : '○ All Items' }}
+          </button>
 
         <div class="feed-filter" *ngIf="feeds.length > 0">
           <button class="filter-btn dropdown-toggle" (click)="toggleFeedDropdown()">
@@ -86,6 +103,7 @@
           title="Mark all as read">
           ✓ Mark All Read
         </button>
+        </div>
       </div>
 
       <!-- User Menu -->
@@ -178,6 +196,23 @@
               (change)="toggleFeedImages($event)">
             <span>Show Feed Pictures</span>
           </label>
+        </div>
+      </div>
+
+      <!-- Article Opening Behavior -->
+      <div class="settings-section">
+        <label>Article Opening:</label>
+        <div class="toggle-option">
+          <label class="toggle-label">
+            <input 
+              type="checkbox" 
+              [checked]="preferences.openInNewTab"
+              (change)="toggleOpenInNewTab($event)">
+            <span>Open Articles in New Tab</span>
+          </label>
+          <p class="setting-description">
+            When disabled, articles open within the app with option to view original site.
+          </p>
         </div>
       </div>
 

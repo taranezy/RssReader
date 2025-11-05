@@ -52,3 +52,10 @@
     <p class="hint">Add some feeds to get started</p>
   </div>
 </div>
+
+<!-- Article Reader -->
+<app-article-reader 
+  *ngIf="selectedArticle"
+  [article]="selectedArticle"
+  (closeReader)="closeArticleReader()">
+</app-article-reader>

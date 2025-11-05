@@ -4,12 +4,13 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { UserSettingsService } from '../../services/user-settings.service';
-import { RssItem, RssFeed } from '../../models/rss-feed.model';
+import { RssItem, RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
+import { ArticleReaderComponent } from '../article-reader/article-reader';
 
 @Component({
   selector: 'app-news-look',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ArticleReaderComponent],
   templateUrl: './news-look.html',
   styleUrls: ['./news-look.scss']
 })
@@ -18,6 +19,13 @@ export class NewsLookComponent implements OnInit, OnDestroy {
   feeds: RssFeed[] = [];
   showFeedImages = true;
   private destroy$ = new Subject<void>();
+  preferences: FeedViewPreference = {
+    viewType: 'grid',
+    selectedFeeds: [],
+    showOnlyUnread: false,
+    openInNewTab: true
+  };
+  selectedArticle: RssItem | null = null;
 
   constructor(
     private feedService: RssFeedService,
@@ -38,6 +46,12 @@ export class NewsLookComponent implements OnInit, OnDestroy {
       this.feeds = feeds;
     });
 
+    this.feedService.preferences$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(prefs => {
+      this.preferences = prefs;
+    });
+
     this.userSettingsService.settings$.pipe(
       takeUntil(this.destroy$)
     ).subscribe(settings => {
@@ -52,7 +66,18 @@ export class NewsLookComponent implements OnInit, OnDestroy {
 
   openArticle(item: RssItem): void {
     this.feedService.markAsRead(item.id);
-    window.open(item.link, '_blank', 'noopener,noreferrer');
+    
+    if (this.preferences.openInNewTab) {
+      // Open in new tab
+      window.open(item.link, '_blank', 'noopener,noreferrer');
+    } else {
+      // Open in article reader within the app
+      this.selectedArticle = item;
+    }
+  }
+
+  closeArticleReader(): void {
+    this.selectedArticle = null;
   }
 
   toggleRead(event: Event, item: RssItem): void {

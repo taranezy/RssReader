@@ -21,7 +21,8 @@ export class HeaderComponent implements OnInit {
   preferences: FeedViewPreference = {
     viewType: 'list',
     selectedFeeds: [],
-    showOnlyUnread: false
+    showOnlyUnread: false,
+    openInNewTab: true
   };
   
   currentView: 'list' | 'grid' | 'news' | 'suggested' = 'list';
@@ -29,6 +30,7 @@ export class HeaderComponent implements OnInit {
   showUserMenu = false;
   showFeedDropdown = false;
   showSettings = false;
+  isMobile = false;
 
   userSettings = {
     font: 'default',
@@ -60,6 +62,9 @@ export class HeaderComponent implements OnInit {
   ngOnInit(): void {
     this.loadUserSettings();
     
+    // Detect mobile screen size
+    this.checkScreenSize();
+    
     this.feedService.feeds$.subscribe(feeds => {
       this.feeds = feeds.filter(f => f.isActive);
     });
@@ -89,6 +94,15 @@ export class HeaderComponent implements OnInit {
 
     // Apply header color on init
     this.applyHeaderColor(this.userSettings.headerColor);
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.checkScreenSize();
+  }
+
+  checkScreenSize(): void {
+    this.isMobile = window.innerWidth <= 768;
   }
 
   switchView(viewType: 'list' | 'grid' | 'news' | 'suggested'): void {
@@ -234,6 +248,13 @@ export class HeaderComponent implements OnInit {
         }
       }
     );
+  }
+
+  toggleOpenInNewTab(event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    this.feedService.updatePreferences({ 
+      openInNewTab: checkbox.checked 
+    });
   }
 
   changeHeaderColor(colorId: string): void {

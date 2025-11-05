@@ -29,4 +29,5 @@ export interface FeedViewPreference {
   viewType: 'list' | 'grid';
   selectedFeeds: string[]; // empty array means 'all'
   showOnlyUnread: boolean;
+  openInNewTab: boolean; // true = open in new tab, false = open in app
 }

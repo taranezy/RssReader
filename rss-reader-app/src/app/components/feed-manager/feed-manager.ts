@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, HostListener, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RssFeed, RssItem } from '../../models/rss-feed.model';
@@ -13,6 +13,7 @@ import { UserSettingsService, HEADER_COLOR_THEMES } from '../../services/user-se
   styleUrl: './feed-manager.scss'
 })
 export class FeedManagerComponent implements OnInit {
+  @Input() isSidebarCollapsed = false;
   @Output() sidebarToggled = new EventEmitter<boolean>();
   
   feeds: RssFeed[] = [];
@@ -36,9 +37,6 @@ export class FeedManagerComponent implements OnInit {
   editFeedTitle = '';
   editFeedColor = '';
   editFeedCategory = '';
-  
-  // Sidebar toggle
-  isSidebarCollapsed = false;
   
   // Drag and drop
   draggedFeed: RssFeed | null = null;

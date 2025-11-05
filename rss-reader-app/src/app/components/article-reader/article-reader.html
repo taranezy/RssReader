@@ -1,0 +1,33 @@
+<div class="article-reader-overlay" *ngIf="article" (click)="close()">
+  <div class="article-reader" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="article-header">
+      <button class="close-btn" (click)="close()" title="Close">✕</button>
+      <button class="open-original-btn" (click)="openOriginal()" title="Open Original Site">
+        🔗 Open Original
+      </button>
+    </div>
+
+    <!-- Article Content -->
+    <div class="article-content">
+      <h1 class="article-title">{{ article.title }}</h1>
+      
+      <div class="article-meta">
+        <span class="article-source">{{ article.feedTitle }}</span>
+        <span class="article-date">{{ getFormattedDate() }}</span>
+      </div>
+
+      <div class="article-image" *ngIf="article.imageUrl">
+        <img [src]="article.imageUrl" [alt]="article.title" />
+      </div>
+
+      <div class="article-body" [innerHTML]="sanitizedContent"></div>
+
+      <div class="article-footer">
+        <a [href]="article.link" target="_blank" rel="noopener noreferrer" class="source-link">
+          View Original Article →
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
