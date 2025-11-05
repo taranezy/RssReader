@@ -218,6 +218,14 @@ export class FeedManagerComponent implements OnInit {
     this.selectFolderFeeds(category);
   }
   
+  toggleCategoryExpand(category: string): void {
+    if (this.expandedCategories.has(category)) {
+      this.expandedCategories.delete(category);
+    } else {
+      this.expandedCategories.add(category);
+    }
+  }
+  
   selectFolderFeeds(category: string): void {
     const categoryFeeds = this.getCategoryFeeds(category);
     const feedIds = categoryFeeds.map(feed => feed.id);

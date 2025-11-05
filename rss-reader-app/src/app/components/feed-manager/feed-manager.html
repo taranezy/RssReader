@@ -124,14 +124,16 @@
     <div class="category-group" *ngFor="let category of getCategories()">
       <div class="category-header" 
            [class.drag-over]="dragOverCategory === category"
-           (click)="toggleCategory(category)"
            (dragover)="onDragOver($event)"
            (dragenter)="onDragEnterCategory($event, category)"
            (dragleave)="onDragLeaveCategory($event)"
-           (drop)="onDropOnCategory($event, category)"
-           title="Click to filter by this folder">
-        <span class="arrow">{{ isCategoryExpanded(category) ? '▼' : '▶' }}</span>
-        <span class="category-name">📁 {{ category }}</span>
+           (drop)="onDropOnCategory($event, category)">
+        <span class="arrow" 
+              (click)="toggleCategoryExpand(category); $event.stopPropagation()"
+              title="Click to expand/collapse folder">{{ isCategoryExpanded(category) ? '▼' : '▶' }}</span>
+        <span class="category-name" 
+              (click)="selectFolderFeeds(category)"
+              title="Click to filter by this folder">📁 {{ category }}</span>
         <span class="category-count">{{ getCategoryFeeds(category).length }}</span>
       </div>
       <div class="category-feeds" *ngIf="isCategoryExpanded(category)">

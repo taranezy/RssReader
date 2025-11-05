@@ -273,19 +273,22 @@
       align-items: center;
       gap: 8px;
       padding: 10px 15px;
-      cursor: pointer;
       background: #f8f9fa;
       border-bottom: 1px solid #eee;
       transition: background 0.2s ease;
 
-      &:hover {
-        background: #e9ecef;
-      }
-
       .arrow {
         font-size: 10px;
         color: #7f8c8d;
-        transition: transform 0.2s ease;
+        transition: all 0.2s ease;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 3px;
+        
+        &:hover {
+          background: rgba(127, 140, 141, 0.1);
+          color: #5a6c7d;
+        }
       }
 
       .category-name {
@@ -293,6 +296,15 @@
         font-size: 13px;
         font-weight: 600;
         color: #2c3e50;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 3px;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          background: rgba(52, 152, 219, 0.1);
+          color: #2980b9;
+        }
       }
 
       .category-count {
