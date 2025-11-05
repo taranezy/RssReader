@@ -53,13 +53,24 @@ $filesToCopy = @(
     "tsconfig.app.json",
     "Dockerfile",
     "docker-compose.yml",
-    ".dockerignore",
-    ".env"
+    ".dockerignore"
+    # Note: .env is NOT copied to avoid overwriting production configuration
 )
 
 foreach ($item in $filesToCopy) {
     if (Test-Path $item) {
-        Copy-Item -Path $item -Destination $tempDir -Recurse -Force
+        if ($item -eq "backend") {
+            # Copy backend directory but exclude node_modules
+            Write-Host "  - Copying backend (excluding node_modules)..." -ForegroundColor DarkGray
+            New-Item -ItemType Directory -Path "$tempDir\backend" -Force | Out-Null
+            
+            # Copy backend files individually to exclude node_modules
+            Get-ChildItem -Path "backend" -Exclude "node_modules" | ForEach-Object {
+                Copy-Item -Path $_.FullName -Destination "$tempDir\backend\" -Recurse -Force
+            }
+        } else {
+            Copy-Item -Path $item -Destination $tempDir -Recurse -Force
+        }
     }
 }
 
@@ -83,24 +94,36 @@ echo '[EXTRACT] Extracting project files...'
 unzip -o $TempArchive
 rm $TempArchive
 
-echo '[CLEANUP] Removing extracted node_modules and fixing permissions...'
+echo '[ENV] Checking environment configuration...'
+# Create .env from example if it doesn't exist (first deployment)
+if [ ! -f .env ]; then
+  echo 'Creating .env from backend/.env.example...'
+  cp backend/.env.example .env
+  echo '⚠️  WARNING: Please configure .env file with production values!'
+else
+  echo '.env file exists, keeping production configuration'
+fi
+
+echo '[CLEANUP] Cleaning up old node_modules and fixing permissions...'
+# Remove any old node_modules that might exist
+find . -type d -name "node_modules" -prune -exec rm -rf {} + 2>/dev/null || true
+# Fix permissions on extracted files
 chmod -R u+rwX . 2>/dev/null || true
-rm -rf backend/node_modules 2>/dev/null || true
 
 echo '[BUILD] Building Docker image...'
-docker build -t rss-reader:latest .
+docker-compose -f docker-compose.prod.yml build --no-cache
 
 echo '[STOP] Stopping old container...'
-docker-compose down || true
+docker-compose -f docker-compose.prod.yml down || true
 
 echo '[START] Starting new container...'
-docker-compose up -d
+docker-compose -f docker-compose.prod.yml up -d
 
 echo '[STATUS] Container status:'
-docker-compose ps
+docker-compose -f docker-compose.prod.yml ps
 
 echo '[LOGS] Recent logs:'
-docker-compose logs --tail=20
+docker-compose -f docker-compose.prod.yml logs --tail=20
 
 echo '[HEALTH] Checking application health...'
 sleep 5

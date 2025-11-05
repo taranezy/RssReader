@@ -24,6 +24,15 @@ import { AuthService } from '../services/auth.service';
             </svg>
             <span>Sign in with Google</span>
           </button>
+
+          <div class="divider">
+            <span>or</span>
+          </div>
+
+          <button class="demo-btn" (click)="loginAsDemo()">
+            <span>🎯</span>
+            <span>Try Demo (100 feeds, read-only)</span>
+          </button>
         </div>
         
         <div class="login-footer">
@@ -100,6 +109,56 @@ import { AuthService } from '../services/auth.service';
       height: 24px;
     }
 
+    .divider {
+      margin: 20px 0;
+      position: relative;
+      text-align: center;
+    }
+
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: #e0e0e0;
+    }
+
+    .divider span {
+      position: relative;
+      background: white;
+      padding: 0 15px;
+      color: #999;
+      font-size: 14px;
+    }
+
+    .demo-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 500;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .demo-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .demo-btn:active {
+      transform: translateY(0);
+    }
+
     .login-footer {
       margin-top: 30px;
       padding-top: 20px;
@@ -118,5 +177,9 @@ export class LoginComponent {
 
   loginWithGoogle(): void {
     this.authService.loginWithGoogle();
+  }
+
+  loginAsDemo(): void {
+    this.authService.loginAsDemo();
   }
 }

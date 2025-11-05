@@ -28,7 +28,8 @@ export class GridViewComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.feedService.items$.subscribe(items => {
+    // Use getFilteredItems() to respect feed filter selection
+    this.feedService.getFilteredItems().subscribe(items => {
       this.allItems = items;
       this.feedService.feeds$.subscribe(feeds => {
         this.updateWidgets(feeds);
@@ -57,7 +58,8 @@ export class GridViewComponent implements OnInit {
           feed,
           items: feedItems
         };
-      });
+      })
+      .filter(widget => widget.items.length > 0); // Only show widgets with items
   }
 
   openArticle(item: RssItem): void {

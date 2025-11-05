@@ -1,10 +1,11 @@
 .app-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); // Default fallback
   color: white;
   box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   position: sticky;
   top: 0;
   z-index: 100;
+  transition: background 0.5s ease;
 }
 
 .header-container {
@@ -289,6 +290,26 @@
   padding: 8px;
 }
 
+.settings-btn {
+  width: 100%;
+  background: transparent;
+  color: #1976d2;
+  border: none;
+  padding: 10px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #e3f2fd;
+  }
+}
+
 .logout-btn {
   width: 100%;
   background: transparent;
@@ -429,6 +450,51 @@
   gap: 10px;
 }
 
+.color-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.color-btn {
+  position: relative;
+  padding: 0;
+  border: 3px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+  overflow: hidden;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 13px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  }
+
+  &.active {
+    border-color: #2196F3;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3), 0 4px 12px rgba(0,0,0,0.25);
+    transform: scale(1.02);
+  }
+
+  .color-name {
+    position: relative;
+    z-index: 1;
+    padding: 8px 12px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+    backdrop-filter: blur(4px);
+  }
+}
+
 .font-btn {
   padding: 12px;
   border: 2px solid #ddd;
@@ -498,23 +564,5 @@
     &:active {
       transform: translateY(0);
     }
-  }
-}
-
-.settings-btn {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 14px;
-
-  &:hover {
-    background: rgba(255, 255, 255, 0.3);
   }
 }

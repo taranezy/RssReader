@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, catchError, map, of } from 'rxjs';
 import { IRssFeedFetcher } from '../interfaces/rss-parser.interface';
+import { environment } from '../../environments/environment';
 
 // Single Responsibility Principle - only handles HTTP fetching
 @Injectable({
@@ -10,7 +11,7 @@ import { IRssFeedFetcher } from '../interfaces/rss-parser.interface';
 export class RssFeedFetcherService implements IRssFeedFetcher {
   
   // Using our backend CORS proxy instead of external service
-  private corsProxyUrl = 'http://localhost:3000/api/proxy/fetch-feed?url=';
+  private corsProxyUrl = `${environment.apiUrl}/proxy/fetch-feed?url=`;
   
   constructor(private http: HttpClient) {}
 

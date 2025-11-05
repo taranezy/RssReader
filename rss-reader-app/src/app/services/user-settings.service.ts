@@ -7,6 +7,7 @@ export interface UserSettings {
   font: string;
   showLeftMenu: boolean;
   showFeedImages: boolean;
+  headerColor: string;
 }
 
 // Font family mappings
@@ -18,6 +19,20 @@ export const FONT_FAMILIES: { [key: string]: string } = {
   'verdana': 'Verdana, sans-serif'
 };
 
+// Header color themes with complementary gradients
+export const HEADER_COLOR_THEMES: { [key: string]: { primary: string; secondary: string; name: string } } = {
+  'purple': { primary: '#667eea', secondary: '#764ba2', name: 'Purple Dream' },
+  'ocean': { primary: '#2E3192', secondary: '#1BFFFF', name: 'Ocean Blue' },
+  'sunset': { primary: '#FF6B6B', secondary: '#FFE66D', name: 'Sunset Orange' },
+  'forest': { primary: '#134E5E', secondary: '#71B280', name: 'Forest Green' },
+  'rose': { primary: '#E91E63', secondary: '#F06292', name: 'Rose Pink' },
+  'midnight': { primary: '#2C3E50', secondary: '#4CA1AF', name: 'Midnight Blue' },
+  'fire': { primary: '#C33764', secondary: '#1D2671', name: 'Fire Red' },
+  'tropical': { primary: '#11998e', secondary: '#38ef7d', name: 'Tropical Teal' },
+  'royal': { primary: '#4A00E0', secondary: '#8E2DE2', name: 'Royal Purple' },
+  'amber': { primary: '#F09819', secondary: '#EDDE5D', name: 'Amber Gold' }
+};
+
 @Injectable({
   providedIn: 'root'
 })
@@ -25,7 +40,8 @@ export class UserSettingsService {
   private settingsSubject = new BehaviorSubject<UserSettings>({
     font: 'default',
     showLeftMenu: true,
-    showFeedImages: true
+    showFeedImages: true,
+    headerColor: 'purple'
   });
 
   public settings$ = this.settingsSubject.asObservable();
@@ -57,6 +73,11 @@ export class UserSettingsService {
   updateShowFeedImages(showFeedImages: boolean): Observable<UserSettings> {
     const current = this.settingsSubject.value;
     return this.updateSettings({ ...current, showFeedImages });
+  }
+
+  updateHeaderColor(headerColor: string): Observable<UserSettings> {
+    const current = this.settingsSubject.value;
+    return this.updateSettings({ ...current, headerColor });
   }
 
   getCurrentSettings(): UserSettings {

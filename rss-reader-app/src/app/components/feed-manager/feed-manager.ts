@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RssFeed, RssItem } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
+import { UserSettingsService, HEADER_COLOR_THEMES } from '../../services/user-settings.service';
 
 @Component({
   selector: 'app-feed-manager',
@@ -44,9 +45,21 @@ export class FeedManagerComponent implements OnInit {
   dragOverCategory: string | null = null;
   dragOverUncategorized = false;
 
-  constructor(private feedService: RssFeedService) {}
+  // Header color for sidebar
+  headerColor = 'purple';
+
+  constructor(
+    private feedService: RssFeedService,
+    private userSettingsService: UserSettingsService
+  ) {}
 
   ngOnInit(): void {
+    // Load user settings for header color
+    this.userSettingsService.settings$.subscribe(settings => {
+      this.headerColor = settings.headerColor;
+      this.applySidebarColor(settings.headerColor);
+    });
+
     this.feedService.feeds$.subscribe(feeds => {
       this.feeds = feeds;
       // Auto-expand all categories initially
@@ -63,6 +76,19 @@ export class FeedManagerComponent implements OnInit {
 
     // Set initial filter based on selected view
     this.selectView('all');
+  }
+
+  applySidebarColor(colorId: string): void {
+    const theme = HEADER_COLOR_THEMES[colorId] || HEADER_COLOR_THEMES['purple'];
+    const sidebarHeader = document.querySelector('.sidebar-header') as HTMLElement;
+    if (sidebarHeader) {
+      sidebarHeader.style.background = `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`;
+    }
+  }
+
+  getSidebarGradient(): string {
+    const theme = HEADER_COLOR_THEMES[this.headerColor] || HEADER_COLOR_THEMES['purple'];
+    return `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`;
   }
 
   toggleAddFeed(): void {

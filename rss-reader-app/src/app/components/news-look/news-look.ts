@@ -25,7 +25,8 @@ export class NewsLookComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.feedService.items$.pipe(
+    // Use getFilteredItems() to respect feed filter selection
+    this.feedService.getFilteredItems().pipe(
       takeUntil(this.destroy$)
     ).subscribe(items => {
       this.items = items;

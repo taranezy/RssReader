@@ -21,7 +21,8 @@
     "deploy:bash": "bash ./deploy.sh",
     "deploy:test": "powershell -File ./test-deployment.ps1",
     "health-check": "powershell -File ./health-check.ps1",
-    "setup:ssh": "powershell -File ./setup-ssh-key.ps1"
+    "setup:ssh": "powershell -File ./setup-ssh-key.ps1",
+    "install:hooks": "powershell -Command \"New-Item -ItemType Directory -Path .git\\hooks -Force | Out-Null; Copy-Item -Path .\\pre-commit.sh -Destination .git\\hooks\\pre-commit -Force; Write-Host 'Git pre-commit hook installed successfully!' -ForegroundColor Green\""
   },
   "prettier": {
     "printWidth": 100,

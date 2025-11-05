@@ -1,4 +1,4 @@
-<header class="app-header">
+<header class="app-header" [style.background]="getHeaderGradient()">
   <div class="header-container">
     <div class="header-left">
       <h1 class="app-title">RSS Reader</h1>
@@ -122,6 +122,22 @@
     </div>
 
     <div class="modal-content">
+      <!-- Header Color Selection -->
+      <div class="settings-section">
+        <label>Header Color:</label>
+        <div class="color-options">
+          <button 
+            *ngFor="let theme of headerColorThemes"
+            class="color-btn"
+            [class.active]="userSettings.headerColor === theme.id"
+            [style.background]="'linear-gradient(135deg, ' + theme.primary + ' 0%, ' + theme.secondary + ' 100%)'"
+            [title]="theme.name"
+            (click)="changeHeaderColor(theme.id)">
+            <span class="color-name">{{ theme.name }}</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Font Selection -->
       <div class="settings-section">
         <label>Font:</label>

@@ -93,10 +93,18 @@ class DatabaseService {
         font TEXT NOT NULL DEFAULT 'default',
         show_left_menu INTEGER NOT NULL DEFAULT 1,
         show_feed_images INTEGER NOT NULL DEFAULT 1,
+        header_color TEXT NOT NULL DEFAULT 'purple',
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       );
     `);
+
+    // Add header_color column if it doesn't exist (migration for existing databases)
+    try {
+      this.db.exec(`ALTER TABLE user_settings ADD COLUMN header_color TEXT NOT NULL DEFAULT 'purple';`);
+    } catch (err) {
+      // Column already exists, ignore error
+    }
 
     // Create indexes for better performance
     this.db.exec(`
@@ -371,23 +379,24 @@ class DatabaseService {
     if (!settings) {
       // Create default settings if not found
       this.db.prepare(`
-        INSERT INTO user_settings (user_id, font, show_left_menu, show_feed_images)
-        VALUES (?, ?, ?, ?)
-      `).run(userId, 'default', 1, 1);
-      return { font: 'default', showLeftMenu: true, showFeedImages: true };
+        INSERT INTO user_settings (user_id, font, show_left_menu, show_feed_images, header_color)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(userId, 'default', 1, 1, 'purple');
+      return { font: 'default', showLeftMenu: true, showFeedImages: true, headerColor: 'purple' };
     }
 
     return {
       font: settings.font,
       showLeftMenu: settings.show_left_menu === 1,
-      showFeedImages: settings.show_feed_images === 1
+      showFeedImages: settings.show_feed_images === 1,
+      headerColor: settings.header_color || 'purple'
     };
   }
 
   updateUserSettings(userId, settings) {
     const stmt = this.db.prepare(`
       UPDATE user_settings 
-      SET font = ?, show_left_menu = ?, show_feed_images = ?, updated_at = CURRENT_TIMESTAMP
+      SET font = ?, show_left_menu = ?, show_feed_images = ?, header_color = ?, updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ?
     `);
 
@@ -395,6 +404,7 @@ class DatabaseService {
       settings.font || 'default',
       settings.showLeftMenu ? 1 : 0,
       settings.showFeedImages ? 1 : 0,
+      settings.headerColor || 'purple',
       userId
     );
   }

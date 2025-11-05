@@ -13,6 +13,7 @@ const DatabaseService = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:4200';
 
 // Ensure data directory exists
 const dataDir = path.join(__dirname, 'data');
@@ -53,10 +54,13 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Google OAuth Strategy
+const callbackURL = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/api/auth/google/callback';
+console.log('Google OAuth Callback URL:', callbackURL);
+
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/api/auth/google/callback'
+    callbackURL: callbackURL
   },
   (accessToken, refreshToken, profile, done) => {
     try {
@@ -119,14 +123,199 @@ app.get('/api/auth/google',
 
 // Google OAuth callback
 app.get('/api/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: 'http://localhost:4200/login' }),
+  passport.authenticate('google', { failureRedirect: `${FRONTEND_URL}/login` }),
   (req, res) => {
     // Successful authentication, redirect to frontend
     console.log('User authenticated successfully:', req.user);
     console.log('Session ID:', req.sessionID);
-    res.redirect('http://localhost:4200');
+    res.redirect(FRONTEND_URL);
   }
 );
+
+// Demo login - creates or retrieves demo user with 100 pre-populated feeds
+app.get('/api/auth/demo', async (req, res) => {
+  try {
+    // Get or create demo user
+    let demoUser = db.findUserByEmail('demo@rssreader.local');
+    let needsFeeds = false;
+    
+    if (!demoUser) {
+      console.log('Creating new demo user...');
+      demoUser = db.createUser('demo@rssreader.local', 'Demo User', null);
+      needsFeeds = true;
+    } else {
+      // Check if user has feeds
+      const existingFeeds = db.getAllFeeds(demoUser.id);
+      if (!existingFeeds || existingFeeds.length === 0) {
+        console.log('Demo user exists but has no feeds, populating...');
+        needsFeeds = true;
+      }
+    }
+
+    if (needsFeeds) {
+      // Create 100 demo RSS feeds with diverse categories
+      const demoFeeds = [
+        // Tech & Programming (10)
+        { url: 'https://news.ycombinator.com/rss', title: 'Hacker News', category: 'Tech' },
+        { url: 'https://www.reddit.com/r/programming/.rss', title: 'r/programming', category: 'Tech' },
+        { url: 'https://www.theverge.com/rss/index.xml', title: 'The Verge', category: 'Tech' },
+        { url: 'https://techcrunch.com/feed/', title: 'TechCrunch', category: 'Tech' },
+        { url: 'https://www.wired.com/feed/rss', title: 'Wired', category: 'Tech' },
+        { url: 'https://arstechnica.com/feed/', title: 'Ars Technica', category: 'Tech' },
+        { url: 'https://www.engadget.com/rss.xml', title: 'Engadget', category: 'Tech' },
+        { url: 'https://www.cnet.com/rss/news/', title: 'CNET News', category: 'Tech' },
+        { url: 'https://www.theguardian.com/technology/rss', title: 'Guardian Tech', category: 'Tech' },
+        { url: 'https://www.bbc.com/news/technology/rss.xml', title: 'BBC Technology', category: 'Tech' },
+        
+        // Science (10)
+        { url: 'https://www.sciencedaily.com/rss/all.xml', title: 'Science Daily', category: 'Science' },
+        { url: 'https://www.nature.com/nature.rss', title: 'Nature', category: 'Science' },
+        { url: 'https://www.nasa.gov/rss/dyn/breaking_news.rss', title: 'NASA News', category: 'Science' },
+        { url: 'https://www.newscientist.com/feed/home', title: 'New Scientist', category: 'Science' },
+        { url: 'https://phys.org/rss-feed/', title: 'Phys.org', category: 'Science' },
+        { url: 'https://www.space.com/feeds/all', title: 'Space.com', category: 'Science' },
+        { url: 'https://www.scientificamerican.com/feed/', title: 'Scientific American', category: 'Science' },
+        { url: 'https://www.livescience.com/feeds/all', title: 'Live Science', category: 'Science' },
+        { url: 'https://www.sciencemag.org/rss/news_current.xml', title: 'Science Magazine', category: 'Science' },
+        { url: 'https://www.popsci.com/feed/', title: 'Popular Science', category: 'Science' },
+        
+        // News (15)
+        { url: 'https://feeds.bbci.co.uk/news/rss.xml', title: 'BBC News', category: 'News' },
+        { url: 'https://www.theguardian.com/world/rss', title: 'Guardian World', category: 'News' },
+        { url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', title: 'NY Times World', category: 'News' },
+        { url: 'https://feeds.reuters.com/reuters/topNews', title: 'Reuters Top News', category: 'News' },
+        { url: 'https://www.aljazeera.com/xml/rss/all.xml', title: 'Al Jazeera', category: 'News' },
+        { url: 'https://rss.cnn.com/rss/edition.rss', title: 'CNN World', category: 'News' },
+        { url: 'https://www.npr.org/rss/rss.php?id=1001', title: 'NPR News', category: 'News' },
+        { url: 'https://www.politico.com/rss/politicopicks.xml', title: 'Politico', category: 'News' },
+        { url: 'https://www.economist.com/the-world-this-week/rss.xml', title: 'The Economist', category: 'News' },
+        { url: 'https://www.washingtonpost.com/news/world/?outputType=rss', title: 'Washington Post', category: 'News' },
+        { url: 'https://www.ft.com/?format=rss', title: 'Financial Times', category: 'News' },
+        { url: 'https://www.usatoday.com/rss/', title: 'USA Today', category: 'News' },
+        { url: 'https://www.independent.co.uk/news/rss', title: 'The Independent', category: 'News' },
+        { url: 'https://www.telegraph.co.uk/rss.xml', title: 'The Telegraph', category: 'News' },
+        { url: 'https://www.foxnews.com/about/rss', title: 'Fox News', category: 'News' },
+        
+        // Development (12)
+        { url: 'https://dev.to/feed', title: 'DEV Community', category: 'Development' },
+        { url: 'https://www.smashingmagazine.com/feed', title: 'Smashing Magazine', category: 'Development' },
+        { url: 'https://css-tricks.com/feed/', title: 'CSS-Tricks', category: 'Development' },
+        { url: 'https://www.freecodecamp.org/news/rss/', title: 'freeCodeCamp', category: 'Development' },
+        { url: 'https://stackoverflow.blog/feed/', title: 'Stack Overflow Blog', category: 'Development' },
+        { url: 'https://github.blog/feed/', title: 'GitHub Blog', category: 'Development' },
+        { url: 'https://medium.com/feed/tag/programming', title: 'Medium Programming', category: 'Development' },
+        { url: 'https://www.reddit.com/r/webdev/.rss', title: 'r/webdev', category: 'Development' },
+        { url: 'https://tympanus.net/codrops/feed/', title: 'Codrops', category: 'Development' },
+        { url: 'https://www.sitepoint.com/feed/', title: 'SitePoint', category: 'Development' },
+        { url: 'https://developer.mozilla.org/en-US/blog/rss.xml', title: 'MDN Blog', category: 'Development' },
+        { url: 'https://www.reddit.com/r/javascript/.rss', title: 'r/javascript', category: 'Development' },
+        
+        // Business (10)
+        { url: 'https://www.bloomberg.com/feed/podcast/businessweek', title: 'Bloomberg', category: 'Business' },
+        { url: 'https://www.forbes.com/business/feed/', title: 'Forbes Business', category: 'Business' },
+        { url: 'https://www.businessinsider.com/rss', title: 'Business Insider', category: 'Business' },
+        { url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html', title: 'CNBC', category: 'Business' },
+        { url: 'https://hbr.org/feed', title: 'Harvard Business Review', category: 'Business' },
+        { url: 'https://www.entrepreneur.com/feed', title: 'Entrepreneur', category: 'Business' },
+        { url: 'https://www.fastcompany.com/rss', title: 'Fast Company', category: 'Business' },
+        { url: 'https://www.inc.com/rss/', title: 'Inc.com', category: 'Business' },
+        { url: 'https://www.marketwatch.com/rss/', title: 'MarketWatch', category: 'Business' },
+        { url: 'https://www.wsj.com/xml/rss/3_7085.xml', title: 'Wall Street Journal', category: 'Business' },
+        
+        // Sports (10)
+        { url: 'https://www.espn.com/espn/rss/news', title: 'ESPN', category: 'Sports' },
+        { url: 'https://www.bbc.com/sport/rss.xml', title: 'BBC Sport', category: 'Sports' },
+        { url: 'https://www.theguardian.com/sport/rss', title: 'Guardian Sport', category: 'Sports' },
+        { url: 'https://www.si.com/rss/si_topstories.rss', title: 'Sports Illustrated', category: 'Sports' },
+        { url: 'https://bleacherreport.com/articles/feed', title: 'Bleacher Report', category: 'Sports' },
+        { url: 'https://www.reddit.com/r/sports/.rss', title: 'r/sports', category: 'Sports' },
+        { url: 'https://www.skysports.com/rss/12040', title: 'Sky Sports', category: 'Sports' },
+        { url: 'https://www.cbssports.com/rss/headlines/', title: 'CBS Sports', category: 'Sports' },
+        { url: 'https://www.foxsports.com/rss', title: 'Fox Sports', category: 'Sports' },
+        { url: 'https://www.nfl.com/feeds/rss/news', title: 'NFL News', category: 'Sports' },
+        
+        // Entertainment (10)
+        { url: 'https://www.ign.com/feed.rss', title: 'IGN', category: 'Entertainment' },
+        { url: 'https://www.polygon.com/rss/index.xml', title: 'Polygon', category: 'Entertainment' },
+        { url: 'https://www.reddit.com/r/movies/.rss', title: 'r/movies', category: 'Entertainment' },
+        { url: 'https://www.hollywoodreporter.com/feed/', title: 'Hollywood Reporter', category: 'Entertainment' },
+        { url: 'https://variety.com/feed/', title: 'Variety', category: 'Entertainment' },
+        { url: 'https://ew.com/feed/', title: 'Entertainment Weekly', category: 'Entertainment' },
+        { url: 'https://www.imdb.com/news/rss/', title: 'IMDb News', category: 'Entertainment' },
+        { url: 'https://www.rollingstone.com/feed/', title: 'Rolling Stone', category: 'Entertainment' },
+        { url: 'https://pitchfork.com/rss/', title: 'Pitchfork', category: 'Entertainment' },
+        { url: 'https://www.reddit.com/r/gaming/.rss', title: 'r/gaming', category: 'Entertainment' },
+        
+        // Lifestyle (8)
+        { url: 'https://www.lifehacker.com/rss', title: 'Lifehacker', category: 'Lifestyle' },
+        { url: 'https://www.buzzfeed.com/index.xml', title: 'BuzzFeed', category: 'Lifestyle' },
+        { url: 'https://www.reddit.com/r/LifeProTips/.rss', title: 'r/LifeProTips', category: 'Lifestyle' },
+        { url: 'https://www.apartmenttherapy.com/main.rss', title: 'Apartment Therapy', category: 'Lifestyle' },
+        { url: 'https://www.bonappetit.com/feed/rss', title: 'Bon Appétit', category: 'Lifestyle' },
+        { url: 'https://www.seriouseats.com/feeds/latest', title: 'Serious Eats', category: 'Lifestyle' },
+        { url: 'https://www.thekitchn.com/main.rss', title: 'The Kitchn', category: 'Lifestyle' },
+        { url: 'https://www.gq.com/feed/rss', title: 'GQ', category: 'Lifestyle' },
+        
+        // Design (8)
+        { url: 'https://www.behance.net/feeds/projects', title: 'Behance', category: 'Design' },
+        { url: 'https://dribbble.com/stories.rss', title: 'Dribbble', category: 'Design' },
+        { url: 'https://www.awwwards.com/blog/feed/', title: 'Awwwards', category: 'Design' },
+        { url: 'https://abduzeedo.com/rss.xml', title: 'Abduzeedo', category: 'Design' },
+        { url: 'https://www.creativebloq.com/feed', title: 'Creative Bloq', category: 'Design' },
+        { url: 'https://www.designboom.com/feed/', title: 'Designboom', category: 'Design' },
+        { url: 'https://www.dezeen.com/feed/', title: 'Dezeen', category: 'Design' },
+        { url: 'https://www.fastcodesign.com/rss.xml', title: 'Fast Co.Design', category: 'Design' },
+        
+        // Machine Learning (7)
+        { url: 'https://www.reddit.com/r/MachineLearning/.rss', title: 'r/MachineLearning', category: 'AI & ML' },
+        { url: 'https://deepmind.com/blog/feed/basic/', title: 'DeepMind', category: 'AI & ML' },
+        { url: 'https://openai.com/blog/rss/', title: 'OpenAI Blog', category: 'AI & ML' },
+        { url: 'https://www.technologyreview.com/feed/', title: 'MIT Tech Review', category: 'AI & ML' },
+        { url: 'https://blog.google/technology/ai/rss/', title: 'Google AI Blog', category: 'AI & ML' },
+        { url: 'https://www.reddit.com/r/artificial/.rss', title: 'r/artificial', category: 'AI & ML' },
+        { url: 'https://ai.googleblog.com/feeds/posts/default', title: 'Google AI Research', category: 'AI & ML' },
+      ];
+
+      const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85929E', '#F06292', '#AED581'];
+
+      // Create feeds for demo user
+      demoFeeds.forEach((feed, index) => {
+        const feedId = `demo-feed-${Date.now()}-${index}`;
+        const color = colors[index % colors.length];
+        
+        try {
+          db.createFeed({
+            id: feedId,
+            url: feed.url,
+            title: feed.title,
+            description: `Demo feed: ${feed.title}`,
+            color: color,
+            category: feed.category,
+            isActive: true,
+            addedDate: new Date().toISOString()
+          }, demoUser.id);
+        } catch (error) {
+          console.error(`Error creating feed ${feed.title}:`, error.message);
+        }
+      });
+
+      console.log(`Created demo user with ${demoFeeds.length} feeds`);
+    } // End of if (needsFeeds)
+
+    // Create session for demo user
+    req.login(demoUser, (err) => {
+      if (err) {
+        console.error('Demo login error:', err);
+        return res.redirect(`${FRONTEND_URL}/login?error=demo_failed`);
+      }
+      console.log('Demo user logged in:', demoUser);
+      res.redirect(FRONTEND_URL);
+    });
+  } catch (error) {
+    console.error('Error creating demo user:', error);
+    res.redirect(`${FRONTEND_URL}/login?error=demo_failed`);
+  }
+});
 
 // Get current user
 app.get('/api/auth/user', (req, res) => {
@@ -482,9 +671,9 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`RSS Reader Backend running on http://localhost:${PORT}`);
+// Start server - bind to 0.0.0.0 for Docker
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`RSS Reader Backend running on http://0.0.0.0:${PORT}`);
   console.log(`Database location: ${path.join(dataDir, 'rss-reader.db')}`);
 });
 

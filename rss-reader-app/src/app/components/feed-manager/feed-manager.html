@@ -1,5 +1,5 @@
 <div class="sidebar" [class.collapsed]="isSidebarCollapsed">
-  <div class="sidebar-header">
+  <div class="sidebar-header" [style.background]="getSidebarGradient()">
     <h2>Feeds</h2>
     <button class="add-feed-btn" (click)="toggleAddFeed()" title="Add new feed">
       +

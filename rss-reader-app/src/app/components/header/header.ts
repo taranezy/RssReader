@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { AuthService, User } from '../../services/auth.service';
-import { UserSettingsService } from '../../services/user-settings.service';
+import { UserSettingsService, HEADER_COLOR_THEMES } from '../../services/user-settings.service';
 
 @Component({
   selector: 'app-header',
@@ -33,7 +33,8 @@ export class HeaderComponent implements OnInit {
   userSettings = {
     font: 'default',
     showLeftMenu: true,
-    showFeedImages: true
+    showFeedImages: true,
+    headerColor: 'purple'
   };
 
   availableFonts = [
@@ -43,6 +44,11 @@ export class HeaderComponent implements OnInit {
     { id: 'comic', name: 'Comic Sans', family: 'Comic Sans MS, cursive' },
     { id: 'verdana', name: 'Verdana', family: 'Verdana, sans-serif' }
   ];
+
+  headerColorThemes = Object.entries(HEADER_COLOR_THEMES).map(([id, theme]) => ({
+    id,
+    ...theme
+  }));
 
   constructor(
     private feedService: RssFeedService,
@@ -77,6 +83,9 @@ export class HeaderComponent implements OnInit {
     } else {
       this.currentView = 'list';
     }
+
+    // Apply header color on init
+    this.applyHeaderColor(this.userSettings.headerColor);
   }
 
   switchView(viewType: 'list' | 'grid' | 'news' | 'suggested'): void {
@@ -224,11 +233,46 @@ export class HeaderComponent implements OnInit {
     );
   }
 
+  changeHeaderColor(colorId: string): void {
+    this.userSettings.headerColor = colorId;
+    
+    // Apply color immediately
+    this.applyHeaderColor(colorId);
+    
+    // Save to database via API
+    this.userSettingsService.updateHeaderColor(colorId).subscribe(
+      () => {
+        console.log('Header color setting updated successfully');
+      },
+      error => {
+        console.error('Error updating header color setting:', error);
+        // Fall back to localStorage if API fails
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('userSettings', JSON.stringify(this.userSettings));
+        }
+      }
+    );
+  }
+
+  applyHeaderColor(colorId: string): void {
+    const theme = HEADER_COLOR_THEMES[colorId] || HEADER_COLOR_THEMES['purple'];
+    const header = document.querySelector('.app-header') as HTMLElement;
+    if (header) {
+      header.style.background = `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`;
+    }
+  }
+
+  getHeaderGradient(): string {
+    const theme = HEADER_COLOR_THEMES[this.userSettings.headerColor] || HEADER_COLOR_THEMES['purple'];
+    return `linear-gradient(135deg, ${theme.primary} 0%, ${theme.secondary} 100%)`;
+  }
+
   loadUserSettings(): void {
     this.userSettingsService.getSettings().subscribe(
       settings => {
         this.userSettings = settings;
         this.userSettingsService.applyFontImmediately(settings.font);
+        this.applyHeaderColor(settings.headerColor);
       },
       error => {
         console.error('Error loading user settings:', error);
@@ -238,6 +282,7 @@ export class HeaderComponent implements OnInit {
           if (saved) {
             this.userSettings = JSON.parse(saved);
             this.userSettingsService.applyFontImmediately(this.userSettings.font);
+            this.applyHeaderColor(this.userSettings.headerColor);
           }
         }
       }

@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:3000/api'
+  // Use relative path so it works with any domain (localhost, andromeda, taranezy.ddns.net)
+  apiUrl: '/api'
 };

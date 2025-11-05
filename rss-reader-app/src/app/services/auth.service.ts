@@ -61,8 +61,17 @@ export class AuthService {
    * Initiate Google OAuth login (redirects to backend)
    */
   loginWithGoogle(): void {
-    // Redirect to backend OAuth endpoint (use absolute URL for redirect)
-    window.location.href = `http://localhost:3000${this.apiUrl}/auth/google`;
+    // Use current origin to support both development and production
+    const origin = window.location.origin;
+    window.location.href = `${origin}${this.apiUrl}/auth/google`;
+  }
+
+  /**
+   * Login as demo user (read-only mode with pre-populated feeds)
+   */
+  loginAsDemo(): void {
+    const origin = window.location.origin;
+    window.location.href = `${origin}${this.apiUrl}/auth/demo`;
   }
 
   /**
