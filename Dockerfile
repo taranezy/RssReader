@@ -20,6 +20,9 @@ RUN npm run build
 # Stage 2: Production image
 FROM node:20-alpine
 
+# Install build dependencies for native modules
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 # Copy backend package files
