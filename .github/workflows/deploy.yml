@@ -59,6 +59,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Check secrets
+        run: |
+          echo "Checking if secrets are set..."
+          if [ -z "${{ secrets.SSH_PRIVATE_KEY }}" ]; then
+            echo "ERROR: SSH_PRIVATE_KEY secret is not set!"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DEPLOY_HOST }}" ]; then
+            echo "ERROR: DEPLOY_HOST secret is not set!"
+            exit 1
+          fi
+          if [ -z "${{ secrets.DEPLOY_USER }}" ]; then
+            echo "ERROR: DEPLOY_USER secret is not set!"
+            exit 1
+          fi
+          echo "✅ All required secrets are set!"
+      
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
