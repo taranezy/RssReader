@@ -96,8 +96,17 @@ jobs:
       
       - name: Pull latest code on remote
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "cd ~/rss-reader && git fetch origin main && git reset --hard origin/main"
+          ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          if [ ! -d ~/rss-reader/.git ]; then
+            echo "ERROR: Git repository not found at ~/rss-reader"
+            echo "Please clone the repository first:"
+            echo "  mkdir -p ~/rss-reader"
+            echo "  cd ~/rss-reader"
+            echo "  git clone https://github.com/taranezy/RssReader.git ."
+            exit 1
+          fi
+          cd ~/rss-reader && git fetch origin main && git reset --hard origin/main
+          EOF
       
       - name: Build Docker image on remote
         run: |
