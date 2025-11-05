@@ -96,4 +96,20 @@ export class UserSettingsService {
     const current = this.settingsSubject.value;
     this.settingsSubject.next({ ...current, font: fontId });
   }
+
+  /**
+   * Export all user data as XML
+   */
+  exportData(): Observable<Blob> {
+    return this.http.get('/api/export', { 
+      responseType: 'blob'
+    });
+  }
+
+  /**
+   * Import user data from XML
+   */
+  importData(xmlData: string): Observable<any> {
+    return this.http.post('/api/import', { xmlData });
+  }
 }

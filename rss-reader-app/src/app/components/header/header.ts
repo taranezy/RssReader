@@ -66,7 +66,8 @@ export class HeaderComponent implements OnInit {
 
     this.feedService.preferences$.subscribe(prefs => {
       this.preferences = prefs;
-      if (this.router.url !== '/suggested') {
+      // Don't change currentView if on news or suggested pages
+      if (this.router.url !== '/suggested' && this.router.url !== '/news') {
         this.currentView = prefs.viewType;
       }
     });
@@ -78,6 +79,8 @@ export class HeaderComponent implements OnInit {
     // Detect current route
     if (this.router.url.includes('/suggested')) {
       this.currentView = 'suggested';
+    } else if (this.router.url.includes('/news')) {
+      this.currentView = 'news';
     } else if (this.router.url.includes('/grid')) {
       this.currentView = 'grid';
     } else {
@@ -285,6 +288,70 @@ export class HeaderComponent implements OnInit {
             this.applyHeaderColor(this.userSettings.headerColor);
           }
         }
+      }
+    );
+  }
+
+  exportData(): void {
+    this.userSettingsService.exportData().subscribe(
+      blob => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `rss-reader-backup-${Date.now()}.xml`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        alert('Data exported successfully!');
+      },
+      error => {
+        console.error('Error exporting data:', error);
+        alert('Failed to export data. Please try again.');
+      }
+    );
+  }
+
+  onImportFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      
+      if (!file.name.endsWith('.xml')) {
+        alert('Please select an XML file.');
+        return;
+      }
+
+      const confirmed = confirm(
+        '⚠️ WARNING: This will DELETE all your current feeds and data, and replace them with the imported data.\n\n' +
+        'Are you sure you want to continue?'
+      );
+
+      if (!confirmed) {
+        input.value = '';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const xmlData = e.target?.result as string;
+        this.importData(xmlData);
+        input.value = ''; // Reset file input
+      };
+      reader.readAsText(file);
+    }
+  }
+
+  importData(xmlData: string): void {
+    this.userSettingsService.importData(xmlData).subscribe(
+      result => {
+        alert(`Data imported successfully!\n\nFeeds: ${result.feedsImported}\nItems: ${result.itemsImported}\n\nReloading page...`);
+        // Reload the page to refresh all data
+        window.location.reload();
+      },
+      error => {
+        console.error('Error importing data:', error);
+        alert('Failed to import data: ' + (error.error?.error || error.message));
       }
     );
   }

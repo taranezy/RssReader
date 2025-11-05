@@ -540,6 +540,72 @@
   }
 }
 
+.data-management {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .export-btn,
+  .import-btn {
+    padding: 12px 20px;
+    border-radius: 6px;
+    border: 2px solid #ddd;
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    transition: all 0.3s;
+    display: inline-block;
+    text-align: center;
+
+    &:hover {
+      border-color: #667eea;
+      background: #f5f7ff;
+      transform: translateY(-2px);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  .export-btn {
+    border-color: #4CAF50;
+    color: #4CAF50;
+
+    &:hover {
+      background: #E8F5E9;
+      border-color: #45a049;
+    }
+  }
+
+  .import-btn {
+    border-color: #2196F3;
+    color: #2196F3;
+
+    &:hover {
+      background: #E3F2FD;
+      border-color: #1976D2;
+    }
+  }
+
+  .data-info {
+    font-size: 12px;
+    color: #666;
+    line-height: 1.5;
+    margin: 0;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: 4px;
+    border-left: 3px solid #ff9800;
+
+    strong {
+      color: #d32f2f;
+    }
+  }
+}
+
 .modal-footer {
   padding: 20px;
   border-top: 1px solid #e0e0e0;

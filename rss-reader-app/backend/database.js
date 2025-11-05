@@ -409,6 +409,15 @@ class DatabaseService {
     );
   }
 
+  // Delete all user data (for import functionality)
+  deleteAllUserData(userId) {
+    // Delete in order due to foreign key constraints
+    this.db.prepare('DELETE FROM rss_items WHERE user_id = ?').run(userId);
+    this.db.prepare('DELETE FROM rss_feeds WHERE user_id = ?').run(userId);
+    this.db.prepare('DELETE FROM user_preferences WHERE user_id = ?').run(userId);
+    // Keep user_settings as they will be updated during import
+  }
+
   // Utility methods
   close() {
     this.db.close();

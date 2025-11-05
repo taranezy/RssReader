@@ -73,10 +73,10 @@ passport.use(new GoogleStrategy({
         const username = profile.displayName || email;
         const userId = db.createUser(email, username, profile.id);
         user = db.findUserById(userId);
-      } else {
-        // Update last login
-        db.updateUserLastLogin(user.id);
       }
+      
+      // Update last login for both new and existing users
+      db.updateUserLastLogin(user.id);
       
       return done(null, user);
     } catch (error) {
@@ -301,6 +301,9 @@ app.get('/api/auth/demo', async (req, res) => {
 
       console.log(`Created demo user with ${demoFeeds.length} feeds`);
     } // End of if (needsFeeds)
+
+    // Update last login for demo user
+    db.updateUserLastLogin(demoUser.id);
 
     // Create session for demo user
     req.login(demoUser, (err) => {
@@ -640,6 +643,193 @@ app.put('/api/user-settings', isAuthenticated, (req, res) => {
     res.status(500).json({ error: 'Failed to update user settings' });
   }
 });
+
+// ==================== EXPORT/IMPORT DATA ====================
+
+// Export user's feeds and items as XML
+app.get('/api/export', isAuthenticated, (req, res) => {
+  try {
+    const feeds = db.getAllFeeds(req.user.id);
+    const items = db.getAllItems(req.user.id);
+    const settings = db.getUserSettings(req.user.id);
+    
+    // Create XML structure
+    let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    xml += '<rss-reader-backup>\n';
+    xml += '  <export-date>' + new Date().toISOString() + '</export-date>\n';
+    xml += '  <user-email>' + escapeXml(req.user.email) + '</user-email>\n';
+    
+    // Export settings
+    xml += '  <settings>\n';
+    xml += '    <font>' + escapeXml(settings.font) + '</font>\n';
+    xml += '    <show-left-menu>' + settings.showLeftMenu + '</show-left-menu>\n';
+    xml += '    <show-feed-images>' + settings.showFeedImages + '</show-feed-images>\n';
+    xml += '    <header-color>' + escapeXml(settings.headerColor) + '</header-color>\n';
+    xml += '  </settings>\n';
+    
+    // Export feeds
+    xml += '  <feeds>\n';
+    feeds.forEach(feed => {
+      xml += '    <feed>\n';
+      xml += '      <id>' + escapeXml(feed.id) + '</id>\n';
+      xml += '      <url>' + escapeXml(feed.url) + '</url>\n';
+      xml += '      <title>' + escapeXml(feed.title) + '</title>\n';
+      xml += '      <description>' + escapeXml(feed.description || '') + '</description>\n';
+      xml += '      <color>' + escapeXml(feed.color) + '</color>\n';
+      xml += '      <category>' + escapeXml(feed.category || '') + '</category>\n';
+      xml += '      <is-active>' + feed.isActive + '</is-active>\n';
+      xml += '      <added-date>' + escapeXml(feed.addedDate || '') + '</added-date>\n';
+      xml += '    </feed>\n';
+    });
+    xml += '  </feeds>\n';
+    
+    // Export items (read status)
+    xml += '  <items>\n';
+    items.forEach(item => {
+      xml += '    <item>\n';
+      xml += '      <feed-id>' + escapeXml(item.feedId) + '</feed-id>\n';
+      xml += '      <title>' + escapeXml(item.title) + '</title>\n';
+      xml += '      <link>' + escapeXml(item.link) + '</link>\n';
+      xml += '      <is-read>' + item.isRead + '</is-read>\n';
+      xml += '      <pub-date>' + escapeXml(item.pubDate || '') + '</pub-date>\n';
+      xml += '    </item>\n';
+    });
+    xml += '  </items>\n';
+    
+    xml += '</rss-reader-backup>';
+    
+    // Send as downloadable file
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Content-Disposition', `attachment; filename="rss-reader-backup-${Date.now()}.xml"`);
+    res.send(xml);
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    res.status(500).json({ error: 'Failed to export data' });
+  }
+});
+
+// Import user's feeds and items from XML
+app.post('/api/import', isAuthenticated, (req, res) => {
+  try {
+    const xmlData = req.body.xmlData;
+    
+    if (!xmlData) {
+      return res.status(400).json({ error: 'No XML data provided' });
+    }
+    
+    // Parse XML (simple parsing for our specific format)
+    const parseXmlValue = (xml, tag) => {
+      const regex = new RegExp(`<${tag}>(.*?)</${tag}>`, 's');
+      const match = xml.match(regex);
+      return match ? match[1].trim() : null;
+    };
+    
+    const parseXmlBoolean = (xml, tag) => {
+      const value = parseXmlValue(xml, tag);
+      return value === 'true' || value === '1';
+    };
+    
+    const parseXmlArray = (xml, containerTag, itemTag) => {
+      const containerRegex = new RegExp(`<${containerTag}>(.*?)</${containerTag}>`, 's');
+      const containerMatch = xml.match(containerRegex);
+      if (!containerMatch) return [];
+      
+      const itemsXml = containerMatch[1];
+      const itemRegex = new RegExp(`<${itemTag}>(.*?)</${itemTag}>`, 'gs');
+      const items = [];
+      let match;
+      
+      while ((match = itemRegex.exec(itemsXml)) !== null) {
+        items.push(match[1]);
+      }
+      
+      return items;
+    };
+    
+    // Delete all existing data for this user
+    db.deleteAllUserData(req.user.id);
+    
+    // Import settings
+    const settingsXml = parseXmlValue(xmlData, 'settings');
+    if (settingsXml) {
+      const settings = {
+        font: parseXmlValue(settingsXml, 'font') || 'default',
+        showLeftMenu: parseXmlBoolean(settingsXml, 'show-left-menu'),
+        showFeedImages: parseXmlBoolean(settingsXml, 'show-feed-images'),
+        headerColor: parseXmlValue(settingsXml, 'header-color') || 'purple'
+      };
+      db.updateUserSettings(req.user.id, settings);
+    }
+    
+    // Import feeds
+    const feedsXml = parseXmlArray(xmlData, 'feeds', 'feed');
+    const feedMap = new Map(); // Map old feed IDs to new ones
+    
+    feedsXml.forEach(feedXml => {
+      const oldId = parseXmlValue(feedXml, 'id');
+      const newId = `feed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      const feed = {
+        id: newId,
+        url: parseXmlValue(feedXml, 'url'),
+        title: parseXmlValue(feedXml, 'title'),
+        description: parseXmlValue(feedXml, 'description'),
+        color: parseXmlValue(feedXml, 'color'),
+        category: parseXmlValue(feedXml, 'category'),
+        isActive: parseXmlBoolean(feedXml, 'is-active'),
+        addedDate: parseXmlValue(feedXml, 'added-date') || new Date().toISOString()
+      };
+      
+      db.createFeed(feed, req.user.id);
+      feedMap.set(oldId, newId);
+    });
+    
+    // Import items
+    const itemsXml = parseXmlArray(xmlData, 'items', 'item');
+    itemsXml.forEach(itemXml => {
+      const oldFeedId = parseXmlValue(itemXml, 'feed-id');
+      const newFeedId = feedMap.get(oldFeedId);
+      
+      if (newFeedId) {
+        const item = {
+          feedId: newFeedId,
+          title: parseXmlValue(itemXml, 'title'),
+          link: parseXmlValue(itemXml, 'link'),
+          description: '',
+          pubDate: parseXmlValue(itemXml, 'pub-date'),
+          isRead: parseXmlBoolean(itemXml, 'is-read')
+        };
+        
+        try {
+          db.addItem(req.user.id, item);
+        } catch (err) {
+          // Ignore duplicate items
+          console.log('Skipping duplicate item:', item.link);
+        }
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      feedsImported: feedsXml.length,
+      itemsImported: itemsXml.length
+    });
+  } catch (error) {
+    console.error('Error importing data:', error);
+    res.status(500).json({ error: 'Failed to import data: ' + error.message });
+  }
+});
+
+// Helper function to escape XML special characters
+function escapeXml(unsafe) {
+  if (unsafe === null || unsafe === undefined) return '';
+  return String(unsafe)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+}
 
 // ==================== HEALTH CHECK ====================
 

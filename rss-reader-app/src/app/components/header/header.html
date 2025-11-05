@@ -180,6 +180,28 @@
           </label>
         </div>
       </div>
+
+      <!-- Export/Import Data -->
+      <div class="settings-section">
+        <label>Data Management:</label>
+        <div class="data-management">
+          <button class="export-btn" (click)="exportData()">
+            📥 Export All Data
+          </button>
+          <label class="import-btn">
+            📤 Import Data
+            <input 
+              type="file" 
+              accept=".xml"
+              (change)="onImportFileSelected($event)"
+              style="display: none;">
+          </label>
+          <p class="data-info">
+            Export your feeds and settings to XML, or import from a backup file.
+            <strong>Warning:</strong> Import will replace all current data!
+          </p>
+        </div>
+      </div>
     </div>
 
     <div class="modal-footer">
