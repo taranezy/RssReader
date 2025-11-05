@@ -109,61 +109,8 @@ jobs:
     if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Create deployment annotation
-        run: |
-          echo "✅ **Deployment Successful**
-          
-          - **Branch:** main
-          - **Commit:** ${{ github.sha }}
-          - **Author:** ${{ github.actor }}
-          - **Message:** ${{ github.event.head_commit.message }}
-          - **Timestamp:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')
-          
-          **Live URL:** https://taranezy.ddns.net:8444" > deployment-summary.txt
-          cat deployment-summary.txt
-      
-      - name: Send Slack notification
-        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: |
-            {
-              "text": "✅ RSS Reader Deployed Successfully",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*✅ Deployment Successful*\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Branch:* main"
-                  }
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "View Workflow"
-                      },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    },
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "Live App"
-                      },
-                      "url": "https://taranezy.ddns.net:8444"
-                    }
-                  ]
-                }
-              ]
-            }
+      - name: Log deployment success
+        run: echo "Deployment successful!"
 
   notify-failure:
     name: Notify Failure
@@ -172,34 +119,5 @@ jobs:
     if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
-      - name: Send Slack notification on failure
-        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
-        uses: slackapi/slack-github-action@v1.24.0
-        with:
-          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
-          payload: |
-            {
-              "text": "❌ RSS Reader Deployment Failed",
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*❌ Deployment Failed*\n*Commit:* ${{ github.sha }}\n*Author:* ${{ github.actor }}\n*Branch:* main"
-                  }
-                },
-                {
-                  "type": "actions",
-                  "elements": [
-                    {
-                      "type": "button",
-                      "text": {
-                        "type": "plain_text",
-                        "text": "View Logs"
-                      },
-                      "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-                    }
-                  ]
-                }
-              ]
-            }
+      - name: Log deployment failure
+        run: echo "Deployment failed!"
