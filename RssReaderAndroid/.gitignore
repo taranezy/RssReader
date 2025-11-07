@@ -1,0 +1,24 @@
+# Android Studio
+.idea/
+.gradle/
+local.properties
+*.iml
+.DS_Store
+
+# Build output
+build/
+app/build/
+*/build/
+
+# Keystore files - NEVER COMMIT THESE!
+*.keystore
+*.jks
+keystore.properties
+app/keystore.properties
+
+# APK/AAB files
+*.apk
+*.aab
+
+# Signing files
+release/

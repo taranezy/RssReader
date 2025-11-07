@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Streamlet</string>
+    <string name="menu_refresh">Refresh</string>
+    <string name="menu_logout">Logout</string>
+</resources>
