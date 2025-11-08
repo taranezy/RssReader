@@ -159,8 +159,6 @@
         <button 
           class="category-btn" 
           [class.active]="selectedCategory === 'data'"
-          [disabled]="isDemoUser"
-          [title]="isDemoUser ? 'Not available for demo users' : ''"
           (click)="selectedCategory = 'data'">
           <span class="category-icon">💾</span>
           <span class="category-text">Saving/Sharing</span>
