@@ -28,7 +28,7 @@ export class ListViewComponent implements OnInit {
   selectedArticleForPreview: RssItem | null = null;
   isLargeScreen = false;
   showPreviewPane = true; // User preference to show/hide preview pane
-  feedColumnWidth = 250; // Fixed width for feed list in pixels (default minimum width)
+  feedColumnWidth = 420; // Fixed width for feed list in pixels (default minimum width)
   isResizing = false;
   resizeStartX = 0;
   resizeStartWidth = 0;
@@ -173,7 +173,7 @@ export class ListViewComponent implements OnInit {
     if (!this.isResizing) return;
 
     const deltaX = event.clientX - this.resizeStartX;
-    const newWidth = Math.max(250, Math.min(this.resizeStartWidth + deltaX, window.innerWidth - 600));
+    const newWidth = Math.max(420, Math.min(this.resizeStartWidth + deltaX, window.innerWidth - 600));
     this.feedColumnWidth = newWidth;
 
     // Save preference to localStorage

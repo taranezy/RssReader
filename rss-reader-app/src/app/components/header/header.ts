@@ -30,6 +30,7 @@ export class HeaderComponent implements OnInit {
   showUserMenu = false;
   showFeedDropdown = false;
   showSettings = false;
+  selectedCategory: 'appearance' | 'settings' | 'data' = 'appearance';
   isMobile = false;
 
   userSettings = {

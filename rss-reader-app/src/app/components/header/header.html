@@ -139,126 +139,184 @@
       <button class="close-btn" (click)="closeSettings()">✕</button>
     </div>
 
-    <div class="modal-content">
-      <!-- Header Color Selection -->
-      <div class="settings-section">
-        <label>Header Color:</label>
-        <div class="color-options">
-          <button 
-            *ngFor="let theme of headerColorThemes"
-            class="color-btn"
-            [class.active]="userSettings.headerColor === theme.id"
-            [style.background]="'linear-gradient(135deg, ' + theme.primary + ' 0%, ' + theme.secondary + ' 100%)'"
-            [title]="theme.name"
-            (click)="changeHeaderColor(theme.id)">
-            <span class="color-name">{{ theme.name }}</span>
-          </button>
-        </div>
+    <div class="modal-body">
+      <!-- Left Sidebar with Categories -->
+      <div class="settings-sidebar">
+        <button 
+          class="category-btn" 
+          [class.active]="selectedCategory === 'appearance'"
+          (click)="selectedCategory = 'appearance'">
+          <span class="category-icon">🎨</span>
+          <span class="category-text">Appearance</span>
+        </button>
+        <button 
+          class="category-btn" 
+          [class.active]="selectedCategory === 'settings'"
+          (click)="selectedCategory = 'settings'">
+          <span class="category-icon">🎛️</span>
+          <span class="category-text">Content Configuration</span>
+        </button>
+        <button 
+          class="category-btn" 
+          [class.active]="selectedCategory === 'data'"
+          (click)="selectedCategory = 'data'">
+          <span class="category-icon">💾</span>
+          <span class="category-text">Saving/Sharing</span>
+        </button>
       </div>
 
-      <!-- Font Selection -->
-      <div class="settings-section">
-        <label>Font:</label>
-        <div class="font-options">
-          <button 
-            *ngFor="let font of availableFonts"
-            class="font-btn"
-            [class.active]="userSettings.font === font.id"
-            [style.fontFamily]="font.family"
-            (click)="changeFont(font.id)">
-            {{ font.name }}
-          </button>
-        </div>
-      </div>
+      <!-- Right Content Area -->
+      <div class="settings-content">
+        <!-- Appearance Settings -->
+        <div class="settings-group" *ngIf="selectedCategory === 'appearance'">
+          <h3 class="group-title">Appearance Settings</h3>
 
-      <!-- Left Menu Toggle -->
-      <div class="settings-section">
-        <label>Left Menu:</label>
-        <div class="toggle-option">
-          <label class="toggle-label">
-            <input 
-              type="checkbox" 
-              [checked]="userSettings.showLeftMenu"
-              (change)="toggleLeftMenu($event)">
-            <span>Show Left Menu</span>
-          </label>
-        </div>
-      </div>
+          <!-- Header Color Selection -->
+          <div class="settings-section">
+            <label>Header Color:</label>
+            <div class="color-options">
+              <button 
+                *ngFor="let theme of headerColorThemes"
+                class="color-btn"
+                [class.active]="userSettings.headerColor === theme.id"
+                [style.background]="'linear-gradient(135deg, ' + theme.primary + ' 0%, ' + theme.secondary + ' 100%)'"
+                [title]="theme.name"
+                (click)="changeHeaderColor(theme.id)">
+                <span class="color-name">{{ theme.name }}</span>
+              </button>
+            </div>
+          </div>
 
-      <!-- Feed Images Toggle -->
-      <div class="settings-section">
-        <label>Feed Images:</label>
-        <div class="toggle-option">
-          <label class="toggle-label">
-            <input 
-              type="checkbox" 
-              [checked]="userSettings.showFeedImages"
-              (change)="toggleFeedImages($event)">
-            <span>Show Feed Pictures</span>
-          </label>
-        </div>
-      </div>
+          <!-- Font Selection -->
+          <div class="settings-section">
+            <label>Font Style:</label>
+            <div class="font-options">
+              <button 
+                *ngFor="let font of availableFonts"
+                class="font-btn"
+                [class.active]="userSettings.font === font.id"
+                [style.fontFamily]="font.family"
+                (click)="changeFont(font.id)">
+                {{ font.name }}
+              </button>
+            </div>
+          </div>
 
-      <!-- Dark Mode Toggle -->
-      <div class="settings-section">
-        <label>Theme:</label>
-        <div class="toggle-option">
-          <label class="toggle-label">
-            <input 
-              type="checkbox" 
-              [checked]="userSettings.darkMode"
-              (change)="toggleDarkMode($event)">
-            <span>🌙 Dark Mode</span>
-          </label>
+          <!-- Dark Mode Toggle -->
+          <div class="settings-section">
+            <label>Theme:</label>
+            <div class="toggle-option">
+              <label class="toggle-label">
+                <input 
+                  type="checkbox" 
+                  [checked]="userSettings.darkMode"
+                  (change)="toggleDarkMode($event)">
+                <span class="toggle-switch"></span>
+                <span>🌙 Dark Mode</span>
+              </label>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- Article Opening Behavior -->
-      <div class="settings-section">
-        <label>Article Opening:</label>
-        <div class="toggle-option">
-          <label class="toggle-label">
-            <input 
-              type="checkbox" 
-              [checked]="preferences.openInNewTab"
-              (change)="toggleOpenInNewTab($event)">
-            <span>Open Articles in New Tab</span>
-          </label>
-          <p class="setting-description">
-            When disabled, articles open within the app with option to view original site.
-          </p>
+        <!-- Settings Group -->
+        <div class="settings-group" *ngIf="selectedCategory === 'settings'">
+          <h3 class="group-title">General Settings</h3>
+
+          <!-- Left Menu Toggle -->
+          <div class="settings-section">
+            <label>Navigation:</label>
+            <div class="toggle-option">
+              <label class="toggle-label">
+                <input 
+                  type="checkbox" 
+                  [checked]="userSettings.showLeftMenu"
+                  (change)="toggleLeftMenu($event)">
+                <span class="toggle-switch"></span>
+                <span>Show Left Menu</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Feed Images Toggle -->
+          <div class="settings-section">
+            <label>Content Display:</label>
+            <div class="toggle-option">
+              <label class="toggle-label">
+                <input 
+                  type="checkbox" 
+                  [checked]="userSettings.showFeedImages"
+                  (change)="toggleFeedImages($event)">
+                <span class="toggle-switch"></span>
+                <span>Show Feed Images</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Article Opening Behavior -->
+          <div class="settings-section">
+            <label>Article Behavior:</label>
+            <div class="toggle-option">
+              <label class="toggle-label">
+                <input 
+                  type="checkbox" 
+                  [checked]="preferences.openInNewTab"
+                  (change)="toggleOpenInNewTab($event)">
+                <span class="toggle-switch"></span>
+                <span>Open Articles in New Tab</span>
+              </label>
+              <p class="setting-description">
+                When disabled, articles open within the app with option to view original site.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <!-- Export/Import Data -->
-      <div class="settings-section">
-        <label>Data Management:</label>
-        <div class="data-management">
-          <button class="export-btn" (click)="exportData()">
-            📥 Export All Data
-          </button>
-          <label class="import-btn">
-            📤 Import Data
-            <input 
-              type="file" 
-              accept=".xml"
-              (change)="onImportFileSelected($event)"
-              style="display: none;">
-          </label>
-          <label class="import-btn feedly-import">
-            🔖 Import from Feedly (OPML)
-            <input 
-              type="file" 
-              accept=".xml,.opml"
-              (change)="onFeedlyImportFileSelected($event)"
-              style="display: none;">
-          </label>
-          <p class="data-info">
-            Export your feeds and settings to XML, or import from a backup file.
-            <strong>Warning:</strong> Import will replace all current data!
-            <br><br>
-            <strong>Feedly Import:</strong> Import feeds from Feedly OPML export (adds to existing feeds).
-          </p>
+        <!-- Data Management Settings -->
+        <div class="settings-group" *ngIf="selectedCategory === 'data'">
+          <h3 class="group-title">Saving & Sharing</h3>
+
+          <!-- Export Data -->
+          <div class="settings-section">
+            <label>Export Data</label>
+            <p class="setting-description">
+              Download all your feeds and settings as an XML backup file.
+            </p>
+            <button class="export-btn" (click)="exportData()">
+              📥 Export All Data
+            </button>
+          </div>
+
+          <!-- Import Data -->
+          <div class="settings-section">
+            <label>Import Data</label>
+            <p class="setting-description">
+              Restore from a previous backup. <strong>Warning:</strong> This will replace all current data!
+            </p>
+            <label class="import-btn">
+              📤 Import Backup
+              <input 
+                type="file" 
+                accept=".xml"
+                (change)="onImportFileSelected($event)"
+                style="display: none;">
+            </label>
+          </div>
+
+          <!-- Import from Feedly -->
+          <div class="settings-section">
+            <label>Import from Feedly</label>
+            <p class="setting-description">
+              Import feeds from Feedly OPML export. <strong>All your existing data will stay</strong> - this only adds new feeds to your collection.
+            </p>
+            <label class="import-btn feedly-import">
+              🔖 Import OPML from Feedly
+              <input 
+                type="file" 
+                accept=".xml,.opml"
+                (change)="onFeedlyImportFileSelected($event)"
+                style="display: none;">
+            </label>
+          </div>
         </div>
       </div>
     </div>
