@@ -159,6 +159,8 @@
         <button 
           class="category-btn" 
           [class.active]="selectedCategory === 'data'"
+          [disabled]="isDemoUser"
+          [title]="isDemoUser ? 'Not available for demo users' : ''"
           (click)="selectedCategory = 'data'">
           <span class="category-icon">💾</span>
           <span class="category-text">Saving/Sharing</span>
@@ -290,15 +292,20 @@
         <div class="settings-group" *ngIf="selectedCategory === 'data'">
           <h3 class="group-title">Saving & Sharing</h3>
 
+          <!-- Demo User Notice -->
+          <div class="demo-notice" *ngIf="isDemoUser">
+            <p>ⓘ Demo mode is read-only. Import/Export features are not available.</p>
+          </div>
+
           <!-- Data Backup Section -->
-          <div class="data-backup-section">
+          <div class="data-backup-section" [class.demo-disabled]="isDemoUser">
             <!-- Export Data -->
             <div class="settings-section">
               <label>Export Data</label>
               <p class="setting-description">
                 Download all your feeds and settings as an XML backup file.
               </p>
-              <button class="export-btn" (click)="exportData()">
+              <button class="export-btn" [disabled]="isDemoUser" (click)="exportData()">
                 📥 Export All Data
               </button>
             </div>
@@ -309,11 +316,12 @@
               <p class="setting-description">
                 Restore from a previous backup. <strong>Warning:</strong> This will replace all current data!
               </p>
-              <label class="import-btn">
+              <label class="import-btn" [class.disabled]="isDemoUser">
                 📤 Import Backup
                 <input 
                   type="file" 
                   accept=".xml"
+                  [disabled]="isDemoUser"
                   (change)="onImportFileSelected($event)"
                   style="display: none;">
               </label>
@@ -321,16 +329,17 @@
           </div>
 
           <!-- Import from Feedly -->
-          <div class="settings-section feedly-section">
+          <div class="settings-section feedly-section" [class.demo-disabled]="isDemoUser">
             <label>Import from Feedly</label>
             <p class="setting-description">
               Import feeds from Feedly OPML export. <strong>All your existing data will stay</strong> - this only adds new feeds to your collection.
             </p>
-            <label class="import-btn feedly-import">
+            <label class="import-btn feedly-import" [class.disabled]="isDemoUser">
               🔖 Import OPML from Feedly
               <input 
                 type="file" 
                 accept=".xml,.opml"
+                [disabled]="isDemoUser"
                 (change)="onFeedlyImportFileSelected($event)"
                 style="display: none;">
             </label>

@@ -32,6 +32,7 @@ export class HeaderComponent implements OnInit {
   showSettings = false;
   selectedCategory: 'appearance' | 'settings' | 'data' = 'appearance';
   isMobile = false;
+  isDemoUser = false;
 
   userSettings = {
     font: 'default',
@@ -81,6 +82,8 @@ export class HeaderComponent implements OnInit {
 
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
+      // Check if user is demo user
+      this.isDemoUser = user?.email === 'demo@rssreader.local';
     });
     
     // Detect current route
