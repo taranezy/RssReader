@@ -89,6 +89,12 @@ export class NewsLookComponent implements OnInit, OnDestroy {
     }
   }
 
+  toggleSaved(event: Event, item: RssItem): void {
+    event.stopPropagation();
+    const newSavedStatus = !item.isSaved;
+    this.feedService.toggleSaved(item.id, newSavedStatus);
+  }
+
   getItemSize(index: number): string {
     // Create a newspaper-like pattern with different sizes
     const pattern = index % 12;

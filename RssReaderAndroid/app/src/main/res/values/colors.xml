@@ -3,4 +3,7 @@
     <!-- Primary brand colors -->
     <color name="primary_purple">#667eea</color>
     <color name="primary_purple_dark">#764ba2</color>
+    
+    <!-- Launcher icon background -->
+    <color name="ic_launcher_background">#667eea</color>
 </resources>

@@ -36,7 +36,8 @@ export class HeaderComponent implements OnInit {
     font: 'default',
     showLeftMenu: true,
     showFeedImages: true,
-    headerColor: 'purple'
+    headerColor: 'purple',
+    darkMode: false
   };
 
   availableFonts = [
@@ -171,6 +172,14 @@ export class HeaderComponent implements OnInit {
   logout(): void {
     if (confirm('Are you sure you want to logout?')) {
       this.authService.logout().subscribe(() => {
+        // Remove dark mode class and clear localStorage just before navigation
+        document.documentElement.classList.remove('dark-mode');
+        document.body.classList.remove('dark-mode');
+        try {
+          localStorage.removeItem('darkMode');
+        } catch (e) {
+          // localStorage might not be available
+        }
         this.router.navigate(['/login']);
       });
     }
@@ -250,6 +259,21 @@ export class HeaderComponent implements OnInit {
     );
   }
 
+  toggleDarkMode(event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    this.userSettings.darkMode = checkbox.checked;
+    
+    // Save to database via API
+    this.userSettingsService.updateDarkMode(checkbox.checked).subscribe(
+      () => {
+        console.log('Dark mode setting updated successfully');
+      },
+      error => {
+        console.error('Error updating dark mode setting:', error);
+      }
+    );
+  }
+
   toggleOpenInNewTab(event: Event): void {
     const checkbox = event.target as HTMLInputElement;
     this.feedService.updatePreferences({ 
@@ -297,6 +321,7 @@ export class HeaderComponent implements OnInit {
         this.userSettings = settings;
         this.userSettingsService.applyFontImmediately(settings.font);
         this.applyHeaderColor(settings.headerColor);
+        this.userSettingsService.applyDarkMode(settings.darkMode);
       },
       error => {
         console.error('Error loading user settings:', error);
@@ -307,6 +332,7 @@ export class HeaderComponent implements OnInit {
             this.userSettings = JSON.parse(saved);
             this.userSettingsService.applyFontImmediately(this.userSettings.font);
             this.applyHeaderColor(this.userSettings.headerColor);
+            this.userSettingsService.applyDarkMode(this.userSettings.darkMode);
           }
         }
       }
@@ -375,6 +401,125 @@ export class HeaderComponent implements OnInit {
         alert('Failed to import data: ' + (error.error?.error || error.message));
       }
     );
+  }
+
+  onFeedlyImportFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      
+      if (!file.name.endsWith('.xml') && !file.name.endsWith('.opml')) {
+        alert('Please select an OPML or XML file.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const opmlData = e.target?.result as string;
+        this.importFeedlyOpml(opmlData);
+        input.value = ''; // Reset file input
+      };
+      reader.readAsText(file);
+    }
+  }
+
+  importFeedlyOpml(opmlData: string): void {
+    try {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(opmlData, 'text/xml');
+      
+      // Check for parsing errors
+      const parserError = xmlDoc.querySelector('parsererror');
+      if (parserError) {
+        throw new Error('Invalid XML/OPML format');
+      }
+
+      // Extract feeds from OPML
+      const outlines = xmlDoc.querySelectorAll('outline[type="rss"]');
+      const feeds: any[] = [];
+      const categories = new Map<string, string[]>();
+
+      outlines.forEach(outline => {
+        const feedUrl = outline.getAttribute('xmlUrl');
+        const feedTitle = outline.getAttribute('title') || outline.getAttribute('text') || 'Untitled Feed';
+        const htmlUrl = outline.getAttribute('htmlUrl');
+        
+        if (feedUrl) {
+          // Get category from parent outline
+          let category = 'Uncategorized';
+          const parentOutline = outline.parentElement?.closest('outline');
+          if (parentOutline) {
+            category = parentOutline.getAttribute('title') || parentOutline.getAttribute('text') || 'Uncategorized';
+          }
+
+          // Generate random color for feed
+          const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+
+          feeds.push({
+            url: feedUrl,
+            title: feedTitle,
+            description: htmlUrl || '',
+            color: randomColor,
+            category: category
+          });
+
+          // Track feeds per category
+          if (!categories.has(category)) {
+            categories.set(category, []);
+          }
+          categories.get(category)!.push(feedTitle);
+        }
+      });
+
+      if (feeds.length === 0) {
+        alert('No RSS feeds found in the OPML file.');
+        return;
+      }
+
+      const confirmed = confirm(
+        `Found ${feeds.length} feeds in ${categories.size} categories:\n\n` +
+        Array.from(categories.entries())
+          .map(([cat, feedList]) => `• ${cat} (${feedList.length} feeds)`)
+          .join('\n') +
+        '\n\nImport these feeds? They will be added to your existing feeds.'
+      );
+
+      if (!confirmed) {
+        return;
+      }
+
+      // Import feeds one by one
+      let importedCount = 0;
+      let errorCount = 0;
+
+      const importNext = (index: number) => {
+        if (index >= feeds.length) {
+          alert(`Import completed!\n\nSuccessfully imported: ${importedCount}\nFailed: ${errorCount}`);
+          // Reload the page to refresh feeds list
+          window.location.reload();
+          return;
+        }
+
+        const feed = feeds[index];
+        this.feedService.addFeed(feed.url, feed.title, feed.category).subscribe(
+          () => {
+            importedCount++;
+            importNext(index + 1);
+          },
+          error => {
+            console.error(`Error importing feed ${feed.title}:`, error);
+            errorCount++;
+            importNext(index + 1);
+          }
+        );
+      };
+
+      importNext(0);
+
+    } catch (error) {
+      console.error('Error parsing OPML:', error);
+      alert('Failed to parse OPML file: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
   }
 
   @HostListener('document:click', ['$event'])

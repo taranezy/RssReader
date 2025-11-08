@@ -113,6 +113,24 @@ class DatabaseService {
       // Column already exists, ignore error
     }
 
+    // Add is_saved column if it doesn't exist (migration for existing databases)
+    try {
+      this.db.exec(`ALTER TABLE rss_items ADD COLUMN is_saved INTEGER NOT NULL DEFAULT 0;`);
+    } catch (err) {
+      // Column already exists, ignore error
+    }
+
+    // Add dark_mode column if it doesn't exist (migration for existing databases)
+    try {
+      this.db.exec(`ALTER TABLE user_settings ADD COLUMN dark_mode INTEGER NOT NULL DEFAULT 0;`);
+      console.log('Dark mode column added successfully');
+    } catch (err) {
+      // Column already exists, ignore error (duplicate column name)
+      if (!err.message.includes('duplicate column name')) {
+        console.error('Error adding dark_mode column:', err);
+      }
+    }
+
     // Create indexes for better performance
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -122,6 +140,7 @@ class DatabaseService {
       CREATE INDEX IF NOT EXISTS idx_items_feed_id ON rss_items(feed_id);
       CREATE INDEX IF NOT EXISTS idx_items_pub_date ON rss_items(pub_date DESC);
       CREATE INDEX IF NOT EXISTS idx_items_is_read ON rss_items(is_read);
+      CREATE INDEX IF NOT EXISTS idx_items_is_saved ON rss_items(is_saved);
       CREATE INDEX IF NOT EXISTS idx_feeds_is_active ON rss_feeds(is_active);
       CREATE INDEX IF NOT EXISTS idx_prefs_user_id ON user_preferences(user_id);
       CREATE INDEX IF NOT EXISTS idx_settings_user_id ON user_settings(user_id);
@@ -323,6 +342,11 @@ class DatabaseService {
       values.push(updates.isRead ? 1 : 0);
     }
 
+    if (updates.isSaved !== undefined) {
+      fields.push('is_saved = ?');
+      values.push(updates.isSaved ? 1 : 0);
+    }
+
     if (fields.length === 0) return;
 
     fields.push('updated_at = CURRENT_TIMESTAMP');
@@ -351,6 +375,37 @@ class DatabaseService {
 
   deleteItemsByFeed(feedId, userId) {
     return this.db.prepare('DELETE FROM rss_items WHERE feed_id = ? AND user_id = ?').run(feedId, userId);
+  }
+
+  // Toggle saved status for an item
+  toggleSavedStatus(itemId, userId, isSaved) {
+    return this.db.prepare(`
+      UPDATE rss_items SET is_saved = ?, updated_at = CURRENT_TIMESTAMP 
+      WHERE id = ? AND user_id = ?
+    `).run(isSaved ? 1 : 0, itemId, userId);
+  }
+
+  // Get saved items
+  getSavedItems(userId) {
+    return this.db.prepare(`
+      SELECT * FROM rss_items WHERE user_id = ? AND is_saved = 1 ORDER BY pub_date DESC
+    `).all(userId);
+  }
+
+  // Delete old items (older than 30 days) that are not saved or read
+  deleteOldItems(userId) {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dateThreshold = thirtyDaysAgo.toISOString();
+
+    const result = this.db.prepare(`
+      DELETE FROM rss_items 
+      WHERE user_id = ? 
+      AND is_saved = 0 
+      AND pub_date < ?
+    `).run(userId, dateThreshold);
+
+    return result.changes; // Return number of deleted items
   }
 
   // Preferences operations (with user_id)
@@ -388,24 +443,25 @@ class DatabaseService {
     if (!settings) {
       // Create default settings if not found
       this.db.prepare(`
-        INSERT INTO user_settings (user_id, font, show_left_menu, show_feed_images, header_color)
-        VALUES (?, ?, ?, ?, ?)
-      `).run(userId, 'default', 1, 1, 'purple');
-      return { font: 'default', showLeftMenu: true, showFeedImages: true, headerColor: 'purple' };
+        INSERT INTO user_settings (user_id, font, show_left_menu, show_feed_images, header_color, dark_mode)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(userId, 'default', 1, 1, 'purple', 0);
+      return { font: 'default', showLeftMenu: true, showFeedImages: true, headerColor: 'purple', darkMode: false };
     }
 
     return {
       font: settings.font,
       showLeftMenu: settings.show_left_menu === 1,
       showFeedImages: settings.show_feed_images === 1,
-      headerColor: settings.header_color || 'purple'
+      headerColor: settings.header_color || 'purple',
+      darkMode: settings.dark_mode === 1 || false // Handle undefined/null
     };
   }
 
   updateUserSettings(userId, settings) {
     const stmt = this.db.prepare(`
       UPDATE user_settings 
-      SET font = ?, show_left_menu = ?, show_feed_images = ?, header_color = ?, updated_at = CURRENT_TIMESTAMP
+      SET font = ?, show_left_menu = ?, show_feed_images = ?, header_color = ?, dark_mode = ?, updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ?
     `);
 
@@ -414,6 +470,7 @@ class DatabaseService {
       settings.showLeftMenu ? 1 : 0,
       settings.showFeedImages ? 1 : 0,
       settings.headerColor || 'purple',
+      settings.darkMode ? 1 : 0,
       userId
     );
   }
@@ -459,6 +516,7 @@ class DatabaseService {
       description: dbItem.description,
       pubDate: dbItem.pub_date,
       isRead: dbItem.is_read === 1,
+      isSaved: dbItem.is_saved === 1,
       author: dbItem.author,
       categories: dbItem.categories ? JSON.parse(dbItem.categories) : undefined,
       content: dbItem.content,

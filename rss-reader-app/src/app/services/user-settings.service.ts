@@ -8,6 +8,7 @@ export interface UserSettings {
   showLeftMenu: boolean;
   showFeedImages: boolean;
   headerColor: string;
+  darkMode: boolean;
 }
 
 // Font family mappings
@@ -41,7 +42,8 @@ export class UserSettingsService {
     font: 'default',
     showLeftMenu: true,
     showFeedImages: true,
-    headerColor: 'purple'
+    headerColor: 'purple',
+    darkMode: false
   });
 
   public settings$ = this.settingsSubject.asObservable();
@@ -80,8 +82,35 @@ export class UserSettingsService {
     return this.updateSettings({ ...current, headerColor });
   }
 
+  updateDarkMode(darkMode: boolean): Observable<UserSettings> {
+    const current = this.settingsSubject.value;
+    this.applyDarkMode(darkMode);
+    return this.updateSettings({ ...current, darkMode });
+  }
+
   getCurrentSettings(): UserSettings {
     return this.settingsSubject.value;
+  }
+
+  /**
+   * Apply dark mode immediately to the DOM
+   */
+  applyDarkMode(darkMode: boolean): void {
+    // Cache to localStorage for instant application on next load
+    try {
+      localStorage.setItem('darkMode', String(darkMode));
+    } catch (e) {
+      // localStorage might not be available
+    }
+
+    // Apply to both html and body elements
+    if (darkMode) {
+      document.documentElement.classList.add('dark-mode');
+      document.body.classList.add('dark-mode');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+      document.body.classList.remove('dark-mode');
+    }
   }
 
   /**

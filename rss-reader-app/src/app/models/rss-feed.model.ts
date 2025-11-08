@@ -19,6 +19,7 @@ export interface RssItem {
   description: string;
   pubDate: Date;
   isRead: boolean;
+  isSaved?: boolean;
   author?: string;
   categories?: string[];
   content?: string;

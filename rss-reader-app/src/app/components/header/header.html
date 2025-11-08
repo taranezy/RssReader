@@ -199,6 +199,20 @@
         </div>
       </div>
 
+      <!-- Dark Mode Toggle -->
+      <div class="settings-section">
+        <label>Theme:</label>
+        <div class="toggle-option">
+          <label class="toggle-label">
+            <input 
+              type="checkbox" 
+              [checked]="userSettings.darkMode"
+              (change)="toggleDarkMode($event)">
+            <span>🌙 Dark Mode</span>
+          </label>
+        </div>
+      </div>
+
       <!-- Article Opening Behavior -->
       <div class="settings-section">
         <label>Article Opening:</label>
@@ -231,9 +245,19 @@
               (change)="onImportFileSelected($event)"
               style="display: none;">
           </label>
+          <label class="import-btn feedly-import">
+            🔖 Import from Feedly (OPML)
+            <input 
+              type="file" 
+              accept=".xml,.opml"
+              (change)="onFeedlyImportFileSelected($event)"
+              style="display: none;">
+          </label>
           <p class="data-info">
             Export your feeds and settings to XML, or import from a backup file.
             <strong>Warning:</strong> Import will replace all current data!
+            <br><br>
+            <strong>Feedly Import:</strong> Import feeds from Feedly OPML export (adds to existing feeds).
           </p>
         </div>
       </div>

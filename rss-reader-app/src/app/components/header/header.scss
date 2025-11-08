@@ -738,6 +738,16 @@
       background: #E3F2FD;
       border-color: #1976D2;
     }
+
+    &.feedly-import {
+      border-color: #FF6B35;
+      color: #FF6B35;
+
+      &:hover {
+        background: #FFF3E0;
+        border-color: #F4511E;
+      }
+    }
   }
 
   .data-info {

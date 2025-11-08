@@ -214,9 +214,11 @@
 .article-meta {
   display: flex;
   justify-content: flex-end;
+  gap: 6px;
   margin-top: auto;
 }
 
+.save-toggle,
 .read-toggle {
   background: none;
   border: 1px solid #ddd;
@@ -233,13 +235,33 @@
   justify-content: center;
 
   &:hover {
-    background: #f0f0f0;
-    border-color: #2196F3;
-    color: #2196F3;
+    transform: scale(1.1);
   }
 
   span {
     line-height: 1;
+  }
+}
+
+.save-toggle {
+  &:hover {
+    background: #FFF8E1;
+    border-color: #FFC107;
+    color: #FFC107;
+  }
+
+  &.saved {
+    background: #FFC107;
+    border-color: #FFC107;
+    color: white;
+  }
+}
+
+.read-toggle {
+  &:hover {
+    background: #f0f0f0;
+    border-color: #2196F3;
+    color: #2196F3;
   }
 }
 

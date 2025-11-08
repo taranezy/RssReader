@@ -1,0 +1,934 @@
+// Dark Mode Styles with High Contrast
+// Designed for excellent readability and visual distinction
+
+// Apply to both html and body to prevent FOUC
+html.dark-mode,
+body.dark-mode {
+  // Core background and text colors
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #242424;
+  --bg-tertiary: #2d2d2d;
+  --bg-elevated: #363636;
+  
+  --text-primary: #e8e8e8;
+  --text-secondary: #b8b8b8;
+  --text-tertiary: #888888;
+  
+  --border-color: #3d3d3d;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  
+  // Accent colors - brighter for dark mode
+  --accent-blue: #64b5f6;
+  --accent-green: #81c784;
+  --accent-orange: #ffb74d;
+  --accent-red: #e57373;
+  --accent-purple: #ba68c8;
+  --accent-yellow: #ffd54f;
+  
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+body.dark-mode {
+  // Global overrides
+  * {
+    scrollbar-color: #555 #2d2d2d;
+  }
+  
+  // Cards and containers
+  .item-card,
+  .widget,
+  .feed-item,
+  .article-item {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+    
+    &:hover {
+      background-color: var(--bg-tertiary) !important;
+      box-shadow: 0 4px 12px var(--shadow-color) !important;
+    }
+    
+    &.selected {
+      background-color: #1e3a5f !important;
+      border-color: var(--accent-blue) !important;
+    }
+    
+    &.read {
+      opacity: 0.6;
+    }
+  }
+  
+  // Text elements
+  .item-title,
+  .widget-title,
+  .article-title,
+  .preview-title,
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary) !important;
+  }
+  
+  .item-description,
+  .article-description,
+  .preview-body,
+  p {
+    color: var(--text-secondary) !important;
+  }
+  
+  .item-date,
+  .article-date,
+  .preview-date,
+  .item-author {
+    color: var(--text-tertiary) !important;
+  }
+  
+  // Badges and tags
+  .feed-badge,
+  .category,
+  .preview-source {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+  
+  // Buttons
+  button:not(.read-toggle-btn):not(.save-toggle-btn):not(.read-toggle):not(.save-toggle) {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+    
+    &:hover {
+      background-color: var(--bg-tertiary) !important;
+      border-color: var(--accent-blue) !important;
+    }
+  }
+  
+  // Preview pane
+  .preview-pane {
+    background-color: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    box-shadow: 0 4px 20px var(--shadow-color) !important;
+  }
+  
+  .preview-header {
+    background: linear-gradient(135deg, #3d5a80 0%, #293241 100%) !important;
+  }
+  
+  .preview-content {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    
+    a {
+      color: var(--accent-blue) !important;
+    }
+    
+    blockquote {
+      border-left-color: var(--accent-blue) !important;
+      color: var(--text-secondary) !important;
+    }
+    
+    code {
+      background-color: var(--bg-elevated) !important;
+      color: var(--accent-orange) !important;
+    }
+    
+    pre {
+      background-color: var(--bg-elevated) !important;
+      border: 1px solid var(--border-color) !important;
+    }
+  }
+  
+  // Article viewer full screen
+  .article-viewer {
+    background-color: var(--bg-primary) !important;
+  }
+  
+  .article-header {
+    background-color: var(--bg-secondary) !important;
+    border-bottom-color: var(--border-color) !important;
+  }
+  
+  .article-content {
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+  }
+  
+  // Sidebar / Feed Manager
+  .feed-manager,
+  .sidebar {
+    background-color: var(--bg-secondary) !important;
+    border-right-color: var(--border-color) !important;
+  }
+
+  .nav-section {
+    background-color: var(--bg-secondary) !important;
+    border-bottom-color: var(--border-color) !important;
+  }
+
+  .nav-item {
+    color: var(--text-primary) !important;
+    
+    .label {
+      color: var(--text-primary) !important;
+    }
+    
+    .count {
+      background-color: var(--accent-red) !important;
+      color: white !important;
+    }
+    
+    &:hover {
+      background-color: var(--bg-tertiary) !important;
+    }
+    
+    &.active {
+      background-color: var(--bg-elevated) !important;
+      border-left-color: var(--accent-blue) !important;
+      
+      .label {
+        color: var(--accent-blue) !important;
+      }
+    }
+  }
+
+  .feeds-section {
+    background-color: var(--bg-secondary) !important;
+    
+    .section-header,
+    .section-subheader {
+      background-color: var(--bg-elevated) !important;
+      border-bottom-color: var(--border-color) !important;
+      
+      .title {
+        color: var(--text-secondary) !important;
+      }
+      
+      .feed-count-badge {
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-secondary) !important;
+      }
+      
+      .refresh-btn {
+        color: var(--text-secondary) !important;
+        
+        &:hover:not(:disabled) {
+          background-color: var(--bg-tertiary) !important;
+          color: var(--text-primary) !important;
+        }
+      }
+      
+      &.clickable {
+        cursor: pointer;
+        
+        &:hover {
+          background-color: var(--bg-tertiary) !important;
+          
+          .title {
+            color: var(--text-primary) !important;
+          }
+        }
+        
+        &:active {
+          background-color: var(--bg-elevated) !important;
+        }
+      }
+    }
+  }
+
+  .feed-item {
+    color: var(--text-primary) !important;
+    
+    .feed-title {
+      color: var(--text-primary) !important;
+    }
+    
+    .unread-count {
+      background-color: var(--accent-red) !important;
+      color: white !important;
+    }
+    
+    .drag-handle {
+      color: var(--text-tertiary) !important;
+    }
+    
+    &:hover {
+      background-color: var(--bg-tertiary) !important;
+    }
+    
+    &.active {
+      background-color: var(--bg-elevated) !important;
+      
+      .feed-title {
+        color: var(--accent-blue) !important;
+      }
+    }
+    
+    &.dragging {
+      background-color: var(--bg-tertiary) !important;
+    }
+  }
+  
+  // Feed categories/folders
+  .feed-category,
+  .category-group {
+    .category-header {
+      background-color: var(--bg-elevated) !important;
+      border-bottom-color: var(--border-color) !important;
+      
+      .arrow {
+        color: var(--text-tertiary) !important;
+        
+        &:hover {
+          background-color: var(--bg-tertiary) !important;
+          color: var(--text-secondary) !important;
+        }
+      }
+      
+      .category-name {
+        color: var(--text-primary) !important;
+        
+        &:hover {
+          background-color: rgba(100, 181, 246, 0.15) !important;
+          color: var(--accent-blue) !important;
+        }
+      }
+      
+      .category-count {
+        background-color: var(--bg-secondary) !important;
+        color: var(--text-secondary) !important;
+      }
+      
+      &.active,
+      &.drag-over {
+        background-color: var(--bg-tertiary) !important;
+        border-left-color: var(--accent-blue) !important;
+        
+        .category-name {
+          color: var(--accent-blue) !important;
+        }
+      }
+    }
+  }
+  
+  // Drop zones for drag and drop
+  .uncategorized-drop-zone {
+    &.drag-over {
+      background-color: rgba(129, 199, 132, 0.2) !important;
+      border-color: var(--accent-green) !important;
+    }
+    
+    &.empty-drop-zone {
+      background-color: var(--bg-elevated) !important;
+      border-color: var(--border-color) !important;
+      
+      &.drag-over {
+        background-color: rgba(129, 199, 132, 0.2) !important;
+        border-color: var(--accent-green) !important;
+      }
+      
+      .drop-hint {
+        color: var(--text-tertiary) !important;
+      }
+    }
+  }
+  
+  // Folder chips
+  .folder-chips {
+    .folder-chip {
+      background-color: var(--bg-elevated) !important;
+      border-color: var(--border-color) !important;
+      color: var(--text-primary) !important;
+      
+      &:hover {
+        background-color: var(--accent-blue) !important;
+        border-color: var(--accent-blue) !important;
+        color: white !important;
+      }
+      
+      &.no-folder {
+        border-color: var(--accent-red) !important;
+        color: var(--accent-red) !important;
+        
+        &:hover {
+          background-color: var(--accent-red) !important;
+          color: white !important;
+        }
+      }
+    }
+  }
+  
+  .existing-folders {
+    border-top-color: var(--border-color) !important;
+  }
+  
+  // Feed category toggle and names
+  .category-toggle {
+    color: var(--text-primary) !important;
+    background-color: transparent !important;
+  }
+  
+  .category-name {
+    color: var(--text-primary) !important;
+  }
+  
+  // Settings Modal
+  .settings-modal-overlay {
+    background-color: rgba(0, 0, 0, 0.7) !important;
+  }
+  
+  .settings-modal {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    
+    .modal-header {
+      border-bottom-color: var(--border-color) !important;
+      
+      h2, h3 {
+        color: var(--text-primary) !important;
+      }
+      
+      .close-btn {
+        color: var(--text-tertiary) !important;
+        background-color: transparent !important;
+        
+        &:hover {
+          color: var(--text-primary) !important;
+        }
+      }
+    }
+    
+    .modal-content {
+      background-color: transparent !important;
+    }
+    
+    label {
+      color: var(--text-primary) !important;
+    }
+  }
+  
+  .settings-section {
+    border-bottom-color: var(--border-color) !important;
+  }
+  
+  // Color buttons (keep their gradient backgrounds)
+  .color-btn {
+    border-color: transparent !important;
+    
+    &:hover {
+      box-shadow: 0 4px 12px var(--shadow-color) !important;
+    }
+    
+    &.active {
+      border-color: var(--accent-blue) !important;
+      box-shadow: 0 0 0 3px rgba(100, 181, 246, 0.3), 0 4px 12px var(--shadow-color) !important;
+    }
+  }
+  
+  // Font buttons
+  .font-btn {
+    background-color: var(--bg-elevated) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+    
+    &:hover {
+      background-color: var(--bg-tertiary) !important;
+      border-color: var(--accent-blue) !important;
+    }
+    
+    &.active {
+      background-color: var(--accent-blue) !important;
+      border-color: var(--accent-blue) !important;
+      color: white !important;
+    }
+  }
+  
+  // Toggle labels
+  .toggle-label {
+    color: var(--text-primary) !important;
+  }
+  
+  .setting-description {
+    color: var(--text-secondary) !important;
+  }
+  
+  // Data management buttons
+  .data-management {
+    .export-btn,
+    .import-btn {
+      background-color: var(--bg-elevated) !important;
+      border-color: var(--border-color) !important;
+      color: var(--text-primary) !important;
+      
+      &:hover {
+        background-color: rgba(100, 181, 246, 0.15) !important;
+        border-color: var(--accent-blue) !important;
+      }
+    }
+    
+    .data-info {
+      background-color: var(--bg-elevated) !important;
+      color: var(--text-secondary) !important;
+      border-left-color: var(--accent-orange) !important;
+      
+      strong {
+        color: var(--accent-red) !important;
+      }
+    }
+  }
+  
+  // Modal footer
+  .modal-footer {
+    border-top-color: var(--border-color) !important;
+    background-color: transparent !important;
+    
+    .btn-primary {
+      // Keep the gradient but ensure text is visible
+      color: white !important;
+    }
+  }
+  
+  .color-option,
+  .font-option {
+    border-color: var(--border-color) !important;
+    
+    &:hover {
+      border-color: var(--accent-blue) !important;
+    }
+    
+    &.selected {
+      border-color: var(--accent-blue) !important;
+      box-shadow: 0 0 0 2px var(--accent-blue) !important;
+    }
+  }
+  
+  // Inputs
+  input[type="text"],
+  input[type="url"],
+  textarea,
+  select {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+    
+    &:focus {
+      border-color: var(--accent-blue) !important;
+      box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2) !important;
+    }
+    
+    &::placeholder {
+      color: var(--text-tertiary) !important;
+    }
+  }
+  
+  // Checkboxes with better visibility
+  input[type="checkbox"] {
+    accent-color: var(--accent-blue);
+    border: 2px solid var(--border-color) !important;
+  }
+  
+  // Grid View
+  .widgets-grid {
+    .widget {
+      background-color: var(--bg-secondary) !important;
+      border: 1px solid var(--border-color) !important;
+    }
+    
+    .widget-header {
+      border-bottom-color: var(--border-color) !important;
+    }
+  }
+  
+  // News Look
+  .newspaper-grid {
+    background-color: var(--bg-primary) !important;
+    
+    .article-item {
+      background-color: var(--bg-secondary) !important;
+      border: 1px solid var(--border-color) !important;
+    }
+  }
+  
+  // Scrollbars (Webkit)
+  ::-webkit-scrollbar {
+    background-color: var(--bg-secondary) !important;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: #555 !important;
+    border-color: var(--bg-secondary) !important;
+    
+    &:hover {
+      background-color: #666 !important;
+    }
+  }
+  
+  ::-webkit-scrollbar-track {
+    background-color: var(--bg-tertiary) !important;
+  }
+  
+  // Images - add subtle border for contrast
+  img {
+    border: 1px solid var(--border-color) !important;
+    
+    &:hover {
+      border-color: var(--accent-blue) !important;
+    }
+  }
+  
+  // Dropdown menus
+  .dropdown,
+  .menu {
+    background-color: var(--bg-elevated) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 4px 12px var(--shadow-color) !important;
+  }
+  
+  .dropdown-item,
+  .menu-item {
+    color: var(--text-primary) !important;
+    
+    &:hover {
+      background-color: var(--bg-tertiary) !important;
+    }
+  }
+  
+  // Read indicator
+  .read-indicator {
+    color: var(--accent-blue) !important;
+  }
+  
+  // Unread badge
+  .unread-badge,
+  .count {
+    background-color: var(--accent-red) !important;
+    color: white !important;
+  }
+  
+  // Action buttons - keep their colors but adjust for dark mode
+  .read-toggle-btn,
+  .read-toggle {
+    border-color: #555 !important;
+    background-color: var(--bg-elevated) !important;
+    color: #888 !important;
+    
+    &:hover {
+      border-color: var(--accent-green) !important;
+      color: var(--accent-green) !important;
+    }
+    
+    &.read {
+      background-color: var(--accent-green) !important;
+      border-color: var(--accent-green) !important;
+      color: white !important;
+    }
+  }
+  
+  .save-toggle-btn,
+  .save-toggle {
+    border-color: #555 !important;
+    background-color: var(--bg-elevated) !important;
+    color: #888 !important;
+    
+    &:hover {
+      border-color: var(--accent-yellow) !important;
+      color: var(--accent-yellow) !important;
+    }
+    
+    &.saved {
+      background-color: var(--accent-yellow) !important;
+      border-color: var(--accent-yellow) !important;
+      color: #1a1a1a !important;
+    }
+  }
+  
+  // No items message
+  .no-items,
+  .no-widgets {
+    color: var(--text-tertiary) !important;
+  }
+  
+  // Loading states
+  .loading,
+  .spinner {
+    color: var(--text-secondary) !important;
+  }
+  
+  // Links - but not router links
+  a:not([routerLink]):not([ng-reflect-router-link]) {
+    color: var(--accent-blue) !important;
+    
+    &:hover {
+      color: var(--accent-purple) !important;
+    }
+  }
+  
+  // Dividers
+  hr,
+  .divider {
+    border-color: var(--border-color) !important;
+  }
+  
+  // Preview footer
+  .preview-footer {
+    border-top-color: var(--border-color) !important;
+  }
+  
+  .preview-source-link {
+    background-color: var(--bg-elevated) !important;
+    color: var(--accent-blue) !important;
+    
+    &:hover {
+      background-color: var(--accent-blue) !important;
+      color: var(--bg-primary) !important;
+    }
+  }
+  
+  // Resize divider
+  .resize-divider {
+    background-color: var(--border-color) !important;
+    
+    &:hover {
+      background-color: var(--accent-blue) !important;
+    }
+  }
+  
+  // Item image placeholder
+  .item-image {
+    background-color: var(--bg-elevated) !important;
+  }
+  
+  // Ensure header gradient is visible in dark mode
+  .header {
+    background: inherit !important; // Keep the user's chosen header color
+  }
+
+  // Feed filter dropdown in header
+  .feed-filter {
+    .filter-btn {
+      background-color: var(--bg-elevated) !important;
+      color: var(--text-primary) !important;
+      border-color: var(--border-color) !important;
+      
+      &:hover {
+        background-color: var(--bg-tertiary) !important;
+      }
+      
+      .arrow {
+        color: var(--text-primary) !important;
+      }
+    }
+    
+    .feed-dropdown {
+      background-color: var(--bg-elevated) !important;
+      border-color: var(--border-color) !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+      
+      .dropdown-header {
+        background-color: var(--bg-tertiary) !important;
+        border-bottom-color: var(--border-color) !important;
+        color: var(--text-primary) !important;
+        
+        span {
+          color: var(--text-primary) !important;
+        }
+        
+        .clear-btn {
+          background-color: var(--accent-red) !important;
+          color: white !important;
+          border: none !important;
+          
+          &:hover {
+            background-color: #c62828 !important;
+          }
+        }
+      }
+      
+      .feed-list {
+        background-color: var(--bg-elevated) !important;
+        
+        .feed-checkbox {
+          color: var(--text-primary) !important;
+          
+          &:hover {
+            background-color: var(--bg-tertiary) !important;
+          }
+          
+          .feed-name {
+            color: var(--text-primary) !important;
+          }
+          
+          input[type="checkbox"] {
+            border-color: var(--border-color) !important;
+            background-color: var(--bg-secondary) !important;
+            
+            &:checked {
+              background-color: var(--accent-blue) !important;
+              border-color: var(--accent-blue) !important;
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  // Article reader
+  .article-reader {
+    background-color: var(--bg-primary) !important;
+    
+    .reader-content {
+      background-color: var(--bg-secondary) !important;
+      color: var(--text-primary) !important;
+    }
+  }
+  
+  // Additional global overrides for any remaining white elements
+  .app-container {
+    background-color: var(--bg-primary) !important;
+  }
+  
+  .main-layout {
+    background-color: var(--bg-primary) !important;
+  }
+  
+  .content,
+  main.content {
+    background-color: var(--bg-primary) !important;
+  }
+  
+  .container,
+  .main-content,
+  .content-wrapper,
+  .page-wrapper,
+  app-root,
+  app-feed-manager,
+  app-list-view,
+  app-grid-view,
+  app-news-look {
+    background-color: var(--bg-primary) !important;
+  }
+  
+  // Form elements
+  form {
+    background-color: transparent !important;
+  }
+  
+  // Tables
+  table {
+    background-color: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    
+    th {
+      background-color: var(--bg-elevated) !important;
+      color: var(--text-primary) !important;
+      border-color: var(--border-color) !important;
+    }
+    
+    td {
+      border-color: var(--border-color) !important;
+      color: var(--text-primary) !important;
+    }
+    
+    tr:hover {
+      background-color: var(--bg-tertiary) !important;
+    }
+  }
+  
+  // Modal overlays
+  .modal-overlay,
+  .backdrop {
+    background-color: rgba(0, 0, 0, 0.7) !important;
+  }
+  
+  // User menu
+  .user-menu {
+    .user-dropdown {
+      background-color: var(--bg-elevated) !important;
+      border: 1px solid var(--border-color) !important;
+      box-shadow: 0 4px 16px var(--shadow-color) !important;
+    }
+    
+    .user-info {
+      border-bottom-color: var(--border-color) !important;
+      
+      .user-email {
+        color: var(--text-secondary) !important;
+      }
+    }
+    
+    .user-actions {
+      background-color: transparent !important;
+    }
+    
+    .settings-btn {
+      background-color: transparent !important;
+      color: var(--accent-blue) !important;
+      
+      &:hover {
+        background-color: rgba(100, 181, 246, 0.15) !important;
+      }
+    }
+    
+    .logout-btn {
+      background-color: transparent !important;
+      color: var(--accent-red) !important;
+      
+      &:hover {
+        background-color: rgba(229, 115, 115, 0.15) !important;
+      }
+    }
+  }
+  
+  // Feed list
+  .feed-list {
+    background-color: var(--bg-secondary) !important;
+  }
+  
+  // Suggested page
+  .suggested-feeds {
+    background-color: var(--bg-primary) !important;
+    
+    .suggested-category {
+      color: var(--text-primary) !important;
+    }
+    
+    .feed-suggestion {
+      background-color: var(--bg-secondary) !important;
+      border: 1px solid var(--border-color) !important;
+      
+      &:hover {
+        background-color: var(--bg-tertiary) !important;
+        border-color: var(--accent-blue) !important;
+      }
+    }
+  }
+  
+  // Toast notifications
+  .toast,
+  .notification {
+    background-color: var(--bg-elevated) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color) !important;
+    
+    &.success {
+      border-left: 4px solid var(--accent-green) !important;
+    }
+    
+    &.error {
+      border-left: 4px solid var(--accent-red) !important;
+    }
+    
+    &.info {
+      border-left: 4px solid var(--accent-blue) !important;
+    }
+  }
+  
+  // Empty states
+  .empty-state {
+    color: var(--text-secondary) !important;
+    
+    svg, i {
+      color: var(--text-tertiary) !important;
+    }
+  }
+}

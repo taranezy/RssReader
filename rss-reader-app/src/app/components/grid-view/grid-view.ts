@@ -99,6 +99,12 @@ export class GridViewComponent implements OnInit {
     }
   }
 
+  toggleSaved(item: RssItem, event: Event): void {
+    event.stopPropagation();
+    const newSavedStatus = !item.isSaved;
+    this.feedService.toggleSaved(item.id, newSavedStatus);
+  }
+
   getUnreadCount(widget: FeedWidget): number {
     return widget.items.filter(item => !item.isRead).length;
   }

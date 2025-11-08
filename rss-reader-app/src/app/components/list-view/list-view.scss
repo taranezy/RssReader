@@ -247,6 +247,29 @@
   color: #999;
 }
 
+.preview-video {
+  margin-bottom: 25px;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  padding-bottom: 56.25%; // 16:9 aspect ratio
+  height: 0;
+
+  iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 8px;
+  }
+}
+
 .preview-image {
   margin-bottom: 25px;
   border-radius: 8px;
@@ -441,7 +464,10 @@
       position: absolute;
       bottom: 6px;
       right: 6px;
+      gap: 4px;
+      padding: 0;
       
+      .save-toggle-btn,
       .read-toggle-btn {
         width: 24px;
         height: 24px;
@@ -587,9 +613,11 @@
 .item-actions {
   display: flex;
   align-items: center;
+  gap: 8px;
   padding: 20px 15px;
   flex-shrink: 0;
 
+  .save-toggle-btn,
   .read-toggle-btn {
     width: 36px;
     height: 36px;
@@ -605,9 +633,27 @@
     justify-content: center;
 
     &:hover {
+      transform: scale(1.1);
+    }
+  }
+
+  .save-toggle-btn {
+    &:hover {
+      border-color: #FFC107;
+      color: #FFC107;
+    }
+
+    &.saved {
+      border-color: #FFC107;
+      background: #FFC107;
+      color: white;
+    }
+  }
+
+  .read-toggle-btn {
+    &:hover {
       border-color: #4CAF50;
       color: #4CAF50;
-      transform: scale(1.1);
     }
 
     &.read {

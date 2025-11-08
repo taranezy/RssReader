@@ -1,5 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RssItem, RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { UserSettingsService } from '../../services/user-settings.service';
@@ -27,14 +28,15 @@ export class ListViewComponent implements OnInit {
   selectedArticleForPreview: RssItem | null = null;
   isLargeScreen = false;
   showPreviewPane = true; // User preference to show/hide preview pane
-  feedColumnWidth = 150; // Fixed width for feed list in pixels
+  feedColumnWidth = 250; // Fixed width for feed list in pixels (default minimum width)
   isResizing = false;
   resizeStartX = 0;
   resizeStartWidth = 0;
 
   constructor(
     private feedService: RssFeedService,
-    private userSettingsService: UserSettingsService
+    private userSettingsService: UserSettingsService,
+    private sanitizer: DomSanitizer
   ) {}
 
   ngOnInit(): void {
@@ -139,6 +141,12 @@ export class ListViewComponent implements OnInit {
     }
   }
 
+  toggleSaved(item: RssItem, event: Event): void {
+    event.stopPropagation();
+    const newSavedStatus = !item.isSaved;
+    this.feedService.toggleSaved(item.id, newSavedStatus);
+  }
+
   getFeedColor(item: RssItem): string {
     const feed = this.feeds.find((f: RssFeed) => f.id === item.feedId);
     return feed?.color || '#999';
@@ -165,7 +173,7 @@ export class ListViewComponent implements OnInit {
     if (!this.isResizing) return;
 
     const deltaX = event.clientX - this.resizeStartX;
-    const newWidth = Math.max(100, Math.min(this.resizeStartWidth + deltaX, window.innerWidth - 600));
+    const newWidth = Math.max(250, Math.min(this.resizeStartWidth + deltaX, window.innerWidth - 600));
     this.feedColumnWidth = newWidth;
 
     // Save preference to localStorage
@@ -176,5 +184,44 @@ export class ListViewComponent implements OnInit {
     this.isResizing = false;
     document.removeEventListener('mousemove', this.onResizeMove.bind(this));
     document.removeEventListener('mouseup', this.onResizeEnd.bind(this));
+  }
+
+  /**
+   * Extract YouTube video ID from various YouTube URL formats
+   */
+  getYouTubeVideoId(url: string): string | null {
+    if (!url) return null;
+
+    // Match various YouTube URL formats:
+    // - https://www.youtube.com/watch?v=VIDEO_ID
+    // - https://youtu.be/VIDEO_ID
+    // - https://www.youtube.com/embed/VIDEO_ID
+    // - https://www.youtube.com/v/VIDEO_ID
+    // - https://www.youtube.com/feeds/videos.xml?channel_id=... (YouTube feed URLs)
+    
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/)([a-zA-Z0-9_-]{11})/,
+      /youtube\.com\/watch\?.*v=([a-zA-Z0-9_-]{11})/
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Generate safe YouTube embed URL
+   */
+  getYouTubeEmbedUrl(url: string): SafeResourceUrl | null {
+    const videoId = this.getYouTubeVideoId(url);
+    if (!videoId) return null;
+
+    const embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+    return this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
   }
 }

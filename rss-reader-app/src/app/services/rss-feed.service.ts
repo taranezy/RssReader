@@ -182,7 +182,23 @@ export class RssFeedService {
     const refreshObservables = activeFeeds.map(feed => this.refreshFeed(feed.id));
     
     return forkJoin(refreshObservables).pipe(
-      map(results => results.reduce((sum, count) => sum + count, 0))
+      map(results => results.reduce((sum, count) => sum + count, 0)),
+      switchMap(totalNewItems => {
+        // After refreshing all feeds, cleanup old items (older than 30 days)
+        return this.apiStorage.cleanupOldItems().pipe(
+          map(deletedCount => {
+            if (deletedCount > 0) {
+              console.log(`Cleaned up ${deletedCount} old items`);
+              this.loadItems(); // Reload items after cleanup
+            }
+            return totalNewItems;
+          }),
+          catchError(error => {
+            console.error('Error cleaning up old items:', error);
+            return of(totalNewItems); // Continue even if cleanup fails
+          })
+        );
+      })
     );
   }
 
@@ -209,10 +225,50 @@ export class RssFeedService {
 
   markAllAsRead(feedId?: string): void {
     this.apiStorage.markAllAsRead(feedId).pipe(
-      tap(() => this.loadItems()),
+      tap(() => {
+        // If showing unread only, switch to all items after marking all as read
+        const currentPrefs = this.preferencesSubject.value;
+        if (currentPrefs.showOnlyUnread) {
+          this.updatePreferences({ ...currentPrefs, showOnlyUnread: false });
+        }
+        this.loadItems();
+      }),
       catchError(error => {
         console.error('Error marking all as read:', error);
         return of(null);
+      })
+    ).subscribe();
+  }
+
+  toggleSaved(itemId: string, isSaved: boolean): void {
+    // Optimistically update UI immediately
+    const currentItems = this.itemsSubject.value;
+    const updatedItems = currentItems.map(item => 
+      item.id === itemId ? { ...item, isSaved } : item
+    );
+    this.itemsSubject.next(updatedItems);
+
+    // Then update on server
+    this.apiStorage.updateItem(itemId, { isSaved }).pipe(
+      catchError(error => {
+        console.error('Error toggling saved status:', error);
+        // Revert on error
+        this.itemsSubject.next(currentItems);
+        return of(null);
+      })
+    ).subscribe();
+  }
+
+  loadSavedItems(): void {
+    console.log('Loading saved items...');
+    this.apiStorage.getSavedItems().pipe(
+      tap(items => {
+        console.log(`Loaded ${items.length} saved items`);
+        this.itemsSubject.next(items);
+      }),
+      catchError(error => {
+        console.error('Error loading saved items:', error);
+        return of([]);
       })
     ).subscribe();
   }
@@ -269,7 +325,7 @@ export class RssFeedService {
     ).subscribe();
   }
 
-  private loadItems(): void {
+  public loadItems(): void {
     this.apiStorage.getAllItems().pipe(
       tap(items => this.itemsSubject.next(items)),
       catchError(error => {

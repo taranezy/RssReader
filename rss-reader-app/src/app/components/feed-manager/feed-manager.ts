@@ -24,7 +24,7 @@ export class FeedManagerComponent implements OnInit {
   isAddingFeed = false;
   isRefreshing = false;
   
-  selectedView: 'today' | 'all' | 'unread' = 'all';
+  selectedView: 'today' | 'all' | 'unread' | 'saved' = 'all';
   expandedCategories: Set<string> = new Set();
   selectedFeedMenu: RssFeed | null = null;
   menuPosition = { x: 0, y: 0 };
@@ -167,19 +167,39 @@ export class FeedManagerComponent implements OnInit {
   }
 
   // View selection
-  selectView(view: 'today' | 'all' | 'unread'): void {
+  selectView(view: 'today' | 'all' | 'unread' | 'saved'): void {
+    console.log('Selecting view:', view);
     this.selectedView = view;
     
-    if (view === 'unread') {
-      this.feedService.updatePreferences({ showOnlyUnread: true, selectedFeeds: [] });
-    } else {
+    if (view === 'saved') {
+      // Clear all filters first, then load saved items
       this.feedService.updatePreferences({ showOnlyUnread: false, selectedFeeds: [] });
+      // Use setTimeout to ensure preferences are updated before loading saved items
+      setTimeout(() => {
+        this.feedService.loadSavedItems();
+      }, 50);
+    } else {
+      // For all other views, reload normal items with appropriate filters
+      if (view === 'unread') {
+        this.feedService.updatePreferences({ showOnlyUnread: true, selectedFeeds: [] });
+      } else {
+        this.feedService.updatePreferences({ showOnlyUnread: false, selectedFeeds: [] });
+      }
+      // Reload all items to restore normal view
+      this.feedService.loadItems();
     }
   }
 
   // Feed selection
   selectFeed(feedId: string): void {
-    this.feedService.updatePreferences({ selectedFeeds: [feedId] });
+    // If we were in saved view, switch back to normal view first
+    if (this.selectedView === 'saved') {
+      this.selectedView = 'all';
+    }
+    
+    this.feedService.updatePreferences({ selectedFeeds: [feedId], showOnlyUnread: false });
+    // Reload items to apply the feed filter
+    this.feedService.loadItems();
   }
 
   isSelectedFeed(feedId: string): boolean {
@@ -249,6 +269,10 @@ export class FeedManagerComponent implements OnInit {
   // Count methods
   getUnreadCount(): number {
     return this.items.filter(item => !item.isRead).length;
+  }
+
+  getSavedCount(): number {
+    return this.items.filter(item => item.isSaved).length;
   }
 
   getFeedUnreadCount(feedId: string): number {

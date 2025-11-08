@@ -36,6 +36,14 @@
         <!-- Meta Info -->
         <div class="article-meta">
           <button 
+            class="save-toggle"
+            (click)="toggleSaved($event, item)"
+            [title]="item.isSaved ? 'Remove from saved' : 'Save for later'"
+            [class.saved]="item.isSaved">
+            <span *ngIf="item.isSaved">★</span>
+            <span *ngIf="!item.isSaved">☆</span>
+          </button>
+          <button 
             class="read-toggle"
             (click)="toggleRead($event, item)"
             [title]="item.isRead ? 'Mark as unread' : 'Mark as read'">

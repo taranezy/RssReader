@@ -2,6 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <script>
+    // Check dark mode synchronously BEFORE page renders
+    (function() {
+      try {
+        var isDark = localStorage.getItem('darkMode') === 'true';
+        if (isDark) {
+          // Write style tag directly into the document as it's being parsed
+          document.write('<style>html,body{background-color:#1a1a1a!important;color:#e8e8e8!important}</style>');
+          document.documentElement.classList.add('dark-mode');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <style>
+    /* Default light mode */
+    html, body {
+      background-color: #f5f7fa;
+      color: #333;
+      margin: 0;
+    }
+    /* Dark mode overrides */
+    html.dark-mode, html.dark-mode body {
+      background-color: #1a1a1a !important;
+      color: #e8e8e8 !important;
+    }
+  </style>
   <title>RSS Reader</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">

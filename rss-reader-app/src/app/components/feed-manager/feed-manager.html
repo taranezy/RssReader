@@ -55,6 +55,11 @@
       <span class="label">Unread</span>
       <span class="count" *ngIf="getUnreadCount() > 0">{{ getUnreadCount() }}</span>
     </div>
+    <div class="nav-item" [class.active]="selectedView === 'saved'" (click)="selectView('saved')">
+      <span class="icon">★</span>
+      <span class="label">Saved</span>
+      <span class="count" *ngIf="getSavedCount() > 0">{{ getSavedCount() }}</span>
+    </div>
   </div>
 
   <!-- Feeds by Category -->

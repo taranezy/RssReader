@@ -143,16 +143,22 @@ app.get('/api/auth/demo', async (req, res) => {
       console.log('Creating new demo user...');
       demoUser = db.createUser('demo@rssreader.local', 'Demo User', null);
       needsFeeds = true;
+      console.log('Demo user created:', demoUser);
     } else {
+      console.log('Demo user found:', demoUser);
       // Check if user has feeds
       const existingFeeds = db.getAllFeeds(demoUser.id);
+      console.log(`Demo user has ${existingFeeds ? existingFeeds.length : 0} feeds`);
       if (!existingFeeds || existingFeeds.length === 0) {
         console.log('Demo user exists but has no feeds, populating...');
         needsFeeds = true;
+      } else {
+        console.log('Demo user already has feeds, skipping population');
       }
     }
 
     if (needsFeeds) {
+      console.log('Starting to populate demo feeds...');
       // Create 100 demo RSS feeds with diverse categories
       const demoFeeds = [
         // Tech & Programming (10)
@@ -300,10 +306,16 @@ app.get('/api/auth/demo', async (req, res) => {
       });
 
       console.log(`Created demo user with ${demoFeeds.length} feeds`);
+      console.log('Note: Demo feeds created. User should refresh feeds to fetch items.');
     } // End of if (needsFeeds)
 
     // Update last login for demo user
-    db.updateUserLastLogin(demoUser.id);
+    try {
+      db.updateUserLastLogin(demoUser.id);
+      console.log('Updated last login for demo user');
+    } catch (error) {
+      console.error('Error updating last login:', error);
+    }
 
     // Create session for demo user
     req.login(demoUser, (err) => {
@@ -311,11 +323,20 @@ app.get('/api/auth/demo', async (req, res) => {
         console.error('Demo login error:', err);
         return res.redirect(`${FRONTEND_URL}/login?error=demo_failed`);
       }
-      console.log('Demo user logged in:', demoUser);
-      res.redirect(FRONTEND_URL);
+      console.log('Demo user logged in successfully:', demoUser.email);
+      
+      // Save session before redirecting
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('Session save error:', saveErr);
+          return res.redirect(`${FRONTEND_URL}/login?error=session_failed`);
+        }
+        console.log('Session saved, redirecting to frontend');
+        res.redirect(FRONTEND_URL);
+      });
     });
   } catch (error) {
-    console.error('Error creating demo user:', error);
+    console.error('Error in demo login:', error);
     res.redirect(`${FRONTEND_URL}/login?error=demo_failed`);
   }
 });
@@ -388,7 +409,14 @@ app.get('/api/proxy/fetch-feed', isAuthenticated, async (req, res) => {
 
         // Handle redirects
         if (response.statusCode === 301 || response.statusCode === 302) {
-          const redirectUrl = response.headers.location;
+          let redirectUrl = response.headers.location;
+          
+          // Handle relative URLs
+          if (redirectUrl && !redirectUrl.startsWith('http')) {
+            const urlObj = new URL(url);
+            redirectUrl = `${urlObj.protocol}//${urlObj.host}${redirectUrl.startsWith('/') ? '' : '/'}${redirectUrl}`;
+          }
+          
           console.log(`Following redirect to: ${redirectUrl}`);
           
           // Recursive call for redirect
@@ -587,6 +615,29 @@ app.post('/api/items/mark-all-read', isAuthenticated, (req, res) => {
   } catch (error) {
     console.error('Error marking items as read:', error);
     res.status(500).json({ error: 'Failed to mark items as read' });
+  }
+});
+
+// Get saved items
+app.get('/api/items/saved', isAuthenticated, (req, res) => {
+  try {
+    const items = db.getSavedItems(req.user.id);
+    const convertedItems = items.map(i => db.convertItemFromDb(i));
+    res.json(convertedItems);
+  } catch (error) {
+    console.error('Error fetching saved items:', error);
+    res.status(500).json({ error: 'Failed to fetch saved items' });
+  }
+});
+
+// Delete old items (older than 30 days)
+app.post('/api/items/cleanup-old', isAuthenticated, (req, res) => {
+  try {
+    const deletedCount = db.deleteOldItems(req.user.id);
+    res.status(200).json({ success: true, deletedCount });
+  } catch (error) {
+    console.error('Error cleaning up old items:', error);
+    res.status(500).json({ error: 'Failed to cleanup old items' });
   }
 });
 
@@ -845,6 +896,27 @@ if (isProduction) {
   // Serve index.html for all other routes (Angular routing)
   app.use((req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
+  });
+} else {
+  // In development, redirect non-API routes to Angular dev server
+  app.use((req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    
+    // For Angular routes, send a helpful message
+    res.status(404).send(`
+      <html>
+        <head><title>Development Mode</title></head>
+        <body>
+          <h1>RSS Reader - Development Mode</h1>
+          <p>Backend is running on port 3000.</p>
+          <p><strong>Please access the application at: <a href="http://localhost:4200">http://localhost:4200</a></strong></p>
+          <p>The Angular development server serves the frontend on port 4200.</p>
+        </body>
+      </html>
+    `);
   });
 }
 

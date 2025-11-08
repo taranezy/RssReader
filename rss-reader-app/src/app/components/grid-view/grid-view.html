@@ -15,7 +15,7 @@
 
       <div class="widget-content">
         <div *ngIf="widget.items.length === 0" class="no-items">
-          No items yet. Refresh this feed!
+          No items yet. Click the <strong>↻ Refresh</strong> button to fetch articles!
         </div>
 
         <div class="widget-item"
@@ -34,12 +34,20 @@
 
           <div class="item-meta">
             <span class="item-date">{{ item.pubDate | date:'short' }}</span>
-            <button 
-              class="read-toggle"
-              (click)="toggleRead(item, $event)"
-              [title]="item.isRead ? 'Mark as unread' : 'Mark as read'">
-              {{ item.isRead ? '✓' : '○' }}
-            </button>
+            <div class="item-actions">
+              <button 
+                class="save-toggle"
+                (click)="toggleSaved(item, $event)"
+                [title]="item.isSaved ? 'Remove from saved' : 'Save for later'">
+                {{ item.isSaved ? '★' : '☆' }}
+              </button>
+              <button 
+                class="read-toggle"
+                (click)="toggleRead(item, $event)"
+                [title]="item.isRead ? 'Mark as unread' : 'Mark as read'">
+                {{ item.isRead ? '✓' : '○' }}
+              </button>
+            </div>
           </div>
         </div>
       </div>

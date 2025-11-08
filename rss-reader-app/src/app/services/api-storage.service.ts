@@ -84,6 +84,18 @@ export class ApiStorageService {
     return this.http.post<{ success: boolean }>(`${this.apiUrl}/items/mark-all-read`, { feedId }, this.httpOptions);
   }
 
+  getSavedItems(): Observable<RssItem[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/items/saved`, this.httpOptions).pipe(
+      map(items => items.map(item => this.convertItemDates(item)))
+    );
+  }
+
+  cleanupOldItems(): Observable<number> {
+    return this.http.post<{ success: boolean; deletedCount: number }>(`${this.apiUrl}/items/cleanup-old`, {}, this.httpOptions).pipe(
+      map(response => response.deletedCount)
+    );
+  }
+
   // ==================== PREFERENCES ====================
   
   getPreferences(): Observable<FeedViewPreference> {

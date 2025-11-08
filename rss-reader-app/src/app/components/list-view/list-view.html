@@ -13,7 +13,12 @@
        [class.with-preview]="isLargeScreen && showPreviewPane"
        [style.width.px]="(isLargeScreen && showPreviewPane) ? feedColumnWidth : null">
     <div *ngIf="items.length === 0" class="no-items">
-      <p>No items to display. Add some RSS feeds and refresh them!</p>
+      <p *ngIf="feeds.length === 0">No items to display. Add some RSS feeds and refresh them!</p>
+      <p *ngIf="feeds.length > 0">
+        You have {{ feeds.length }} feed(s) but no items yet. 
+        <br><br>
+        Click the <strong>↻ Refresh</strong> button in the left sidebar to fetch articles!
+      </p>
     </div>
 
     <div class="item-card" 
@@ -56,6 +61,13 @@
       </div>
 
       <div class="item-actions">
+        <button 
+          class="save-toggle-btn"
+          [class.saved]="item.isSaved"
+          (click)="toggleSaved(item, $event)"
+          [title]="item.isSaved ? 'Remove from saved' : 'Save for later'">
+          {{ item.isSaved ? '★' : '☆' }}
+        </button>
         <button 
           class="read-toggle-btn"
           [class.read]="item.isRead"
@@ -101,7 +113,17 @@
         <span class="preview-date">{{ selectedArticleForPreview.pubDate | date:'medium' }}</span>
       </div>
 
-      <div class="preview-image" *ngIf="selectedArticleForPreview.imageUrl">
+      <!-- YouTube Video Embed -->
+      <div class="preview-video" *ngIf="getYouTubeVideoId(selectedArticleForPreview.link)">
+        <iframe 
+          [src]="getYouTubeEmbedUrl(selectedArticleForPreview.link)" 
+          frameborder="0" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          allowfullscreen>
+        </iframe>
+      </div>
+
+      <div class="preview-image" *ngIf="selectedArticleForPreview.imageUrl && !getYouTubeVideoId(selectedArticleForPreview.link)">
         <img [src]="selectedArticleForPreview.imageUrl" [alt]="selectedArticleForPreview.title" />
       </div>
 
