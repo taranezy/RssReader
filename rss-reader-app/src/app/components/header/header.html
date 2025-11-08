@@ -174,6 +174,9 @@
           <!-- Header Color Selection -->
           <div class="settings-section">
             <label>Header Color:</label>
+            <p class="setting-description">
+              Choose a color theme for the application header. This will change the gradient colors throughout the interface.
+            </p>
             <div class="color-options">
               <button 
                 *ngFor="let theme of headerColorThemes"
@@ -190,6 +193,9 @@
           <!-- Font Selection -->
           <div class="settings-section">
             <label>Font Style:</label>
+            <p class="setting-description">
+              Select your preferred font family for the entire application. Different fonts can improve readability based on your preference.
+            </p>
             <div class="font-options">
               <button 
                 *ngFor="let font of availableFonts"
@@ -205,6 +211,9 @@
           <!-- Dark Mode Toggle -->
           <div class="settings-section">
             <label>Theme:</label>
+            <p class="setting-description">
+              Switch between light and dark modes. Dark mode reduces eye strain in low-light environments and saves battery on OLED screens.
+            </p>
             <div class="toggle-option">
               <label class="toggle-label">
                 <input 
@@ -225,6 +234,9 @@
           <!-- Left Menu Toggle -->
           <div class="settings-section">
             <label>Navigation:</label>
+            <p class="setting-description">
+              Toggle the visibility of the left sidebar menu. When hidden, you can use the menu button in the header to access your feeds.
+            </p>
             <div class="toggle-option">
               <label class="toggle-label">
                 <input 
@@ -240,6 +252,9 @@
           <!-- Feed Images Toggle -->
           <div class="settings-section">
             <label>Content Display:</label>
+            <p class="setting-description">
+              Show or hide images from RSS feeds. Hiding images can improve loading speed and reduce data usage.
+            </p>
             <div class="toggle-option">
               <label class="toggle-label">
                 <input 
@@ -275,35 +290,38 @@
         <div class="settings-group" *ngIf="selectedCategory === 'data'">
           <h3 class="group-title">Saving & Sharing</h3>
 
-          <!-- Export Data -->
-          <div class="settings-section">
-            <label>Export Data</label>
-            <p class="setting-description">
-              Download all your feeds and settings as an XML backup file.
-            </p>
-            <button class="export-btn" (click)="exportData()">
-              📥 Export All Data
-            </button>
-          </div>
+          <!-- Data Backup Section -->
+          <div class="data-backup-section">
+            <!-- Export Data -->
+            <div class="settings-section">
+              <label>Export Data</label>
+              <p class="setting-description">
+                Download all your feeds and settings as an XML backup file.
+              </p>
+              <button class="export-btn" (click)="exportData()">
+                📥 Export All Data
+              </button>
+            </div>
 
-          <!-- Import Data -->
-          <div class="settings-section">
-            <label>Import Data</label>
-            <p class="setting-description">
-              Restore from a previous backup. <strong>Warning:</strong> This will replace all current data!
-            </p>
-            <label class="import-btn">
-              📤 Import Backup
-              <input 
-                type="file" 
-                accept=".xml"
-                (change)="onImportFileSelected($event)"
-                style="display: none;">
-            </label>
+            <!-- Import Data -->
+            <div class="settings-section">
+              <label>Import Data</label>
+              <p class="setting-description">
+                Restore from a previous backup. <strong>Warning:</strong> This will replace all current data!
+              </p>
+              <label class="import-btn">
+                📤 Import Backup
+                <input 
+                  type="file" 
+                  accept=".xml"
+                  (change)="onImportFileSelected($event)"
+                  style="display: none;">
+              </label>
+            </div>
           </div>
 
           <!-- Import from Feedly -->
-          <div class="settings-section">
+          <div class="settings-section feedly-section">
             <label>Import from Feedly</label>
             <p class="setting-description">
               Import feeds from Feedly OPML export. <strong>All your existing data will stay</strong> - this only adds new feeds to your collection.

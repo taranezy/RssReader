@@ -646,6 +646,22 @@
   padding: 20px;
 }
 
+.data-backup-section {
+  padding: 20px;
+  margin-bottom: 30px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.feedly-section {
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background: #fafafa;
+  margin-bottom: 0 !important;
+}
+
 .settings-section {
   margin-bottom: 25px;
   width: 100%;
@@ -671,7 +687,7 @@
     padding: 12px 24px;
     border-radius: 6px;
     border: 2px solid;
-    background: white;
+    background: white !important;
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
@@ -690,31 +706,31 @@
   }
 
   .export-btn {
-    border-color: #4CAF50;
-    color: #4CAF50;
+    border-color: #4CAF50 !important;
+    color: #4CAF50 !important;
 
     &:hover {
-      background: #E8F5E9;
-      border-color: #45a049;
+      background: #E8F5E9 !important;
+      border-color: #45a049 !important;
     }
   }
 
   .import-btn {
-    border-color: #2196F3;
-    color: #2196F3;
+    border-color: #2196F3 !important;
+    color: #2196F3 !important;
 
     &:hover {
-      background: #E3F2FD;
-      border-color: #1976D2;
+      background: #E3F2FD !important;
+      border-color: #1976D2 !important;
     }
 
     &.feedly-import {
-      border-color: #FF6B35;
-      color: #FF6B35;
+      border-color: #FF6B35 !important;
+      color: #FF6B35 !important;
 
       &:hover {
-        background: #FFF3E0;
-        border-color: #F4511E;
+        background: #FFF3E0 !important;
+        border-color: #F4511E !important;
       }
     }
   }
@@ -863,84 +879,12 @@
 .setting-description {
   font-size: 12px;
   color: #666;
-  margin: 0;
-  padding-left: 28px;
-}
-
-.data-management {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-
-  .export-btn,
-  .import-btn {
-    padding: 12px 20px;
-    border-radius: 6px;
-    border: 2px solid #ddd;
-    background: white;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
-    transition: all 0.3s;
-    display: inline-block;
-    text-align: center;
-
-    &:hover {
-      border-color: #667eea;
-      background: #f5f7ff;
-      transform: translateY(-2px);
-    }
-
-    &:active {
-      transform: translateY(0);
-    }
-  }
-
-  .export-btn {
-    border-color: #4CAF50;
-    color: #4CAF50;
-
-    &:hover {
-      background: #E8F5E9;
-      border-color: #45a049;
-    }
-  }
-
-  .import-btn {
-    border-color: #2196F3;
-    color: #2196F3;
-
-    &:hover {
-      background: #E3F2FD;
-      border-color: #1976D2;
-    }
-
-    &.feedly-import {
-      border-color: #FF6B35;
-      color: #FF6B35;
-
-      &:hover {
-        background: #FFF3E0;
-        border-color: #F4511E;
-      }
-    }
-  }
-
-  .data-info {
-    font-size: 12px;
-    color: #666;
-    line-height: 1.5;
-    margin: 0;
-    padding: 10px;
-    background: #f9f9f9;
-    border-radius: 4px;
-    border-left: 3px solid #ff9800;
-
-    strong {
-      color: #d32f2f;
-    }
-  }
+  margin: 8px 0;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-left: 3px solid #667eea;
+  border-radius: 4px;
+  line-height: 1.5;
 }
 
 .modal-footer {

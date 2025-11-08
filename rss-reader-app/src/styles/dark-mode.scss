@@ -516,6 +516,8 @@ body.dark-mode {
   
   .setting-description {
     color: var(--text-secondary) !important;
+    background: rgba(102, 126, 234, 0.1) !important;
+    border-left-color: #667eea !important;
   }
   
   // Data management buttons
@@ -523,12 +525,35 @@ body.dark-mode {
     .export-btn,
     .import-btn {
       background-color: var(--bg-elevated) !important;
-      border-color: var(--border-color) !important;
-      color: var(--text-primary) !important;
+    }
+    
+    .export-btn {
+      border-color: #4CAF50 !important;
+      color: #4CAF50 !important;
       
       &:hover {
-        background-color: rgba(100, 181, 246, 0.15) !important;
-        border-color: var(--accent-blue) !important;
+        background-color: rgba(76, 175, 80, 0.15) !important;
+        border-color: #45a049 !important;
+      }
+    }
+    
+    .import-btn {
+      border-color: #2196F3 !important;
+      color: #2196F3 !important;
+      
+      &:hover {
+        background-color: rgba(33, 150, 243, 0.15) !important;
+        border-color: #1976D2 !important;
+      }
+      
+      &.feedly-import {
+        border-color: #FF6B35 !important;
+        color: #FF6B35 !important;
+        
+        &:hover {
+          background-color: rgba(255, 107, 53, 0.15) !important;
+          border-color: #F4511E !important;
+        }
       }
     }
     
@@ -1049,26 +1074,47 @@ body.dark-mode {
       .export-btn,
       .import-btn {
         background-color: var(--bg-elevated) !important;
-        
-        &:hover {
-          background-color: var(--bg-tertiary) !important;
-        }
       }
       
       .export-btn {
         border-color: #4CAF50 !important;
         color: #4CAF50 !important;
+        
+        &:hover {
+          background-color: rgba(76, 175, 80, 0.15) !important;
+          border-color: #45a049 !important;
+        }
       }
       
       .import-btn {
         border-color: #2196F3 !important;
         color: #2196F3 !important;
         
+        &:hover {
+          background-color: rgba(33, 150, 243, 0.15) !important;
+          border-color: #1976D2 !important;
+        }
+        
         &.feedly-import {
           border-color: #FF6B35 !important;
           color: #FF6B35 !important;
+          
+          &:hover {
+            background-color: rgba(255, 107, 53, 0.15) !important;
+            border-color: #F4511E !important;
+          }
         }
       }
+    }
+    
+    .data-backup-section {
+      background: var(--bg-secondary) !important;
+      border-color: var(--border-color) !important;
+    }
+    
+    .feedly-section {
+      background: var(--bg-secondary) !important;
+      border-color: var(--border-color) !important;
     }
     
     .toggle-label {
