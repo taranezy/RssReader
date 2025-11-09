@@ -71,15 +71,32 @@ export class AuthService {
     localStorage.setItem('streamlet_id_token', idToken);
     localStorage.setItem('streamlet_authenticated', 'true');
 
-    // Update current user (will be verified with backend on next checkAuthStatus)
-    this.currentUserSubject.next({
-      id: 0,
-      email: email,
-      username: email.split('@')[0]
-    });
-
-    // Verify auth status with backend
-    this.checkAuthStatus().subscribe();
+    // Send token to backend to establish session
+    this.http.post(`${this.apiUrl}/auth/native-app`, 
+      { email, idToken }, 
+      { withCredentials: true }
+    ).pipe(
+      tap((response: any) => {
+        console.log('[AuthService] Native app session established:', response);
+        
+        // Update current user with data from backend
+        if (response.user) {
+          this.currentUserSubject.next(response.user);
+        }
+      }),
+      catchError((error) => {
+        console.error('[AuthService] Failed to establish session:', error);
+        
+        // Fallback: set user locally even if backend call fails
+        this.currentUserSubject.next({
+          id: 0,
+          email: email,
+          username: email.split('@')[0]
+        });
+        
+        return of(null);
+      })
+    ).subscribe();
   }
 
   /**

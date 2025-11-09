@@ -63,6 +63,11 @@ export class App implements OnInit, OnDestroy {
   }
 
   checkScreenSize(): void {
+    // Only check screen size in browser environment
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
     const wasMobile = this.isMobileScreen;
     this.isMobileScreen = window.innerWidth <= 768;
     

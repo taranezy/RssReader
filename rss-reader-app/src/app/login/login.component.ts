@@ -238,7 +238,10 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     // Check if user is coming from Android native app with token
-    this.checkNativeAppAuth();
+    // Only run in browser, not during SSR
+    if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      this.checkNativeAppAuth();
+    }
   }
 
   /**

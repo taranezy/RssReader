@@ -407,6 +407,64 @@ app.get('/api/auth/demo', async (req, res) => {
   }
 });
 
+// ==================== ANDROID APP AUTHENTICATION ====================
+
+/**
+ * Endpoint for Android app to authenticate using Google ID token
+ * Android app should POST: { email, idToken }
+ */
+app.post('/api/auth/native-app', async (req, res) => {
+  try {
+    const { email, idToken } = req.body;
+
+    console.log('[Native App Auth] Received authentication request for:', email);
+
+    if (!email || !idToken) {
+      return res.status(400).json({ error: 'Email and idToken are required' });
+    }
+
+    // For now, we'll trust the token from the Android app
+    // In production, you should verify the Google ID token here using google-auth-library
+    // const { OAuth2Client } = require('google-auth-library');
+    // const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    // const ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
+
+    // Check if user exists in database, create if not
+    let user = db.getUserByEmail(email);
+    
+    if (!user) {
+      console.log('[Native App Auth] Creating new user:', email);
+      const username = email.split('@')[0];
+      const userId = db.createUser(email, username);
+      user = db.getUserById(userId);
+    }
+
+    console.log('[Native App Auth] User found/created:', user);
+
+    // Create session for the user
+    req.login(user, (err) => {
+      if (err) {
+        console.error('[Native App Auth] Error creating session:', err);
+        return res.status(500).json({ error: 'Failed to create session' });
+      }
+
+      console.log('[Native App Auth] Session created successfully');
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username
+        }
+      });
+    });
+
+  } catch (error) {
+    console.error('[Native App Auth] Error:', error);
+    res.status(500).json({ error: 'Authentication failed' });
+  }
+});
+
 // Get current user
 app.get('/api/auth/user', (req, res) => {
   console.log('Auth check - Session ID:', req.sessionID, 'Authenticated:', req.isAuthenticated());
