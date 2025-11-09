@@ -408,18 +408,10 @@ export class RssFeedService {
 
   // Filtered Items
   getFilteredItems(): Observable<RssItem[]> {
-    return combineLatest([this.items$, this.preferences$, this.isRefreshing$]).pipe(
-      tap(([items, prefs, refreshing]) => console.log('[DEBUG] combineLatest triggered, refreshing:', refreshing, 'items:', items.length)),
-      // BLOCK ALL EMISSIONS during refresh
-      filter(([items, prefs, refreshing]) => {
-        if (refreshing) {
-          console.log('[DEBUG] BLOCKING EMISSION - refresh in progress');
-          return false; // Don't emit at all
-        }
-        return true; // Allow emission
-      }),
-      // Now process normally (only when not refreshing)
-      map(([items, prefs, refreshing]) => {
+    return combineLatest([this.items$, this.preferences$]).pipe(
+      tap(([items, prefs]) => console.log('[DEBUG] combineLatest triggered, items:', items.length)),
+      // Process normally - no blocking during refresh
+      map(([items, prefs]) => {
         console.log('[DEBUG] Processing items, length:', items.length);
         let filtered = items;
 
