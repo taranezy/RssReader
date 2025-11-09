@@ -32,6 +32,33 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <script>
+    // Enable Angular DevTools detection
+    window['ngDevMode'] = true;
+    
+    // Android WebView Interface Helper
+    window.notifyAngularAuthReady = function() {
+      console.log('[Android Bridge] Auth ready notification received');
+      var event = new CustomEvent('androidAuthReady');
+      window.dispatchEvent(event);
+    };
+    
+    // Debug helper to check localStorage from Android
+    window.checkAndroidAuth = function() {
+      console.log('[Android Bridge] Current localStorage:', {
+        streamlet_skip_login: localStorage.getItem('streamlet_skip_login'),
+        streamlet_id_token: localStorage.getItem('streamlet_id_token') ? 'present' : 'missing',
+        streamlet_email: localStorage.getItem('streamlet_email'),
+        streamlet_native_app: localStorage.getItem('streamlet_native_app')
+      });
+      return {
+        skipLogin: localStorage.getItem('streamlet_skip_login'),
+        hasToken: !!localStorage.getItem('streamlet_id_token'),
+        email: localStorage.getItem('streamlet_email'),
+        isNativeApp: localStorage.getItem('streamlet_native_app')
+      };
+    };
+  </script>
 </head>
 <body>
   <app-root></app-root>

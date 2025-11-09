@@ -230,6 +230,7 @@ import { AuthService } from '../services/auth.service';
 })
 export class LoginComponent implements OnInit {
   isNativeAppAuth = false;
+  private authCheckInProgress = false;
 
   constructor(
     private authService: AuthService,
@@ -240,7 +241,36 @@ export class LoginComponent implements OnInit {
     // Check if user is coming from Android native app with token
     // Only run in browser, not during SSR
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+      // Immediate check
       this.checkNativeAppAuth();
+      
+      // Delayed check for Android WebView which might inject values after page load
+      setTimeout(() => {
+        this.checkNativeAppAuth();
+      }, 100);
+      
+      // Another check after a bit more delay
+      setTimeout(() => {
+        this.checkNativeAppAuth();
+      }, 500);
+      
+      // Listen for storage events from Android WebView
+      window.addEventListener('storage', () => {
+        console.log('[LoginComponent] Storage event detected, rechecking auth...');
+        this.checkNativeAppAuth();
+      });
+      
+      // Listen for custom event from Android app
+      window.addEventListener('androidAuthReady', () => {
+        console.log('[LoginComponent] Android auth ready event received');
+        this.checkNativeAppAuth();
+      });
+      
+      // Listen for the actual event name that Android app sends
+      window.addEventListener('streamletNativeLogin', (event: any) => {
+        console.log('[LoginComponent] Streamlet native login event received:', event.detail);
+        this.checkNativeAppAuth();
+      });
     }
   }
 
@@ -249,6 +279,11 @@ export class LoginComponent implements OnInit {
    * Android app injects token into localStorage if user logged in via native Google Sign-In
    */
   private checkNativeAppAuth(): void {
+    // Prevent duplicate processing
+    if (this.authCheckInProgress || this.isNativeAppAuth) {
+      return;
+    }
+    
     // Check all signals that indicate native app authentication
     const skipLogin = localStorage.getItem('streamlet_skip_login') === 'true';
     const idToken = localStorage.getItem('streamlet_id_token');
@@ -260,26 +295,48 @@ export class LoginComponent implements OnInit {
       hasToken: !!idToken,
       hasEmail: !!email,
       isNativeApp,
-      allPresent: skipLogin && idToken && email
+      allPresent: skipLogin && idToken && email && isNativeApp,
+      localStorage: {
+        streamlet_skip_login: localStorage.getItem('streamlet_skip_login'),
+        streamlet_id_token: idToken ? idToken.substring(0, 20) + '...' : null,
+        streamlet_email: email,
+        streamlet_native_app: localStorage.getItem('streamlet_native_app')
+      }
     });
 
     // If all required data is present, user is authenticated via native app
     if (skipLogin && idToken && email && isNativeApp) {
-      console.log('[LoginComponent]  Native app authentication detected!');
+      console.log('[LoginComponent] ✓ Native app authentication detected!');
       console.log('[LoginComponent] User:', email);
       
+      this.authCheckInProgress = true;
       this.isNativeAppAuth = true;
 
-      // Set auth state in service
-      this.authService.setNativeAppAuthenticated(email, idToken);
-
-      // Navigate to main page after brief delay for visual feedback
-      setTimeout(() => {
-        console.log('[LoginComponent] Navigating to /list...');
-        this.router.navigate(['/list']);
-      }, 800);
+      // Set auth state in service and wait for session to be established
+      this.authService.setNativeAppAuthenticated(email, idToken).subscribe({
+        next: (response) => {
+          console.log('[LoginComponent] Session established, navigating to /list...');
+          // Navigate after session is confirmed
+          setTimeout(() => {
+            this.router.navigate(['/list']);
+          }, 500);
+        },
+        error: (error) => {
+          console.error('[LoginComponent] Session establishment failed:', error);
+          // Still navigate even if it fails (fallback behavior)
+          setTimeout(() => {
+            this.router.navigate(['/list']);
+          }, 500);
+        }
+      });
     } else {
-      console.log('[LoginComponent] No native app auth detected, showing login form');
+      console.log('[LoginComponent] ✗ No native app auth detected, showing login form');
+      console.log('[LoginComponent] Missing:', {
+        skipLogin: !skipLogin,
+        idToken: !idToken,
+        email: !email,
+        isNativeApp: !isNativeApp
+      });
     }
   }
 

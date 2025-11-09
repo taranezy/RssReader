@@ -29,6 +29,7 @@ class LoginActivity : AppCompatActivity() {
 
         // Configure Google Sign-In
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id)) // Request ID token for backend authentication
             .requestEmail()
             .requestProfile()
             .build()
@@ -79,8 +80,14 @@ class LoginActivity : AppCompatActivity() {
     private fun startMainActivity(account: GoogleSignInAccount) {
         val intent = Intent(this, MainActivity::class.java)
         intent.putExtra("email", account.email)
-        intent.putExtra("idToken", account.idToken)
+        intent.putExtra("idToken", account.idToken ?: "no-token-available")
         intent.putExtra("displayName", account.displayName)
+        
+        Log.d("LoginActivity", "Starting MainActivity with:")
+        Log.d("LoginActivity", "  Email: ${account.email}")
+        Log.d("LoginActivity", "  Has ID Token: ${account.idToken != null}")
+        Log.d("LoginActivity", "  Display Name: ${account.displayName}")
+        
         startActivity(intent)
         finish()
     }

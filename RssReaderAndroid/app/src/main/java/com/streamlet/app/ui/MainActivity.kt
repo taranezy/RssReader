@@ -27,24 +27,28 @@ class MainActivity : AppCompatActivity() {
     private var userIdToken: String? = null
     
     companion object {
-        private const val WEB_APP_URL = "https://taranezy.ddns.net:8444"
+        // For Android Emulator/Physical Device debugging: Use your PC's local IP
+        // For Production: Use https://taranezy.ddns.net:8444
+        private const val WEB_APP_URL = "http://192.168.100.10:4200"  // Your PC's local IP
     }
     
     private fun enableFullscreen() {
-        // Hide system UI elements for immersive fullscreen experience
+        // Make status bar transparent and draw content behind it
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.parseColor("#5a4a82")
+        
+        // Enable edge-to-edge mode (content goes under system bars)
         @Suppress("DEPRECATION")
         window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
         )
     }
     
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
-            // Re-enable fullscreen when window gains focus
+            // Re-apply edge-to-edge when window gains focus
             enableFullscreen()
         }
     }
@@ -53,6 +57,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("MainActivity", "onCreate started")
+        Log.d("MainActivity", "Loading URL: $WEB_APP_URL")
+        
+        // Enable WebView debugging for Chrome DevTools
+        WebView.setWebContentsDebuggingEnabled(true)
         
         // Enable fullscreen immersive mode
         enableFullscreen()
@@ -60,9 +68,7 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
-        setSupportActionBar(binding.toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(true)
-        supportActionBar?.title = getString(R.string.app_name)
+        // Removed toolbar setup - using web app's header instead
         
         // Get auth data from LoginActivity
         userEmail = intent.getStringExtra("email")
@@ -76,7 +82,7 @@ class MainActivity : AppCompatActivity() {
         
         Log.d("MainActivity", "onCreate completed successfully")
     }
-    
+
     override fun onNewIntent(intent: android.content.Intent?) {
         super.onNewIntent(intent)
         // Handle OAuth callback if the activity is resumed
@@ -95,9 +101,17 @@ class MainActivity : AppCompatActivity() {
     
     private fun syncCookies() {
         try {
-            // Sync cookies between Chrome and WebView
-            CookieManager.getInstance().flush()
+            // Sync cookies between Chrome and WebView  
+            val cookieManager = CookieManager.getInstance()
+            cookieManager.setAcceptCookie(true)
+            cookieManager.setAcceptThirdPartyCookies(webView, true)
+            cookieManager.flush()
             Log.d("MainActivity", "Cookies synced")
+            
+            // Log current cookies for debugging
+            val url = WEB_APP_URL
+            val cookies = cookieManager.getCookie(url)
+            Log.d("MainActivity", "Cookies for $url: $cookies")
         } catch (e: Exception) {
             Log.e("MainActivity", "Failed to sync cookies", e)
         }
@@ -139,6 +153,24 @@ class MainActivity : AppCompatActivity() {
                 super.onPageStarted(view, url, favicon)
                 Log.d("MainActivity", "Page started: $url")
                 
+                // Inject backend URL to bypass proxy
+                val backendUrl = "http://192.168.100.10:3000"
+                val jsBackendConfig = """
+                    (function() {
+                        try {
+                            window.BACKEND_API_URL = '$backendUrl';
+                            localStorage.setItem('backend_api_url', '$backendUrl');
+                            console.log('[Streamlet] Backend URL configured: $backendUrl');
+                        } catch(e) {
+                            console.error('[Streamlet] Failed to set backend URL: ' + e);
+                        }
+                    })();
+                """.trimIndent()
+                
+                view?.evaluateJavascript(jsBackendConfig) { result ->
+                    Log.d("MainActivity", "Backend URL injection result: $result")
+                }
+                
                 // Inject auth data into page BEFORE it fully loads
                 if (!userEmail.isNullOrEmpty() && !userIdToken.isNullOrEmpty()) {
                     Log.d("MainActivity", "Injecting auth data on page start for: $userEmail")
@@ -159,13 +191,23 @@ class MainActivity : AppCompatActivity() {
                         })();
                     """.trimIndent()
                     
-                    view?.evaluateJavascript(jsCode) {}
+                    view?.evaluateJavascript(jsCode) { result ->
+                        Log.d("MainActivity", "Auth injection result: $result")
+                    }
                 }
             }
             
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 Log.d("MainActivity", "Page loaded: $url")
+                
+                // Force save cookies after page load
+                try {
+                    CookieManager.getInstance().flush()
+                    Log.d("MainActivity", "Cookies flushed after page load")
+                } catch (e: Exception) {
+                    Log.e("MainActivity", "Failed to flush cookies", e)
+                }
                 
                 // Double-check auth data is set after page fully loads
                 if (!userEmail.isNullOrEmpty() && !userIdToken.isNullOrEmpty()) {
@@ -194,6 +236,26 @@ class MainActivity : AppCompatActivity() {
                     
                     view?.evaluateJavascript(jsCode) {}
                 }
+            }
+            
+            override fun onReceivedError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                error: android.webkit.WebResourceError?
+            ) {
+                super.onReceivedError(view, request, error)
+                Log.e("MainActivity", "WebView error: ${error?.description} (${error?.errorCode})")
+                Log.e("MainActivity", "Failed URL: ${request?.url}")
+            }
+            
+            override fun onReceivedHttpError(
+                view: WebView?,
+                request: WebResourceRequest?,
+                errorResponse: android.webkit.WebResourceResponse?
+            ) {
+                super.onReceivedHttpError(view, request, errorResponse)
+                Log.e("MainActivity", "HTTP error: ${errorResponse?.statusCode} - ${errorResponse?.reasonPhrase}")
+                Log.e("MainActivity", "Failed URL: ${request?.url}")
             }
         }
         

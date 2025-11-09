@@ -62,8 +62,9 @@ export class AuthService {
    * Called when user logs in via native Google Sign-In and token is injected
    * @param email User email address from native app
    * @param idToken Google ID token from native app
+   * @returns Observable that completes when session is established
    */
-  setNativeAppAuthenticated(email: string, idToken: string): void {
+  setNativeAppAuthenticated(email: string, idToken: string): Observable<any> {
     console.log('[AuthService] Setting native app authentication:', email);
     
     // Store credentials from native app
@@ -72,7 +73,7 @@ export class AuthService {
     localStorage.setItem('streamlet_authenticated', 'true');
 
     // Send token to backend to establish session
-    this.http.post(`${this.apiUrl}/auth/native-app`, 
+    return this.http.post(`${this.apiUrl}/auth/native-app`, 
       { email, idToken }, 
       { withCredentials: true }
     ).pipe(
@@ -96,7 +97,7 @@ export class AuthService {
         
         return of(null);
       })
-    ).subscribe();
+    );
   }
 
   /**

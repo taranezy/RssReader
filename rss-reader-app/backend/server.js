@@ -29,7 +29,13 @@ const db = new DatabaseService();
 const isProduction = process.env.NODE_ENV === 'production';
 
 app.use(cors({
-  origin: isProduction ? false : 'http://localhost:4200',
+  origin: isProduction ? false : [
+    'http://localhost:4200',
+    'http://192.168.100.10:4200',
+    'http://127.0.0.1:4200',
+    'http://192.168.100.10:3000',  // Allow direct backend calls from WebView
+    'http://localhost:3000'         // Local backend
+  ],
   credentials: true
 }));
 // Increase body parser limit to handle feed items with images
@@ -44,9 +50,10 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     secure: false, // Set to true in production with HTTPS
-    httpOnly: true,
+    httpOnly: false, // Allow JavaScript access for native app debugging  
     sameSite: 'lax', // Allow cookie to be sent on OAuth redirects
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    domain: undefined // Don't restrict domain for local development
   }
 }));
 
@@ -430,13 +437,13 @@ app.post('/api/auth/native-app', async (req, res) => {
     // const ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
 
     // Check if user exists in database, create if not
-    let user = db.getUserByEmail(email);
+    let user = db.findUserByEmail(email);
     
     if (!user) {
       console.log('[Native App Auth] Creating new user:', email);
       const username = email.split('@')[0];
       const userId = db.createUser(email, username);
-      user = db.getUserById(userId);
+      user = db.findUserById(userId);
     }
 
     console.log('[Native App Auth] User found/created:', user);
@@ -449,13 +456,23 @@ app.post('/api/auth/native-app', async (req, res) => {
       }
 
       console.log('[Native App Auth] Session created successfully');
-      res.json({
-        success: true,
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username
+      console.log('[Native App Auth] Session ID:', req.sessionID);
+      console.log('[Native App Auth] User authenticated:', req.isAuthenticated());
+      
+      // Force session save
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('[Native App Auth] Error saving session:', saveErr);
         }
+        
+        res.json({
+          success: true,
+          user: {
+            id: user.id,
+            email: user.email,
+            username: user.username
+          }
+        });
       });
     });
 
