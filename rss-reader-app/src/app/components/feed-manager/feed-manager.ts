@@ -45,6 +45,9 @@ export class FeedManagerComponent implements OnInit {
 
   // Header color for sidebar
   headerColor = 'purple';
+  
+  // Refresh progress
+  refreshProgress = { total: 0, completed: 0, currentFeed: '' };
 
   constructor(
     private feedService: RssFeedService,
@@ -70,6 +73,11 @@ export class FeedManagerComponent implements OnInit {
 
     this.feedService.preferences$.subscribe(prefs => {
       this.selectedFeedIds = prefs.selectedFeeds;
+    });
+    
+    // Subscribe to refresh progress
+    this.feedService.refreshProgress$.subscribe(progress => {
+      this.refreshProgress = progress;
     });
 
     // Set initial filter based on selected view
@@ -146,21 +154,32 @@ export class FeedManagerComponent implements OnInit {
   }
 
   refreshAllFeeds(): void {
+    // Prevent multiple simultaneous refreshes
+    if (this.isRefreshing) {
+      console.log('Refresh already in progress, please wait...');
+      return;
+    }
+    
     this.isRefreshing = true;
+    
+    // Start refresh in background - don't wait for completion
     this.feedService.refreshAllFeeds().subscribe({
       next: (count) => {
         this.isRefreshing = false;
+        console.log(`Refresh completed: ${count} new items`);
+        // Optional: show non-blocking notification instead of alert
         if (count > 0) {
-          alert(`${count} new item(s) fetched from all feeds!`);
-        } else {
-          alert('No new items found.');
+          console.log(`✓ ${count} new item(s) loaded`);
         }
       },
-      error: () => {
+      error: (err) => {
         this.isRefreshing = false;
-        alert('Error refreshing feeds.');
+        console.error('Error refreshing feeds:', err);
       }
     });
+    
+    // Immediately close menu and allow user to continue reading
+    this.closeMenu();
   }
 
   updateFeedColor(feedId: string, color: string): void {

@@ -69,10 +69,24 @@
       <button
         (click)="refreshAllFeeds()"
         [disabled]="isRefreshing"
+        [class.spinning]="isRefreshing"
         class="refresh-btn"
-        title="Refresh all feeds">
+        title="Refresh all feeds (background process)">
         {{ isRefreshing ? '⟳' : '↻' }}
       </button>
+    </div>
+    
+    <!-- Refresh Progress Indicator -->
+    <div class="refresh-progress" *ngIf="refreshProgress.total > 0">
+      <div class="progress-bar">
+        <div class="progress-fill" 
+             [style.width.%]="(refreshProgress.completed / refreshProgress.total) * 100">
+        </div>
+      </div>
+      <div class="progress-text">
+        <span>{{ refreshProgress.completed }}/{{ refreshProgress.total }}</span>
+        <span *ngIf="refreshProgress.currentFeed" class="current-feed">{{ refreshProgress.currentFeed }}</span>
+      </div>
     </div>
 
     <!-- Uncategorized Feeds -->

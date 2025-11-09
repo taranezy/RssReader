@@ -223,11 +223,60 @@
         color: #2c3e50;
       }
 
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
+      &.spinning {
         animation: spin 1s linear infinite;
+        color: #3498db;
       }
+      
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+    }
+  }
+  
+  .refresh-progress {
+    padding: 8px 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    
+    .progress-bar {
+      height: 4px;
+      background: #e0e0e0;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 4px;
+      
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3498db, #2ecc71);
+        transition: width 0.3s ease;
+      }
+    }
+    
+    .progress-text {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: #7f8c8d;
+      
+      .current-feed {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        font-style: italic;
+      }
+    }
+  }
+  
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
     }
   }
   

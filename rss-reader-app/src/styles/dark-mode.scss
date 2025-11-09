@@ -215,6 +215,11 @@ body.dark-mode {
           background-color: var(--bg-tertiary) !important;
           color: var(--text-primary) !important;
         }
+        
+        &:disabled {
+          cursor: not-allowed !important;
+          opacity: 0.7 !important;
+        }
       }
       
       &.clickable {
@@ -230,6 +235,28 @@ body.dark-mode {
         
         &:active {
           background-color: var(--bg-elevated) !important;
+        }
+      }
+    }
+    
+    // Refresh progress indicator
+    .refresh-progress {
+      background-color: var(--bg-elevated) !important;
+      border-bottom-color: var(--border-color) !important;
+      
+      .progress-bar {
+        background-color: var(--bg-tertiary) !important;
+        
+        .progress-fill {
+          background: linear-gradient(90deg, var(--accent-blue), var(--accent-green)) !important;
+        }
+      }
+      
+      .progress-text {
+        color: var(--text-secondary) !important;
+        
+        .current-feed {
+          color: var(--text-tertiary) !important;
         }
       }
     }

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest, forkJoin, map, of, switchMap, tap, catchError, interval } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, forkJoin, map, of, switchMap, tap, catchError, interval, from, concatMap, toArray } from 'rxjs';
 import { RssFeed, RssItem, FeedViewPreference } from '../models/rss-feed.model';
 import { ApiStorageService } from './api-storage.service';
 import { RssParserService } from './rss-parser.service';
@@ -18,10 +18,18 @@ export class RssFeedService {
     showOnlyUnread: false,
     openInNewTab: true // Default to current behavior (open in new tab)
   });
+  
+  // Track refresh progress
+  private refreshProgressSubject = new BehaviorSubject<{total: number, completed: number, currentFeed: string}>({
+    total: 0,
+    completed: 0,
+    currentFeed: ''
+  });
 
   public feeds$ = this.feedsSubject.asObservable();
   public items$ = this.itemsSubject.asObservable();
   public preferences$ = this.preferencesSubject.asObservable();
+  public refreshProgress$ = this.refreshProgressSubject.asObservable();
 
   private readonly defaultColors = [
     '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
@@ -43,15 +51,16 @@ export class RssFeedService {
 
   // Auto-refresh all feeds every 60 seconds
   private startAutoRefresh(): void {
-    interval(60000).subscribe(() => {
-      this.refreshAllFeeds().subscribe(
-        () => {
-          console.log('Auto-refresh completed');
+    interval(600000).subscribe(() => {
+      console.log('Starting auto-refresh in background...');
+      this.refreshAllFeeds().subscribe({
+        next: (count) => {
+          console.log(`Auto-refresh completed: ${count} new items`);
         },
-        error => {
+        error: (error) => {
           console.error('Error during auto-refresh:', error);
         }
-      );
+      });
     });
   }
 
@@ -193,14 +202,58 @@ export class RssFeedService {
   refreshAllFeeds(): Observable<number> {
     const activeFeeds = this.feedsSubject.value.filter(f => f.isActive);
     if (activeFeeds.length === 0) {
+      this.refreshProgressSubject.next({ total: 0, completed: 0, currentFeed: '' });
       return of(0);
     }
 
-    const refreshObservables = activeFeeds.map(feed => this.refreshFeed(feed.id));
+    // Initialize progress tracking
+    this.refreshProgressSubject.next({ total: activeFeeds.length, completed: 0, currentFeed: '' });
     
-    return forkJoin(refreshObservables).pipe(
-      map(results => results.reduce((sum, count) => sum + count, 0)),
-      switchMap(totalNewItems => {
+    // Use concatMap to refresh feeds sequentially instead of all at once
+    // This prevents overwhelming the server and allows UI to remain responsive
+    let totalNewItems = 0;
+    let completed = 0;
+    
+    return from(activeFeeds).pipe(
+      concatMap((feed: RssFeed) => {
+        // Update progress with current feed
+        this.refreshProgressSubject.next({ 
+          total: activeFeeds.length, 
+          completed: completed, 
+          currentFeed: feed.title 
+        });
+        
+        return this.refreshFeed(feed.id).pipe(
+          tap(count => {
+            totalNewItems += count;
+            completed++;
+            
+            // Update progress
+            this.refreshProgressSubject.next({ 
+              total: activeFeeds.length, 
+              completed: completed, 
+              currentFeed: completed < activeFeeds.length ? '' : 'Complete' 
+            });
+            
+            // Reload items after each feed completes so user sees progress
+            if (count > 0) {
+              this.loadItems();
+            }
+          }),
+          catchError(error => {
+            console.error(`Error refreshing feed ${feed.title}:`, error);
+            completed++;
+            this.refreshProgressSubject.next({ 
+              total: activeFeeds.length, 
+              completed: completed, 
+              currentFeed: '' 
+            });
+            return of(0); // Continue with other feeds even if one fails
+          })
+        );
+      }),
+      toArray(), // Wait for all to complete
+      switchMap(() => {
         // After refreshing all feeds, cleanup old items (older than 30 days)
         return this.apiStorage.cleanupOldItems().pipe(
           map(deletedCount => {
@@ -208,10 +261,14 @@ export class RssFeedService {
               console.log(`Cleaned up ${deletedCount} old items`);
               this.loadItems(); // Reload items after cleanup
             }
+            
+            // Reset progress
+            this.refreshProgressSubject.next({ total: 0, completed: 0, currentFeed: '' });
             return totalNewItems;
           }),
           catchError(error => {
             console.error('Error cleaning up old items:', error);
+            this.refreshProgressSubject.next({ total: 0, completed: 0, currentFeed: '' });
             return of(totalNewItems); // Continue even if cleanup fails
           })
         );
