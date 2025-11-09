@@ -23,6 +23,8 @@ class MainActivity : AppCompatActivity() {
     
     private lateinit var binding: ActivityMainBinding
     private lateinit var webView: WebView
+    private var userEmail: String? = null
+    private var userIdToken: String? = null
     
     companion object {
         private const val WEB_APP_URL = "https://taranezy.ddns.net:8444"
@@ -63,14 +65,14 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.title = getString(R.string.app_name)
         
         // Get auth data from LoginActivity
-        val email = intent.getStringExtra("email")
-        val idToken = intent.getStringExtra("idToken")
+        userEmail = intent.getStringExtra("email")
+        userIdToken = intent.getStringExtra("idToken")
         val displayName = intent.getStringExtra("displayName")
         
-        Log.d("MainActivity", "User: $displayName ($email)")
+        Log.d("MainActivity", "User: $displayName ($userEmail)")
         
         setupWebView()
-        loadWebApp(email, idToken)
+        loadWebApp(userEmail, userIdToken)
         
         Log.d("MainActivity", "onCreate completed successfully")
     }
@@ -133,9 +135,65 @@ class MainActivity : AppCompatActivity() {
                 return false
             }
             
+            override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                Log.d("MainActivity", "Page started: $url")
+                
+                // Inject auth data into page BEFORE it fully loads
+                if (!userEmail.isNullOrEmpty() && !userIdToken.isNullOrEmpty()) {
+                    Log.d("MainActivity", "Injecting auth data on page start for: $userEmail")
+                    val jsCode = """
+                        (function() {
+                            try {
+                                localStorage.setItem('streamlet_email', '$userEmail');
+                                localStorage.setItem('streamlet_id_token', '$userIdToken');
+                                localStorage.setItem('streamlet_authenticated', 'true');
+                                localStorage.setItem('streamlet_skip_login', 'true');
+                                localStorage.setItem('streamlet_native_app', 'true');
+                                console.log('[Streamlet] Auth credentials injected from native app');
+                                window.streamletAuthenticated = true;
+                                window.streamletEmail = '$userEmail';
+                            } catch(e) {
+                                console.error('[Streamlet] Failed to inject auth: ' + e);
+                            }
+                        })();
+                    """.trimIndent()
+                    
+                    view?.evaluateJavascript(jsCode) {}
+                }
+            }
+            
             override fun onPageFinished(view: WebView?, url: String?) {
                 super.onPageFinished(view, url)
                 Log.d("MainActivity", "Page loaded: $url")
+                
+                // Double-check auth data is set after page fully loads
+                if (!userEmail.isNullOrEmpty() && !userIdToken.isNullOrEmpty()) {
+                    Log.d("MainActivity", "Verifying auth data after page load")
+                    val jsCode = """
+                        (function() {
+                            try {
+                                // Verify data is set
+                                const token = localStorage.getItem('streamlet_id_token');
+                                const auth = localStorage.getItem('streamlet_authenticated');
+                                console.log('[Streamlet] Auth verified - authenticated: ' + auth + ', has token: ' + !!token);
+                                
+                                // Emit event for Angular app to detect native login
+                                const event = new CustomEvent('streamletNativeLogin', { 
+                                    detail: { 
+                                        authenticated: true, 
+                                        email: localStorage.getItem('streamlet_email')
+                                    }
+                                });
+                                window.dispatchEvent(event);
+                            } catch(e) {
+                                console.error('[Streamlet] Error verifying auth: ' + e);
+                            }
+                        })();
+                    """.trimIndent()
+                    
+                    view?.evaluateJavascript(jsCode) {}
+                }
             }
         }
         
@@ -155,19 +213,44 @@ class MainActivity : AppCompatActivity() {
         try {
             Log.d("MainActivity", "Loading web app: $WEB_APP_URL")
             
-            // Store auth data for website to access
+            // Store auth data for website to access BEFORE loading URL
             if (email != null && idToken != null) {
-                // Store in localStorage so website can access
+                Log.d("MainActivity", "Setting auth credentials for: $email")
+                
+                // JavaScript to set auth data in localStorage AND skip login
                 val jsCode = """
-                    localStorage.setItem('streamlet_email', '$email');
-                    localStorage.setItem('streamlet_id_token', '$idToken');
+                    try {
+                        // Store auth credentials
+                        localStorage.setItem('streamlet_email', '$email');
+                        localStorage.setItem('streamlet_id_token', '$idToken');
+                        localStorage.setItem('streamlet_authenticated', 'true');
+                        localStorage.setItem('streamlet_skip_login', 'true');
+                        
+                        // Mark as native app login
+                        localStorage.setItem('streamlet_native_app', 'true');
+                        
+                        console.log('Auth data set successfully');
+                    } catch(e) {
+                        console.error('Failed to set auth data: ' + e);
+                    }
                 """.trimIndent()
+                
+                // Execute JavaScript AFTER page loads to set credentials
                 webView.evaluateJavascript(jsCode) { result ->
-                    Log.d("MainActivity", "Auth data stored in localStorage: $result")
+                    Log.d("MainActivity", "Auth data injected: $result")
                 }
             }
             
-            webView.loadUrl(WEB_APP_URL)
+            // Load URL with skip_login parameter to bypass login page
+            val urlWithParams = if (email != null && idToken != null) {
+                "$WEB_APP_URL?skip_login=true&native_app=true"
+            } else {
+                WEB_APP_URL
+            }
+            
+            webView.loadUrl(urlWithParams)
+            
+            Log.d("MainActivity", "Loading URL: $urlWithParams")
         } catch (e: Exception) {
             Log.e("MainActivity", "Failed to load web app", e)
             Snackbar.make(binding.root, "Failed to load app", Snackbar.LENGTH_LONG).show()
