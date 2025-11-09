@@ -14,7 +14,6 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.appcompat.app.AppCompatActivity
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
 import com.streamlet.app.R
@@ -63,8 +62,15 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.setDisplayShowTitleEnabled(true)
         supportActionBar?.title = getString(R.string.app_name)
         
+        // Get auth data from LoginActivity
+        val email = intent.getStringExtra("email")
+        val idToken = intent.getStringExtra("idToken")
+        val displayName = intent.getStringExtra("displayName")
+        
+        Log.d("MainActivity", "User: $displayName ($email)")
+        
         setupWebView()
-        loadWebApp()
+        loadWebApp(email, idToken)
         
         Log.d("MainActivity", "onCreate completed successfully")
     }
@@ -123,18 +129,8 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 if (request == null) return false
-                
-                val url = request.url.toString()
-                Log.d("MainActivity", "URL loading: $url")
-                
-                // Intercept Google OAuth URLs
-                if (isGoogleOAuthUrl(url)) {
-                    Log.d("MainActivity", "OAuth URL detected, opening Chrome Custom Tab")
-                    openChromeCustomTab(url)
-                    return true // Don't load in WebView
-                }
-                
-                return false // Load normally in WebView
+                // Allow all URLs to load normally in WebView (no OAuth interception needed)
+                return false
             }
             
             override fun onPageFinished(view: WebView?, url: String?) {
@@ -155,41 +151,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
     
-    private fun loadWebApp() {
+    private fun loadWebApp(email: String?, idToken: String?) {
         try {
             Log.d("MainActivity", "Loading web app: $WEB_APP_URL")
+            
+            // Store auth data for website to access
+            if (email != null && idToken != null) {
+                // Store in localStorage so website can access
+                val jsCode = """
+                    localStorage.setItem('streamlet_email', '$email');
+                    localStorage.setItem('streamlet_id_token', '$idToken');
+                """.trimIndent()
+                webView.evaluateJavascript(jsCode) { result ->
+                    Log.d("MainActivity", "Auth data stored in localStorage: $result")
+                }
+            }
+            
             webView.loadUrl(WEB_APP_URL)
         } catch (e: Exception) {
             Log.e("MainActivity", "Failed to load web app", e)
             Snackbar.make(binding.root, "Failed to load app", Snackbar.LENGTH_LONG).show()
-        }
-    }
-    
-    private fun isGoogleOAuthUrl(url: String): Boolean {
-        return url.contains("accounts.google.com/o/oauth2") ||
-               url.contains("accounts.google.com/signin") ||
-               url.contains("accounts.google.com/ServiceLogin") ||
-               url.contains("accounts.google.com/gsi")
-    }
-    
-    private fun openChromeCustomTab(url: String) {
-        try {
-            @Suppress("DEPRECATION")
-            val builder = CustomTabsIntent.Builder()
-            builder.setToolbarColor(ContextCompat.getColor(this, R.color.primary_purple))
-            builder.setShowTitle(true)
-            
-            val customTabsIntent = builder.build()
-            customTabsIntent.launchUrl(this, Uri.parse(url))
-            
-            Log.d("MainActivity", "Chrome Custom Tab launched successfully")
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Failed to open Chrome Custom Tab", e)
-            Snackbar.make(
-                binding.root,
-                "Failed to open login page. Please ensure Chrome is installed.",
-                Snackbar.LENGTH_LONG
-            ).show()
         }
     }
     
@@ -214,15 +195,22 @@ class MainActivity : AppCompatActivity() {
     
     private fun logout() {
         try {
-            // Clear WebView data - this will log out of the web app
+            // Clear WebView data
             webView.clearCache(true)
             webView.clearHistory()
             CookieManager.getInstance().removeAllCookies(null)
             CookieManager.getInstance().flush()
             
-            // Reload to show login page
-            webView.loadUrl(WEB_APP_URL)
-            Log.d("MainActivity", "Logout successful")
+            // Clear localStorage
+            webView.evaluateJavascript("localStorage.clear()") {}
+            
+            Log.d("MainActivity", "Logout successful - returning to LoginActivity")
+            
+            // Return to LoginActivity
+            val intent = android.content.Intent(this, LoginActivity::class.java)
+            intent.flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            finish()
         } catch (e: Exception) {
             Log.e("MainActivity", "Logout error", e)
             Snackbar.make(binding.root, "Logout failed", Snackbar.LENGTH_SHORT).show()

@@ -103,7 +103,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = 'com.streamlet.app'
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId "com.streamlet.app"
