@@ -22,7 +22,7 @@
     </div>
 
     <div class="item-card" 
-         *ngFor="let item of items"
+         *ngFor="let item of items; trackBy: trackByItemId"
          [class.read]="item.isRead"
          [class.selected]="selectedArticleForPreview?.id === item.id"
          (click)="openArticle(item)">

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest, forkJoin, map, of, switchMap, tap, catchError, interval, from, concatMap, toArray } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, forkJoin, map, of, switchMap, tap, catchError, interval, from, concatMap, toArray, distinctUntilChanged, filter } from 'rxjs';
 import { RssFeed, RssItem, FeedViewPreference } from '../models/rss-feed.model';
 import { ApiStorageService } from './api-storage.service';
 import { RssParserService } from './rss-parser.service';
@@ -25,6 +25,11 @@ export class RssFeedService {
     completed: 0,
     currentFeed: ''
   });
+
+  // Flag to indicate refresh is in progress
+  private isRefreshing = false;
+  private refreshingSubject = new BehaviorSubject<boolean>(false);
+  public isRefreshing$ = this.refreshingSubject.asObservable();
 
   public feeds$ = this.feedsSubject.asObservable();
   public items$ = this.itemsSubject.asObservable();
@@ -178,7 +183,10 @@ export class RssFeedService {
               return this.apiStorage.updateFeed(feedId, { lastFetched: new Date() }).pipe(
                 tap(() => {
                   this.loadFeeds();
+                  // Emit items immediately for real-time updates
+                  // Preview lock in list-view will prevent interruption
                   this.loadItems();
+                  console.log('[DEBUG] refreshFeed: added', uniqueNewItems.length, 'items, emitting for real-time update');
                 }),
                 map(() => uniqueNewItems.length)
               );
@@ -206,8 +214,15 @@ export class RssFeedService {
       return of(0);
     }
 
+    // Set refreshing flag - this will pause item emissions
+    this.isRefreshing = true;
+    this.refreshingSubject.next(true);
+
     // Initialize progress tracking
     this.refreshProgressSubject.next({ total: activeFeeds.length, completed: 0, currentFeed: '' });
+    
+    // Collect all new items here WITHOUT emitting
+    const allNewItems: RssItem[] = [];
     
     // Use concatMap to refresh feeds sequentially instead of all at once
     // This prevents overwhelming the server and allows UI to remain responsive
@@ -258,27 +273,27 @@ export class RssFeedService {
       }),
       toArray(), // Wait for all to complete
       switchMap(() => {
-        // After refreshing all feeds, cleanup old items (older than 30 days)
+        // After refreshing all feeds, just cleanup old items
         return this.apiStorage.cleanupOldItems().pipe(
-          map(deletedCount => {
-            // Reload items only once at the end if there were changes
-            if (hasNewItems || deletedCount > 0) {
-              console.log(`Refresh complete: ${totalNewItems} new items, ${deletedCount} cleaned up`);
-              this.loadItems(); // Single reload at the end - no more blinking!
-            }
+          tap(deletedCount => {
+            console.log(`Refresh complete: ${totalNewItems} new items, ${deletedCount} cleaned up`);
+            
+            // Clear refreshing flag - items were already emitted per-feed
+            this.isRefreshing = false;
+            this.refreshingSubject.next(false);
             
             // Reset progress
             this.refreshProgressSubject.next({ total: 0, completed: 0, currentFeed: '' });
-            return totalNewItems;
           }),
+          map(() => totalNewItems),
           catchError(error => {
             console.error('Error cleaning up old items:', error);
-            // Still reload if we got new items
-            if (hasNewItems) {
-              this.loadItems();
-            }
+            // Clear refreshing flag
+            this.isRefreshing = false;
+            this.refreshingSubject.next(false);
+            // Reset progress
             this.refreshProgressSubject.next({ total: 0, completed: 0, currentFeed: '' });
-            return of(totalNewItems); // Continue even if cleanup fails
+            return of(totalNewItems);
           })
         );
       })
@@ -287,8 +302,21 @@ export class RssFeedService {
 
   // Item Management
   markAsRead(itemId: string): void {
+    console.log('[DEBUG] markAsRead called for:', itemId);
     this.apiStorage.updateItem(itemId, { isRead: true }).pipe(
-      tap(() => this.loadItems()),
+      tap(() => {
+        // Update the specific item in place to avoid creating new references
+        const currentItems = this.itemsSubject.value;
+        const item = currentItems.find(i => i.id === itemId);
+        if (item && !item.isRead) {
+          console.log('[DEBUG] markAsRead: updating item in-place, emitting SAME array');
+          item.isRead = true;
+          // Emit to trigger count updates in feed-manager, but trackBy prevents DOM recreation
+          this.itemsSubject.next(currentItems);
+        } else {
+          console.log('[DEBUG] markAsRead: item already read or not found, NOT emitting');
+        }
+      }),
       catchError(error => {
         console.error('Error marking item as read:', error);
         return of(null);
@@ -298,7 +326,15 @@ export class RssFeedService {
 
   markAsUnread(itemId: string): void {
     this.apiStorage.updateItem(itemId, { isRead: false }).pipe(
-      tap(() => this.loadItems()),
+      tap(() => {
+        // Update the specific item in place
+        const currentItems = this.itemsSubject.value;
+        const item = currentItems.find(i => i.id === itemId);
+        if (item && item.isRead) {
+          item.isRead = false;
+          this.itemsSubject.next(currentItems);
+        }
+      }),
       catchError(error => {
         console.error('Error marking item as unread:', error);
         return of(null);
@@ -372,8 +408,19 @@ export class RssFeedService {
 
   // Filtered Items
   getFilteredItems(): Observable<RssItem[]> {
-    return combineLatest([this.items$, this.preferences$]).pipe(
-      map(([items, prefs]) => {
+    return combineLatest([this.items$, this.preferences$, this.isRefreshing$]).pipe(
+      tap(([items, prefs, refreshing]) => console.log('[DEBUG] combineLatest triggered, refreshing:', refreshing, 'items:', items.length)),
+      // BLOCK ALL EMISSIONS during refresh
+      filter(([items, prefs, refreshing]) => {
+        if (refreshing) {
+          console.log('[DEBUG] BLOCKING EMISSION - refresh in progress');
+          return false; // Don't emit at all
+        }
+        return true; // Allow emission
+      }),
+      // Now process normally (only when not refreshing)
+      map(([items, prefs, refreshing]) => {
+        console.log('[DEBUG] Processing items, length:', items.length);
         let filtered = items;
 
         // Filter by selected feeds
@@ -386,9 +433,31 @@ export class RssFeedService {
           filtered = filtered.filter(item => !item.isRead);
         }
 
-        // Sort by date (newest first)
-        return filtered.sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime());
-      })
+        // Sort by date (newest first) - slice first to avoid mutating original
+        const sorted = filtered.slice().sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime());
+        console.log('[DEBUG] After filter/sort, length:', sorted.length);
+        return sorted;
+      }),
+      // Only emit when the filtered/sorted result actually changes (not on every items$ emission)
+      distinctUntilChanged((prev, curr) => {
+        // Quick length check first
+        if (prev.length !== curr.length) {
+          console.log('[DEBUG] distinctUntilChanged: length changed', prev.length, '→', curr.length, 'EMITTING');
+          return false;
+        }
+        
+        // Check if same items in same order (by ID and key properties)
+        const same = prev.every((item, idx) => {
+          const currItem = curr[idx];
+          return item.id === currItem.id && 
+                 item.isRead === currItem.isRead && 
+                 item.isSaved === currItem.isSaved;
+        });
+        
+        console.log('[DEBUG] distinctUntilChanged: same items?', same, same ? 'BLOCKING' : 'EMITTING');
+        return same;
+      }),
+      tap((items) => console.log('[DEBUG] getFilteredItems EMITTING to list-view:', items.length, 'items'))
     );
   }
 

@@ -107,7 +107,7 @@
          (dragleave)="onDragLeaveUncategorized($event)"
          (drop)="onDropOnUncategorized($event)">
       <div class="feed-item" 
-           *ngFor="let feedItem of getUncategorizedFeeds()"
+           *ngFor="let feedItem of getUncategorizedFeeds(); trackBy: trackByFeedId"
            [class.active]="isSelectedFeed(feedItem.id)"
            [class.dragging]="draggedFeed?.id === feedItem.id"
            draggable="true"
@@ -145,7 +145,7 @@
     <div class="section-subheader" *ngIf="getCategories().length > 0">
       <span class="title">Folders</span>
     </div>
-    <div class="category-group" *ngFor="let category of getCategories()">
+    <div class="category-group" *ngFor="let category of getCategories(); trackBy: trackByCategory">
       <div class="category-header" 
            [class.drag-over]="dragOverCategory === category"
            (dragover)="onDragOver($event)"
@@ -162,7 +162,7 @@
       </div>
       <div class="category-feeds" *ngIf="isCategoryExpanded(category)">
         <div class="feed-item" 
-             *ngFor="let feedItem of getCategoryFeeds(category)"
+             *ngFor="let feedItem of getCategoryFeeds(category); trackBy: trackByFeedId"
              [class.active]="isSelectedFeed(feedItem.id)"
              [class.dragging]="draggedFeed?.id === feedItem.id"
              draggable="true"

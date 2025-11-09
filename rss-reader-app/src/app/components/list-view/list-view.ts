@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener } from '@angular/core';
+import { Component, OnInit, HostListener, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RssItem, RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
@@ -11,7 +11,8 @@ import { ArticleReaderComponent } from '../article-reader/article-reader';
   standalone: true,
   imports: [CommonModule, ArticleReaderComponent],
   templateUrl: './list-view.html',
-  styleUrl: './list-view.scss'
+  styleUrl: './list-view.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ListViewComponent implements OnInit {
   items: RssItem[] = [];
@@ -36,26 +37,46 @@ export class ListViewComponent implements OnInit {
   constructor(
     private feedService: RssFeedService,
     private userSettingsService: UserSettingsService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.checkScreenSize();
     
-    this.feedService.getFilteredItems().subscribe(items => {
+    // Subscribe to filtered items - updates in real-time
+    this.feedService.getFilteredItems().subscribe((items: RssItem[]) => {
+      console.log('[LIST-VIEW] Received items update:', items.length);
       this.items = items;
+      
+      // CRITICAL: Don't trigger re-render if preview is showing
+      if (!this.selectedArticleForPreview) {
+        this.cdr.markForCheck();
+      } else {
+        console.log('[LIST-VIEW] Preview showing - BLOCKING re-render (iframe protected)');
+      }
     });
 
     this.feedService.feeds$.subscribe(feeds => {
+      console.log('[LIST-VIEW] Received feeds update:', feeds.length);
       this.feeds = feeds;
+      if (!this.selectedArticleForPreview) {
+        this.cdr.markForCheck();
+      }
     });
 
     this.feedService.preferences$.subscribe(prefs => {
       this.preferences = prefs;
+      if (!this.selectedArticleForPreview) {
+        this.cdr.markForCheck();
+      }
     });
 
     this.userSettingsService.settings$.subscribe(settings => {
       this.showFeedImages = settings.showFeedImages;
+      if (!this.selectedArticleForPreview) {
+        this.cdr.markForCheck();
+      }
     });
 
     // Load preview pane preference from localStorage
@@ -93,11 +114,14 @@ export class ListViewComponent implements OnInit {
   }
 
   openArticle(item: RssItem): void {
+    // ALWAYS mark change detection when user explicitly clicks
+    console.log('[LIST-VIEW] User clicked item - allowing change detection');
     this.feedService.markAsRead(item.id);
     
     // On large screens with preview pane enabled and showing, always show in preview
     if (this.isLargeScreen && this.showPreviewPane) {
       this.selectedArticleForPreview = item;
+      this.cdr.markForCheck(); // Allow update when user clicks
     } else if (this.preferences.openInNewTab) {
       // Open in new tab
       window.open(item.link, '_blank', 'noopener,noreferrer');
@@ -250,5 +274,10 @@ export class ListViewComponent implements OnInit {
       month: 'short', 
       day: 'numeric'
     });
+  }
+
+  // TrackBy function to prevent unnecessary DOM recreation
+  trackByItemId(index: number, item: RssItem): string {
+    return item.id;
   }
 }

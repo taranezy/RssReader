@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, HostListener, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, Input, HostListener, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RssFeed, RssItem } from '../../models/rss-feed.model';
@@ -10,7 +10,8 @@ import { UserSettingsService, HEADER_COLOR_THEMES } from '../../services/user-se
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './feed-manager.html',
-  styleUrl: './feed-manager.scss'
+  styleUrl: './feed-manager.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FeedManagerComponent implements OnInit {
   @Input() isSidebarCollapsed = false;
@@ -49,9 +50,15 @@ export class FeedManagerComponent implements OnInit {
   // Refresh progress
   refreshProgress = { total: 0, completed: 0, currentFeed: '' };
 
+  // Cached counts to avoid recalculation on every change detection
+  private cachedUnreadCount = 0;
+  private cachedSavedCount = 0;
+  private cachedFeedUnreadCounts = new Map<string, number>();
+
   constructor(
     private feedService: RssFeedService,
-    private userSettingsService: UserSettingsService
+    private userSettingsService: UserSettingsService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -59,25 +66,32 @@ export class FeedManagerComponent implements OnInit {
     this.userSettingsService.settings$.subscribe(settings => {
       this.headerColor = settings.headerColor;
       this.applySidebarColor(settings.headerColor);
+      this.cdr.markForCheck();
     });
 
     this.feedService.feeds$.subscribe(feeds => {
       this.feeds = feeds;
       // Auto-expand all categories initially
       this.getCategories().forEach(cat => this.expandedCategories.add(cat));
+      this.cdr.markForCheck();
     });
 
     this.feedService.items$.subscribe(items => {
       this.items = items;
+      // Recalculate cached counts when items change
+      this.updateCachedCounts();
+      this.cdr.markForCheck();
     });
 
     this.feedService.preferences$.subscribe(prefs => {
       this.selectedFeedIds = prefs.selectedFeeds;
+      this.cdr.markForCheck();
     });
     
     // Subscribe to refresh progress
     this.feedService.refreshProgress$.subscribe(progress => {
       this.refreshProgress = progress;
+      this.cdr.markForCheck();
     });
 
     // Set initial filter based on selected view
@@ -149,7 +163,17 @@ export class FeedManagerComponent implements OnInit {
   }
 
   refreshFeed(feedId: string): void {
-    this.feedService.refreshFeed(feedId).subscribe();
+    this.feedService.refreshFeed(feedId).subscribe({
+      next: (count) => {
+        // For single feed refresh, reload items immediately
+        if (count > 0) {
+          this.feedService.loadItems();
+        }
+      },
+      error: (err) => {
+        console.error('Error refreshing feed:', err);
+      }
+    });
     this.closeMenu();
   }
 
@@ -286,17 +310,32 @@ export class FeedManagerComponent implements OnInit {
     return this.expandedCategories.has(category);
   }
 
-  // Count methods
+  // Count methods - now using cached values
   getUnreadCount(): number {
-    return this.items.filter(item => !item.isRead).length;
+    return this.cachedUnreadCount;
   }
 
   getSavedCount(): number {
-    return this.items.filter(item => item.isSaved).length;
+    return this.cachedSavedCount;
   }
 
   getFeedUnreadCount(feedId: string): number {
-    return this.items.filter(item => item.feedId === feedId && !item.isRead).length;
+    return this.cachedFeedUnreadCounts.get(feedId) || 0;
+  }
+
+  // Update cached counts - called only when items array changes
+  private updateCachedCounts(): void {
+    this.cachedUnreadCount = this.items.filter(item => !item.isRead).length;
+    this.cachedSavedCount = this.items.filter(item => item.isSaved).length;
+    
+    // Calculate unread counts per feed
+    this.cachedFeedUnreadCounts.clear();
+    this.items.forEach(item => {
+      if (!item.isRead) {
+        const currentCount = this.cachedFeedUnreadCounts.get(item.feedId) || 0;
+        this.cachedFeedUnreadCounts.set(item.feedId, currentCount + 1);
+      }
+    });
   }
 
   // Format feed date for display
@@ -527,5 +566,14 @@ export class FeedManagerComponent implements OnInit {
     
     this.dragOverUncategorized = false;
     this.draggedFeed = null;
+  }
+
+  // TrackBy functions to prevent unnecessary DOM recreation
+  trackByFeedId(index: number, feed: RssFeed): string {
+    return feed.id;
+  }
+
+  trackByCategory(index: number, category: string): string {
+    return category;
   }
 }
