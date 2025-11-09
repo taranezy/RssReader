@@ -213,6 +213,7 @@ export class RssFeedService {
     // This prevents overwhelming the server and allows UI to remain responsive
     let totalNewItems = 0;
     let completed = 0;
+    let hasNewItems = false;
     
     return from(activeFeeds).pipe(
       concatMap((feed: RssFeed) => {
@@ -228,6 +229,11 @@ export class RssFeedService {
             totalNewItems += count;
             completed++;
             
+            // Track if we got any new items (for final reload)
+            if (count > 0) {
+              hasNewItems = true;
+            }
+            
             // Update progress
             this.refreshProgressSubject.next({ 
               total: activeFeeds.length, 
@@ -235,10 +241,8 @@ export class RssFeedService {
               currentFeed: completed < activeFeeds.length ? '' : 'Complete' 
             });
             
-            // Reload items after each feed completes so user sees progress
-            if (count > 0) {
-              this.loadItems();
-            }
+            // DON'T reload items here - it causes YouTube to blink
+            // Items will be reloaded once at the end
           }),
           catchError(error => {
             console.error(`Error refreshing feed ${feed.title}:`, error);
@@ -257,9 +261,10 @@ export class RssFeedService {
         // After refreshing all feeds, cleanup old items (older than 30 days)
         return this.apiStorage.cleanupOldItems().pipe(
           map(deletedCount => {
-            if (deletedCount > 0) {
-              console.log(`Cleaned up ${deletedCount} old items`);
-              this.loadItems(); // Reload items after cleanup
+            // Reload items only once at the end if there were changes
+            if (hasNewItems || deletedCount > 0) {
+              console.log(`Refresh complete: ${totalNewItems} new items, ${deletedCount} cleaned up`);
+              this.loadItems(); // Single reload at the end - no more blinking!
             }
             
             // Reset progress
@@ -268,6 +273,10 @@ export class RssFeedService {
           }),
           catchError(error => {
             console.error('Error cleaning up old items:', error);
+            // Still reload if we got new items
+            if (hasNewItems) {
+              this.loadItems();
+            }
             this.refreshProgressSubject.next({ total: 0, completed: 0, currentFeed: '' });
             return of(totalNewItems); // Continue even if cleanup fails
           })
