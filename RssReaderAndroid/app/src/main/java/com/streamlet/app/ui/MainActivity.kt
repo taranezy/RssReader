@@ -79,7 +79,6 @@ class MainActivity : AppCompatActivity() {
         webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
-            databaseEnabled = true
             allowContentAccess = true
             allowFileAccess = false
             setSupportZoom(true)
@@ -89,6 +88,7 @@ class MainActivity : AppCompatActivity() {
             useWideViewPort = true
             javaScriptCanOpenWindowsAutomatically = false
             mediaPlaybackRequiresUserGesture = false
+            mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         }
         
         // Enable cookies for session management
@@ -99,7 +99,9 @@ class MainActivity : AppCompatActivity() {
         
         webView.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
-                val url = request?.url.toString()
+                if (request == null) return false
+                
+                val url = request.url.toString()
                 Log.d("MainActivity", "URL loading: $url")
                 
                 // Intercept Google OAuth URLs
@@ -116,21 +118,6 @@ class MainActivity : AppCompatActivity() {
                 super.onPageFinished(view, url)
                 Log.d("MainActivity", "Page loaded: $url")
             }
-            
-            override fun onReceivedError(
-                view: WebView?,
-                errorCode: Int,
-                description: String?,
-                failingUrl: String?
-            ) {
-                super.onReceivedError(view, errorCode, description, failingUrl)
-                Log.e("MainActivity", "WebView error: $description")
-                Snackbar.make(
-                    binding.root,
-                    "Error loading page: $description",
-                    Snackbar.LENGTH_LONG
-                ).show()
-            }
         }
         
         webView.webChromeClient = object : WebChromeClient() {
@@ -146,8 +133,13 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun loadWebApp() {
-        Log.d("MainActivity", "Loading web app: $WEB_APP_URL")
-        webView.loadUrl(WEB_APP_URL)
+        try {
+            Log.d("MainActivity", "Loading web app: $WEB_APP_URL")
+            webView.loadUrl(WEB_APP_URL)
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to load web app", e)
+            Snackbar.make(binding.root, "Failed to load app", Snackbar.LENGTH_LONG).show()
+        }
     }
     
     private fun isGoogleOAuthUrl(url: String): Boolean {
@@ -159,6 +151,7 @@ class MainActivity : AppCompatActivity() {
     
     private fun openChromeCustomTab(url: String) {
         try {
+            @Suppress("DEPRECATION")
             val builder = CustomTabsIntent.Builder()
             builder.setToolbarColor(ContextCompat.getColor(this, R.color.primary_purple))
             builder.setShowTitle(true)
@@ -197,14 +190,20 @@ class MainActivity : AppCompatActivity() {
     }
     
     private fun logout() {
-        // Clear WebView data - this will log out of the web app
-        webView.clearCache(true)
-        webView.clearHistory()
-        CookieManager.getInstance().removeAllCookies(null)
-        CookieManager.getInstance().flush()
-        
-        // Reload to show login page
-        webView.loadUrl(WEB_APP_URL)
+        try {
+            // Clear WebView data - this will log out of the web app
+            webView.clearCache(true)
+            webView.clearHistory()
+            CookieManager.getInstance().removeAllCookies(null)
+            CookieManager.getInstance().flush()
+            
+            // Reload to show login page
+            webView.loadUrl(WEB_APP_URL)
+            Log.d("MainActivity", "Logout successful")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Logout error", e)
+            Snackbar.make(binding.root, "Logout failed", Snackbar.LENGTH_SHORT).show()
+        }
     }
     
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
