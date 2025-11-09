@@ -27,6 +27,11 @@
          [class.selected]="selectedArticleForPreview?.id === item.id"
          (click)="openArticle(item)">
       
+      <!-- Left Time Column with Feed Color Border -->
+      <div class="item-time-column" [style.border-left-color]="getFeedColor(item)">
+        <span class="item-time-value">{{ formatItemDate(item.pubDate) }}</span>
+      </div>
+      
       <div class="item-indicator" [style.background-color]="getFeedColor(item)"></div>
       
       <div class="item-image" *ngIf="showFeedImages && item.imageUrl">
@@ -46,6 +51,8 @@
           {{ item.title }}
         </h3>
 
+        
+
         <p class="item-description">{{ getExcerpt(item.description) }}</p>
 
         <div class="item-footer">
@@ -60,7 +67,9 @@
         </div>
       </div>
 
-      <div class="item-actions">
+      <div  class="item-datetime" *ngIf="showPreviewPane">{{ item.pubDate | date:'short' }}</div>
+      
+      <div class="item-actions"> 
         <button 
           class="save-toggle-btn"
           [class.saved]="item.isSaved"

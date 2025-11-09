@@ -142,6 +142,7 @@ export class FeedManagerComponent implements OnInit {
 
   refreshFeed(feedId: string): void {
     this.feedService.refreshFeed(feedId).subscribe();
+    this.closeMenu();
   }
 
   refreshAllFeeds(): void {
@@ -279,13 +280,78 @@ export class FeedManagerComponent implements OnInit {
     return this.items.filter(item => item.feedId === feedId && !item.isRead).length;
   }
 
+  // Format feed date for display
+  formatFeedDate(date: Date | string): string {
+    if (!date) return '';
+    
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const now = new Date();
+    const diffMs = now.getTime() - dateObj.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    // Less than 1 minute
+    if (diffMins < 1) {
+      return 'just now';
+    }
+    
+    // Less than 1 hour
+    if (diffMins < 60) {
+      return `${diffMins}m ago`;
+    }
+    
+    // Less than 24 hours
+    if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    }
+    
+    // Less than 7 days
+    if (diffDays < 7) {
+      return `${diffDays}d ago`;
+    }
+    
+    // Format as date - show month and day
+    return dateObj.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
   // Feed menu methods
   openFeedMenu(feed: RssFeed, event: Event): void {
     event.stopPropagation();
     this.selectedFeedMenu = feed;
     const target = event.target as HTMLElement;
     const rect = target.getBoundingClientRect();
-    this.menuPosition = { x: rect.left, y: rect.bottom };
+    
+    // Calculate menu dimensions (estimate based on number of buttons)
+    const menuHeight = 5 * 40; // 5 buttons * ~40px each
+    const viewportHeight = window.innerHeight;
+    const spaceBelow = viewportHeight - rect.bottom;
+    
+    // If not enough space below, position menu above the button
+    let posY: number;
+    if (spaceBelow < menuHeight) {
+      // Position above the button
+      posY = rect.top - menuHeight;
+    } else {
+      // Position below the button (default)
+      posY = rect.bottom;
+    }
+    
+    // Ensure menu doesn't go above viewport
+    posY = Math.max(10, posY);
+    
+    this.menuPosition = { x: rect.left, y: posY };
+    
+    // Add overlay effect to prevent scrolling behind sidebar
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+      sidebar.classList.add('menu-open');
+    }
   }
 
   editFeed(feed: RssFeed): void {
@@ -294,7 +360,7 @@ export class FeedManagerComponent implements OnInit {
     this.editFeedColor = feed.color;
     this.editFeedCategory = feed.category || '';
     this.showEditModal = true;
-    this.selectedFeedMenu = null;
+    this.closeMenu();
   }
 
   saveEditFeed(): void {
@@ -314,6 +380,15 @@ export class FeedManagerComponent implements OnInit {
     this.editFeedTitle = '';
     this.editFeedColor = '';
     this.editFeedCategory = '';
+    this.closeMenu();
+  }
+
+  closeMenu(): void {
+    this.selectedFeedMenu = null;
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+      sidebar.classList.remove('menu-open');
+    }
   }
 
   changeFeedColor(feed: RssFeed): void {
@@ -325,7 +400,7 @@ export class FeedManagerComponent implements OnInit {
     this.editingFeed = feed;
     this.editFeedCategory = feed.category || '';
     this.showMoveModal = true;
-    this.selectedFeedMenu = null;
+    this.closeMenu();
   }
 
   saveMoveFeed(): void {
@@ -341,6 +416,7 @@ export class FeedManagerComponent implements OnInit {
     this.showMoveModal = false;
     this.editingFeed = null;
     this.editFeedCategory = '';
+    this.closeMenu();
   }
   
   toggleSidebar(): void {
@@ -352,7 +428,7 @@ export class FeedManagerComponent implements OnInit {
     if (confirm(`Are you sure you want to delete "${feed.title}"?`)) {
       this.feedService.removeFeed(feed.id);
     }
-    this.selectedFeedMenu = null;
+    this.closeMenu();
   }
 
   @HostListener('document:click', ['$event'])
@@ -360,7 +436,7 @@ export class FeedManagerComponent implements OnInit {
     if (this.selectedFeedMenu) {
       const target = event.target as HTMLElement;
       if (!target.closest('.feed-menu') && !target.closest('.feed-menu-btn')) {
-        this.selectedFeedMenu = null;
+        this.closeMenu();
       }
     }
   }

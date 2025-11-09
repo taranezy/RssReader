@@ -103,7 +103,12 @@
            title="Drag to move to a folder">
         <span class="drag-handle" title="Drag to move">⋮⋮</span>
         <span class="feed-color" [style.background-color]="feedItem.color"></span>
-        <span class="feed-title">{{ feedItem.title }}</span>
+        <div class="feed-info">
+          <span class="feed-date" *ngIf="feedItem.lastFetched || feedItem.addedDate">
+            {{ formatFeedDate(feedItem.lastFetched || feedItem.addedDate) }}
+          </span>
+          <span class="feed-title">{{ feedItem.title }}</span>
+        </div>
         <span class="feed-count" *ngIf="getFeedUnreadCount(feedItem.id) > 0">
           {{ getFeedUnreadCount(feedItem.id) }}
         </span>
@@ -153,7 +158,12 @@
              title="Drag to move to another folder">
           <span class="drag-handle" title="Drag to move">⋮⋮</span>
           <span class="feed-color" [style.background-color]="feedItem.color"></span>
-          <span class="feed-title">{{ feedItem.title }}</span>
+          <div class="feed-info">
+            <span class="feed-date" *ngIf="feedItem.lastFetched || feedItem.addedDate">
+              {{ formatFeedDate(feedItem.lastFetched || feedItem.addedDate) }}
+            </span>
+            <span class="feed-title">{{ feedItem.title }}</span>
+          </div>
           <span class="feed-count" *ngIf="getFeedUnreadCount(feedItem.id) > 0">
             {{ getFeedUnreadCount(feedItem.id) }}
           </span>

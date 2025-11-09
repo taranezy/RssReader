@@ -224,4 +224,31 @@ export class ListViewComponent implements OnInit {
     const embedUrl = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
     return this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
   }
+
+  /**
+   * Format item date for display in the left column
+   * Shows relative time (e.g., "5m ago", "2h ago") for recent items
+   * Shows date for older items (e.g., "Nov 08")
+   */
+  formatItemDate(date: Date | string | null): string {
+    if (!date) return '';
+    
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    const now = new Date();
+    const diffMs = now.getTime() - dateObj.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'now';
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+    
+    // For older items, show date like "Nov 08"
+    return dateObj.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric'
+    });
+  }
 }

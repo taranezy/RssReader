@@ -10,6 +10,7 @@ const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
 const DatabaseService = require('./database');
+const RssProxyService = require('./rss-proxy');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -57,6 +58,55 @@ app.use(passport.session());
 const callbackURL = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/api/auth/google/callback';
 console.log('Google OAuth Callback URL:', callbackURL);
 
+// Function to populate initial feeds for new users
+const populateInitialFeeds = (userId) => {
+  const initialFeeds = [
+    // Tech & Programming (5)
+    { url: 'https://news.ycombinator.com/rss', title: 'Hacker News', category: 'Tech' },
+    { url: 'https://www.theverge.com/rss/index.xml', title: 'The Verge', category: 'Tech' },
+    { url: 'https://techcrunch.com/feed/', title: 'TechCrunch', category: 'Tech' },
+    { url: 'https://arstechnica.com/feed/', title: 'Ars Technica', category: 'Tech' },
+    { url: 'https://www.wired.com/feed/rss', title: 'Wired', category: 'Tech' },
+    
+    // Science (3)
+    { url: 'https://www.sciencedaily.com/rss/all.xml', title: 'Science Daily', category: 'Science' },
+    { url: 'https://www.nasa.gov/rss/dyn/breaking_news.rss', title: 'NASA News', category: 'Science' },
+    { url: 'https://phys.org/rss-feed/', title: 'Phys.org', category: 'Science' },
+    
+    // News (4)
+    { url: 'https://feeds.bbci.co.uk/news/rss.xml', title: 'BBC News', category: 'News' },
+    { url: 'https://www.theguardian.com/world/rss', title: 'Guardian World', category: 'News' },
+    { url: 'https://feeds.reuters.com/reuters/topNews', title: 'Reuters Top News', category: 'News' },
+    { url: 'https://www.aljazeera.com/xml/rss/all.xml', title: 'Al Jazeera', category: 'News' },
+    
+    // YouTube Channels (3)
+    { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCXuqSBlHAE6Xw-yeJA7Pur0', title: 'Linus Tech Tips', category: 'YouTube' },
+    { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCBJycsmduvYEL83R_U4JriQ', title: 'MKBHD - Marques Brownlee', category: 'YouTube' },
+    { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCJ1X_WBt-7DW-yEtNpamZZw', title: 'ElectroBOOM', category: 'YouTube' },
+  ];
+
+  const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85929E', '#F06292', '#AED581'];
+
+  initialFeeds.forEach((feed, index) => {
+    try {
+      db.createFeed({
+        id: `feed-${Date.now()}-${index}`,
+        url: feed.url,
+        title: feed.title,
+        description: feed.title,
+        color: colors[index % colors.length],
+        category: feed.category,
+        isActive: true,
+        addedDate: new Date().toISOString()
+      }, userId);
+    } catch (error) {
+      console.error(`Error creating feed ${feed.title}:`, error.message);
+    }
+  });
+
+  console.log(`Populated ${initialFeeds.length} initial feeds for new user`);
+};
+
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -66,6 +116,7 @@ passport.use(new GoogleStrategy({
     try {
       // Check if user exists
       let user = db.findUserByGoogleId(profile.id);
+      let isNewUser = false;
       
       if (!user) {
         // Create new user
@@ -73,6 +124,14 @@ passport.use(new GoogleStrategy({
         const username = profile.displayName || email;
         const userId = db.createUser(email, username, profile.id);
         user = db.findUserById(userId);
+        isNewUser = true;
+        
+        // Populate initial feeds for new user
+        try {
+          populateInitialFeeds(user.id);
+        } catch (error) {
+          console.error('Error populating initial feeds:', error.message);
+        }
       }
       
       // Update last login for both new and existing users
@@ -280,6 +339,13 @@ app.get('/api/auth/demo', async (req, res) => {
         { url: 'https://blog.google/technology/ai/rss/', title: 'Google AI Blog', category: 'AI & ML' },
         { url: 'https://www.reddit.com/r/artificial/.rss', title: 'r/artificial', category: 'AI & ML' },
         { url: 'https://ai.googleblog.com/feeds/posts/default', title: 'Google AI Research', category: 'AI & ML' },
+        
+        // YouTube Channels (5) - Using official YouTube RSS feeds
+        { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCXuqSBlHAE6Xw-yeJA7Pur0', title: 'Linus Tech Tips', category: 'YouTube' },
+        { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCBJycsmduvYEL83R_U4JriQ', title: 'MKBHD - Marques Brownlee', category: 'YouTube' },
+        { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCJ1X_WBt-7DW-yEtNpamZZw', title: 'ElectroBOOM', category: 'YouTube' },
+        { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCGiLAlstWyxwNZ5JwHikwNQ', title: 'Veritasium', category: 'YouTube' },
+        { url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCYO_jab_esuFRV4b-r-ccEw', title: '3Blue1Brown', category: 'YouTube' },
       ];
 
       const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85929E', '#F06292', '#AED581'];
@@ -881,6 +947,108 @@ function escapeXml(unsafe) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&apos;');
 }
+
+// ==================== HEALTH CHECK ====================
+
+app.get('/api/proxy/feed', async (req, res) => {
+  try {
+    const { url, format = 'rss' } = req.query;
+
+    if (!url) {
+      return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
+    console.log(`[RSS Proxy] Processing URL: ${url} (Format: ${format})`);
+
+    const proxy = new RssProxyService();
+
+    // Check if it's already a standard feed
+    const isStandard = await proxy.isStandardFeed(url);
+
+    if (isStandard) {
+      console.log(`[RSS Proxy] URL is a standard feed, passing through directly`);
+      // For standard feeds, fetch and return as-is
+      const response = await require('axios').get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        },
+        timeout: 15000
+      });
+      res.type(format === 'json' ? 'application/json' : 'application/rss+xml').send(response.data);
+    } else {
+      console.log(`[RSS Proxy] URL is not a standard feed, converting HTML...`);
+      // Try to detect a feed URL first
+      const feedUrl = await proxy.detectFeedUrl(url);
+      
+      if (feedUrl && feedUrl !== url) {
+        console.log(`[RSS Proxy] Found feed URL: ${feedUrl}`);
+        const response = await require('axios').get(feedUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          },
+          timeout: 15000
+        });
+        return res.type(format === 'json' ? 'application/json' : 'application/rss+xml').send(response.data);
+      }
+
+      // Convert HTML to RSS/JSON feed
+      const rssFeed = await proxy.convertHtmlToRss(url);
+      
+      if (format === 'json') {
+        const $ = require('cheerio').load(rssFeed);
+        const articles = [];
+        $('item').each((i, elem) => {
+          articles.push({
+            title: $(elem).find('title').text(),
+            link: $(elem).find('link').text(),
+            description: $(elem).find('description').text(),
+            pubDate: $(elem).find('pubDate').text(),
+            author: $(elem).find('author').text()
+          });
+        });
+        const title = $('channel > title').text();
+        const jsonFeed = proxy.generateJsonFeed(title, url, articles);
+        res.type('application/json').json(jsonFeed);
+      } else {
+        res.type('application/rss+xml').send(rssFeed);
+      }
+    }
+  } catch (error) {
+    console.error('[RSS Proxy] Error processing URL:', error.message);
+    res.status(500).json({ 
+      error: 'Failed to convert to RSS feed',
+      message: error.message 
+    });
+  }
+});
+
+// Test endpoint to check if URL can be converted
+app.get('/api/proxy/test', async (req, res) => {
+  try {
+    const { url } = req.query;
+
+    if (!url) {
+      return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
+    const proxy = new RssProxyService();
+    const isStandard = await proxy.isStandardFeed(url);
+    const feedUrl = isStandard ? url : await proxy.detectFeedUrl(url);
+
+    res.json({
+      url,
+      isStandardFeed: isStandard,
+      detectedFeedUrl: feedUrl,
+      canConvert: !isStandard
+    });
+  } catch (error) {
+    console.error('[RSS Proxy] Error testing URL:', error.message);
+    res.status(500).json({ 
+      error: 'Failed to test URL',
+      message: error.message 
+    });
+  }
+});
 
 // ==================== HEALTH CHECK ====================
 

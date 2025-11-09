@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, combineLatest, forkJoin, map, of, switchMap, tap, catchError } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, forkJoin, map, of, switchMap, tap, catchError, interval } from 'rxjs';
 import { RssFeed, RssItem, FeedViewPreference } from '../models/rss-feed.model';
 import { ApiStorageService } from './api-storage.service';
 import { RssParserService } from './rss-parser.service';
@@ -36,6 +36,23 @@ export class RssFeedService {
     this.loadFeeds();
     this.loadItems();
     this.loadPreferences();
+    
+    // Auto-refresh all feeds every 60 seconds
+    this.startAutoRefresh();
+  }
+
+  // Auto-refresh all feeds every 60 seconds
+  private startAutoRefresh(): void {
+    interval(60000).subscribe(() => {
+      this.refreshAllFeeds().subscribe(
+        () => {
+          console.log('Auto-refresh completed');
+        },
+        error => {
+          console.error('Error during auto-refresh:', error);
+        }
+      );
+    });
   }
 
   // Feed Management

@@ -147,6 +147,12 @@ export class RssParserService implements IRssParser {
   }
 
   private extractImageUrl(element: Element, description: string, content?: string): string | null {
+    // 0. Try YouTube video ID extraction (for YouTube feeds)
+    const youtubeThumb = this.extractYouTubeThumbnail(element);
+    if (youtubeThumb) {
+      return youtubeThumb;
+    }
+
     // 1. Try media:thumbnail (Media RSS)
     const mediaThumbnail = element.querySelector('media\\:thumbnail');
     if (mediaThumbnail) {
@@ -211,6 +217,85 @@ export class RssParserService implements IRssParser {
       if (imgMatch && imgMatch[1]) {
         return imgMatch[1];
       }
+    }
+
+    return null;
+  }
+
+  private extractYouTubeThumbnail(element: Element): string | null {
+    let videoId: string | null = null;
+
+    // 1. Try yt:videoId tag (YouTube official)
+    const ytVideoIdElement = element.querySelector('yt\\:videoId');
+    if (ytVideoIdElement?.textContent) {
+      videoId = ytVideoIdElement.textContent.trim();
+      console.log('Found YouTube video ID via yt:videoId:', videoId);
+      return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    }
+
+    // 2. Try media:content with specific duration (YouTube structure)
+    const mediaContent = element.querySelector('media\\:content[duration]');
+    if (mediaContent?.getAttribute('url')) {
+      const url = mediaContent.getAttribute('url');
+      if (url) {
+        videoId = this.extractVideoIdFromUrl(url);
+        if (videoId) {
+          console.log('Found YouTube video ID from media:content:', videoId);
+          return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        }
+      }
+    }
+
+    // 3. Try link elements for youtube.com URLs
+    const linkElements = element.querySelectorAll('link');
+    for (let i = 0; i < linkElements.length; i++) {
+      const href = linkElements[i].getAttribute('href') || linkElements[i].textContent;
+      if (href && (href.includes('youtube.com') || href.includes('youtu.be'))) {
+        videoId = this.extractVideoIdFromUrl(href);
+        if (videoId) {
+          console.log('Found YouTube video ID from link:', videoId);
+          return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        }
+      }
+    }
+
+    // 4. Try description for YouTube URLs
+    const description = element.querySelector('description')?.textContent || 
+                       element.querySelector('summary')?.textContent;
+    if (description && (description.includes('youtube.com') || description.includes('youtu.be'))) {
+      // Try to extract YouTube URL from description HTML/text
+      const urlMatch = description.match(/(https?:\/\/(www\.)?(youtube\.com|youtu\.be)\/[^\s<>"]*)/i);
+      if (urlMatch && urlMatch[0]) {
+        videoId = this.extractVideoIdFromUrl(urlMatch[0]);
+        if (videoId) {
+          console.log('Found YouTube video ID from description:', videoId);
+          return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  private extractVideoIdFromUrl(url: string | null): string | null {
+    if (!url) return null;
+
+    // Handle youtube.com/watch?v=VIDEO_ID
+    const matchWatch = url.match(/youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})/);
+    if (matchWatch && matchWatch[1]) {
+      return matchWatch[1];
+    }
+
+    // Handle youtu.be/VIDEO_ID
+    const matchShort = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+    if (matchShort && matchShort[1]) {
+      return matchShort[1];
+    }
+
+    // Handle youtube.com/embed/VIDEO_ID
+    const matchEmbed = url.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]{11})/);
+    if (matchEmbed && matchEmbed[1]) {
+      return matchEmbed[1];
     }
 
     return null;

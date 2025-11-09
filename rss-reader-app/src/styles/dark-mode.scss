@@ -1133,4 +1133,27 @@ body.dark-mode {
       }
     }
   }
+
+  // Items list styling for dark mode
+  .items-list {
+    background-color: var(--bg-primary) !important;
+    
+    &.with-preview {
+      /* Custom scrollbar styling for dark mode */
+      &::-webkit-scrollbar-track {
+        background: var(--bg-secondary) !important;
+        border-radius: 4px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: var(--bg-tertiary) !important;
+        border-radius: 4px;
+        
+        &:hover {
+          background: var(--bg-elevated) !important;
+        }
+      }
+    }
+  }
 }
+
