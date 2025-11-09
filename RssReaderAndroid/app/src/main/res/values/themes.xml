@@ -6,6 +6,9 @@
         <item name="colorAccent">@color/primary_purple</item>
         <item name="android:statusBarColor">@color/primary_purple</item>
         <item name="android:navigationBarColor">@color/primary_purple_dark</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">false</item>
     </style>
 
     <style name="Theme.RssReader" parent="Base.Theme.RssReader" />

@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.webkit.CookieManager
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -28,10 +29,32 @@ class MainActivity : AppCompatActivity() {
         private const val WEB_APP_URL = "https://taranezy.ddns.net:8444"
     }
     
+    private fun enableFullscreen() {
+        // Hide system UI elements for immersive fullscreen experience
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = (
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+        )
+    }
+    
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            // Re-enable fullscreen when window gains focus
+            enableFullscreen()
+        }
+    }
+    
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("MainActivity", "onCreate started")
+        
+        // Enable fullscreen immersive mode
+        enableFullscreen()
         
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
