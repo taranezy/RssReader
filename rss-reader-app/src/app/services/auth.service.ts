@@ -58,6 +58,31 @@ export class AuthService {
   }
 
   /**
+   * Set authenticated user from native Android app
+   * Called when user logs in via native Google Sign-In and token is injected
+   * @param email User email address from native app
+   * @param idToken Google ID token from native app
+   */
+  setNativeAppAuthenticated(email: string, idToken: string): void {
+    console.log('[AuthService] Setting native app authentication:', email);
+    
+    // Store credentials from native app
+    localStorage.setItem('streamlet_email', email);
+    localStorage.setItem('streamlet_id_token', idToken);
+    localStorage.setItem('streamlet_authenticated', 'true');
+
+    // Update current user (will be verified with backend on next checkAuthStatus)
+    this.currentUserSubject.next({
+      id: 0,
+      email: email,
+      username: email.split('@')[0]
+    });
+
+    // Verify auth status with backend
+    this.checkAuthStatus().subscribe();
+  }
+
+  /**
    * Initiate Google OAuth login (redirects to backend)
    */
   loginWithGoogle(): void {
