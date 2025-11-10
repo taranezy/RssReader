@@ -27,6 +27,12 @@ export class ListViewComponent implements OnInit {
   };
   selectedArticle: RssItem | null = null;
   selectedArticleForPreview: RssItem | null = null;
+  pipArticle: RssItem | null = null; // Article shown in floating PIP overlay
+  
+  // Cached embed URLs to prevent iframe recreation
+  previewEmbedUrl: SafeResourceUrl | null = null;
+  pipEmbedUrl: SafeResourceUrl | null = null;
+  
   isLargeScreen = false;
   showPreviewPane = true; // User preference to show/hide preview pane
   feedColumnWidth = 420; // Fixed width for feed list in pixels (default minimum width)
@@ -48,35 +54,24 @@ export class ListViewComponent implements OnInit {
     this.feedService.getFilteredItems().subscribe((items: RssItem[]) => {
       console.log('[LIST-VIEW] Received items update:', items.length);
       this.items = items;
-      
-      // CRITICAL: Don't trigger re-render if preview is showing
-      if (!this.selectedArticleForPreview) {
-        this.cdr.markForCheck();
-      } else {
-        console.log('[LIST-VIEW] Preview showing - BLOCKING re-render (iframe protected)');
-      }
+      // Always update - trackBy will protect iframe
+      this.cdr.markForCheck();
     });
 
     this.feedService.feeds$.subscribe(feeds => {
       console.log('[LIST-VIEW] Received feeds update:', feeds.length);
       this.feeds = feeds;
-      if (!this.selectedArticleForPreview) {
-        this.cdr.markForCheck();
-      }
+      this.cdr.markForCheck();
     });
 
     this.feedService.preferences$.subscribe(prefs => {
       this.preferences = prefs;
-      if (!this.selectedArticleForPreview) {
-        this.cdr.markForCheck();
-      }
+      this.cdr.markForCheck();
     });
 
     this.userSettingsService.settings$.subscribe(settings => {
       this.showFeedImages = settings.showFeedImages;
-      if (!this.selectedArticleForPreview) {
-        this.cdr.markForCheck();
-      }
+      this.cdr.markForCheck();
     });
 
     // Load preview pane preference from localStorage
@@ -120,8 +115,23 @@ export class ListViewComponent implements OnInit {
     
     // On large screens with preview pane enabled and showing, always show in preview
     if (this.isLargeScreen && this.showPreviewPane) {
+      const clickedItemHasVideo = this.getYouTubeVideoId(item.link);
+      const previewHasVideo = this.selectedArticleForPreview && 
+                              this.getYouTubeVideoId(this.selectedArticleForPreview.link);
+      
+      // If there's a video in preview and user clicks a different item
+      if (this.selectedArticleForPreview && 
+          this.selectedArticleForPreview.id !== item.id && 
+          previewHasVideo) {
+        // Move current video to PIP (regardless of what user clicked)
+        this.pipArticle = this.selectedArticleForPreview;
+        this.pipEmbedUrl = this.previewEmbedUrl; // Cache the URL
+      }
+      
+      // Always show the clicked item in preview
       this.selectedArticleForPreview = item;
-      this.cdr.markForCheck(); // Allow update when user clicks
+      this.previewEmbedUrl = this.getYouTubeEmbedUrl(item.link); // Cache the URL
+      this.cdr.markForCheck();
     } else if (this.preferences.openInNewTab) {
       // Open in new tab
       window.open(item.link, '_blank', 'noopener,noreferrer');
@@ -136,7 +146,42 @@ export class ListViewComponent implements OnInit {
   }
 
   closePreviewPane(): void {
+    // If there's a video playing, move it to PIP before closing
+    if (this.selectedArticleForPreview && 
+        this.getYouTubeVideoId(this.selectedArticleForPreview.link)) {
+      this.pipArticle = this.selectedArticleForPreview;
+      this.pipEmbedUrl = this.previewEmbedUrl; // Cache the URL
+    }
     this.selectedArticleForPreview = null;
+    this.previewEmbedUrl = null;
+  }
+
+  closePipOverlay(): void {
+    this.pipArticle = null;
+    this.pipEmbedUrl = null;
+    this.cdr.markForCheck();
+  }
+
+  openPipInPreview(): void {
+    if (this.pipArticle) {
+      // If preview has a video, swap them
+      if (this.selectedArticleForPreview && 
+          this.getYouTubeVideoId(this.selectedArticleForPreview.link)) {
+        const temp = this.selectedArticleForPreview;
+        const tempUrl = this.previewEmbedUrl;
+        this.selectedArticleForPreview = this.pipArticle;
+        this.previewEmbedUrl = this.pipEmbedUrl;
+        this.pipArticle = temp;
+        this.pipEmbedUrl = tempUrl;
+      } else {
+        // Just move PIP to preview
+        this.selectedArticleForPreview = this.pipArticle;
+        this.previewEmbedUrl = this.pipEmbedUrl;
+        this.pipArticle = null;
+        this.pipEmbedUrl = null;
+      }
+      this.cdr.markForCheck();
+    }
   }
 
   openPreviewInFullscreen(): void {

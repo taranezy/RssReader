@@ -123,16 +123,16 @@
       </div>
 
       <!-- YouTube Video Embed -->
-      <div class="preview-video" *ngIf="getYouTubeVideoId(selectedArticleForPreview.link)">
+      <div class="preview-video" *ngIf="previewEmbedUrl">
         <iframe 
-          [src]="getYouTubeEmbedUrl(selectedArticleForPreview.link)" 
+          [src]="previewEmbedUrl" 
           frameborder="0" 
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
           allowfullscreen>
         </iframe>
       </div>
 
-      <div class="preview-image" *ngIf="selectedArticleForPreview.imageUrl && !getYouTubeVideoId(selectedArticleForPreview.link)">
+      <div class="preview-image" *ngIf="selectedArticleForPreview.imageUrl && !previewEmbedUrl">
         <img [src]="selectedArticleForPreview.imageUrl" [alt]="selectedArticleForPreview.title" />
       </div>
 
@@ -144,6 +144,25 @@
         </a>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Floating PIP Video Overlay -->
+<div class="pip-overlay" *ngIf="pipArticle && pipEmbedUrl">
+  <div class="pip-header">
+    <span class="pip-title">{{ pipArticle.title }}</span>
+    <div class="pip-actions">
+      <button class="pip-btn" (click)="openPipInPreview()" title="Move to Preview Pane">⛶</button>
+      <button class="pip-btn" (click)="closePipOverlay()" title="Close">✕</button>
+    </div>
+  </div>
+  <div class="pip-video">
+    <iframe 
+      [src]="pipEmbedUrl" 
+      frameborder="0" 
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+      allowfullscreen>
+    </iframe>
   </div>
 </div>
 
