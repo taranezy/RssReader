@@ -9,6 +9,7 @@ export interface UserSettings {
   showFeedImages: boolean;
   headerColor: string;
   darkMode: boolean;
+  enablePIP: boolean;
 }
 
 // Font family mappings
@@ -43,7 +44,8 @@ export class UserSettingsService {
     showLeftMenu: true,
     showFeedImages: true,
     headerColor: 'purple',
-    darkMode: false
+    darkMode: false,
+    enablePIP: true
   });
 
   public settings$ = this.settingsSubject.asObservable();

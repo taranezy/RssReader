@@ -18,6 +18,27 @@
         <router-outlet></router-outlet>
       </main>
     </div>
+
+    <!-- Global PIP Container - visible across entire app -->
+    <ng-container *ngIf="pipState$ | async as pipState">
+      <div class="global-pip-container" *ngIf="pipState.isActive && pipState.url">
+        <div class="pip-video-header">
+          <span class="pip-video-title">{{ pipState.article?.title }}</span>
+          <div class="pip-video-actions">
+            <button class="pip-video-btn" (click)="closePip()" title="Close">✕</button>
+          </div>
+        </div>
+        <div class="pip-video-iframe-wrapper">
+          <iframe 
+            [src]="pipState.url" 
+            frameborder="0" 
+            allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen
+            title="YouTube video player">
+          </iframe>
+        </div>
+      </div>
+    </ng-container>
   </ng-container>
 
   <ng-template #loginView>

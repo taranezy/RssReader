@@ -103,7 +103,7 @@
         <button class="preview-btn" (click)="openPreviewInFullscreen()" title="Open in Fullscreen">
           ⛶ Fullscreen
         </button>
-        <button class="preview-btn" *ngIf="!isVideoInPipMode && ((activeContainer === 'A' && containerAUrl && !containerAInPip) || (activeContainer === 'B' && containerBUrl && !containerBInPip))" (click)="createPipManually()" title="Create Picture-in-Picture">
+        <button class="preview-btn" *ngIf="isPIPEnabled && !isVideoInPipMode && ((activeContainer === 'A' && containerAUrl && !containerAInPip) || (activeContainer === 'B' && containerBUrl && !containerBInPip))" (click)="createPipManually()" title="Create Picture-in-Picture">
           📺 PIP
         </button>
         <button class="preview-btn" (click)="openPreviewInNewTab()" title="Open in New Tab">
@@ -145,8 +145,10 @@
             allowfullscreen
             title="YouTube video player">
           </iframe>
-          <!-- Blocking overlay when PIP is active and this is the preview video -->
-          <div class="video-overlay" *ngIf="isVideoInPipMode && activeContainer === 'A' && !containerAInPip"></div>
+          <!-- Blocking overlay when PIP is active and this is the preview video (use global PIP state) -->
+          <ng-container *ngIf="pipState$ | async as pipState">
+            <div class="video-overlay" *ngIf="($any(pipState)).isActive && activeContainer === 'A' && !containerAInPip"></div>
+          </ng-container>
         </div>
       </div>
 
@@ -162,16 +164,18 @@
             <button class="video-btn" (click)="closePipOverlay()" title="Close">✕</button>
           </div>
         </div>
-        <div class="video-iframe-wrapper" *ngIf="containerBUrl && (activeContainer === 'B' || containerBInPip)">
+        <div class="video-iframe-wrapper" *ngIf="containerBUrl && (activeContainer === 'B' && !containerBInPip)">
           <iframe 
             [src]="containerBUrl" 
             frameborder="0" 
             allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
             allowfullscreen
-            title="YouTube video player">
+            title="YouTube video player"> 
           </iframe>
-          <!-- Blocking overlay when PIP is active and this is the preview video -->
-          <div class="video-overlay" *ngIf="isVideoInPipMode && activeContainer === 'B' && !containerBInPip"></div>
+          <!-- Blocking overlay when PIP is active and this is the preview video (use global PIP state) -->
+          <ng-container *ngIf="pipState$ | async as pipState">
+            <div class="video-overlay" *ngIf="($any(pipState)).isActive && activeContainer === 'B' && !containerBInPip"></div>
+          </ng-container>
         </div>
       </div>
 

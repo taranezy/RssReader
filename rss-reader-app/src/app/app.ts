@@ -6,6 +6,7 @@ import { FeedManagerComponent } from './components/feed-manager/feed-manager';
 import { LoginComponent } from './login/login.component';
 import { AuthService } from './services/auth.service';
 import { UserSettingsService } from './services/user-settings.service';
+import { PipStateService } from './services/pip-state.service';
 import { filter } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 
@@ -19,6 +20,7 @@ import { Observable } from 'rxjs';
 export class App implements OnInit, OnDestroy {
   title = 'RSS Reader';
   isAuthenticated$: Observable<boolean>;
+  pipState$: Observable<any>;
   isSidebarCollapsed = false;
   showLeftMenu = true;
   private autoHideTimeout: any;
@@ -29,9 +31,11 @@ export class App implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private userSettingsService: UserSettingsService,
+    private pipStateService: PipStateService,
     private router: Router
   ) {
     this.isAuthenticated$ = this.authService.isAuthenticated();
+    this.pipState$ = this.pipStateService.pipState$;
   }
 
   ngOnInit(): void {
@@ -207,5 +211,9 @@ export class App implements OnInit, OnDestroy {
         }
       }
     );
+  }
+
+  closePip(): void {
+    this.pipStateService.closePip();
   }
 }

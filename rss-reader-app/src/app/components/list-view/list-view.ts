@@ -4,6 +4,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RssItem, RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { UserSettingsService } from '../../services/user-settings.service';
+import { PipStateService } from '../../services/pip-state.service';
 import { ArticleReaderComponent } from '../article-reader/article-reader';
 
 @Component({
@@ -28,6 +29,9 @@ export class ListViewComponent implements OnInit {
   selectedArticle: RssItem | null = null;
   selectedArticleForPreview: RssItem | null = null;
   
+  // Expose global PIP state to template
+  pipState$: any;
+  
   // Container A - can be in preview or PIP
   containerAArticle: RssItem | null = null;
   containerAUrl: SafeResourceUrl | null = null;
@@ -45,6 +49,7 @@ export class ListViewComponent implements OnInit {
   isVideoInPipMode = false; // true = one of the containers is in PIP
   pipContainer: 'A' | 'B' | null = null; // Track which container is in PIP
   hasEverHadVideoPIP = false; // true = user has manually closed a video from PIP at least once
+  isPIPEnabled = true; // Whether PIP feature is enabled in user settings
   
   isLargeScreen = false;
   showPreviewPane = true; // User preference to show/hide preview pane
@@ -62,10 +67,13 @@ export class ListViewComponent implements OnInit {
   constructor(
     private feedService: RssFeedService,
     private userSettingsService: UserSettingsService,
+    private pipStateService: PipStateService,
     private sanitizer: DomSanitizer,
     private cdr: ChangeDetectorRef,
     private renderer: Renderer2
-  ) {}
+  ) {
+    this.pipState$ = this.pipStateService.pipState$;
+  }
 
   ngOnInit(): void {
     this.checkScreenSize();
@@ -91,7 +99,18 @@ export class ListViewComponent implements OnInit {
 
     this.userSettingsService.settings$.subscribe(settings => {
       this.showFeedImages = settings.showFeedImages;
+      this.isPIPEnabled = settings.enablePIP;
       this.cdr.markForCheck();
+    });
+
+    // Subscribe to PIP state and restore preview when returning to list view
+    this.pipState$.subscribe((pipState: any) => {
+      if (pipState.isActive && pipState.article && !this.selectedArticleForPreview) {
+        // Restore the preview article from PIP state when user returns to list view
+        console.log('[LIST-VIEW] Restoring preview article from global PIP state:', pipState.article.title);
+        this.selectedArticleForPreview = pipState.article;
+        this.cdr.markForCheck();
+      }
     });
 
     // Load preview pane preference from localStorage
@@ -231,6 +250,10 @@ export class ListViewComponent implements OnInit {
     
     this.isVideoInPipMode = false;
     this.pipContainer = null; // Clear PIP container tracker
+    
+    // Close global PIP
+    this.pipStateService.closePip();
+    
     this.cdr.markForCheck();
     
     // Release transition lock after CSS transition completes
@@ -240,6 +263,12 @@ export class ListViewComponent implements OnInit {
   }
 
   createPipManually(): void {
+    // Check if PIP is enabled in user settings
+    if (!this.isPIPEnabled) {
+      console.log('[LIST-VIEW] PIP is disabled in settings');
+      return;
+    }
+    
     // Prevent rapid successive transitions that confuse YouTube iframe state
     if (this.transitionInProgress) return;
     
@@ -254,6 +283,9 @@ export class ListViewComponent implements OnInit {
         this.containerBArticle = null;
         this.containerBInPip = false;
         this.isVideoInPipMode = true;
+        
+        // Update global PIP state
+        this.pipStateService.openPip(this.containerAArticle, this.containerAUrl, 'A');
       }
     } else {
       if (this.containerBArticle && this.containerBUrl) {
@@ -263,6 +295,9 @@ export class ListViewComponent implements OnInit {
         this.containerAArticle = null;
         this.containerAInPip = false;
         this.isVideoInPipMode = true;
+        
+        // Update global PIP state
+        this.pipStateService.openPip(this.containerBArticle, this.containerBUrl, 'B');
       }
     }
     this.cdr.markForCheck();

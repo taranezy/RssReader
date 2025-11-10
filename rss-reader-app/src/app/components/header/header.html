@@ -284,6 +284,24 @@
               </p>
             </div>
           </div>
+
+          <!-- Picture-in-Picture Toggle -->
+          <div class="settings-section">
+            <label>Video Playback:</label>
+            <div class="toggle-option">
+              <label class="toggle-label">
+                <input 
+                  type="checkbox" 
+                  [checked]="userSettings.enablePIP"
+                  (change)="togglePIP($event)">
+                <span class="toggle-switch"></span>
+                <span>Enable Picture-in-Picture (PIP)</span>
+              </label>
+              <p class="setting-description">
+                Allow videos to play in a floating window while browsing other articles. Disable to keep videos within the preview pane only.
+              </p>
+            </div>
+          </div>
         </div>
 
         <!-- Data Management Settings -->

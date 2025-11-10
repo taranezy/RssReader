@@ -39,7 +39,8 @@ export class HeaderComponent implements OnInit {
     showLeftMenu: true,
     showFeedImages: true,
     headerColor: 'purple',
-    darkMode: false
+    darkMode: false,
+    enablePIP: true
   };
 
   availableFonts = [
@@ -283,6 +284,26 @@ export class HeaderComponent implements OnInit {
     this.feedService.updatePreferences({ 
       openInNewTab: checkbox.checked 
     });
+  }
+
+  togglePIP(event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    this.userSettings.enablePIP = checkbox.checked;
+    
+    // Save to database via API using the service method
+    const current = this.userSettingsService.getCurrentSettings();
+    this.userSettingsService.updateSettings({ ...current, enablePIP: checkbox.checked }).subscribe(
+      () => {
+        console.log('PIP setting updated successfully');
+      },
+      error => {
+        console.error('Error updating PIP setting:', error);
+        // Fall back to localStorage if API fails
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('userSettings', JSON.stringify(this.userSettings));
+        }
+      }
+    );
   }
 
   changeHeaderColor(colorId: string): void {
