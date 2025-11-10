@@ -103,6 +103,9 @@
         <button class="preview-btn" (click)="openPreviewInFullscreen()" title="Open in Fullscreen">
           ⛶ Fullscreen
         </button>
+        <button class="preview-btn" *ngIf="!isVideoInPipMode && ((activeContainer === 'A' && containerAUrl && !containerAInPip) || (activeContainer === 'B' && containerBUrl && !containerBInPip))" (click)="createPipManually()" title="Create Picture-in-Picture">
+          📺 PIP
+        </button>
         <button class="preview-btn" (click)="openPreviewInNewTab()" title="Open in New Tab">
           🔗 New Tab
         </button>
@@ -122,29 +125,57 @@
         <span class="preview-date">{{ selectedArticleForPreview.pubDate | date:'medium' }}</span>
       </div>
 
-      <!-- YouTube Video Embed - Single iframe that repositions with CSS -->
+      <!-- Container A - can be in preview or PIP -->
       <div class="video-container" 
-           *ngIf="currentVideoUrl"
-           [class.in-pip-mode]="isVideoInPipMode"
-           [class.in-preview-mode]="!isVideoInPipMode">
-        <div class="video-header" *ngIf="isVideoInPipMode">
-          <span class="video-title">{{ currentVideoArticle?.title }}</span>
+           [class.in-pip-mode]="containerAInPip"
+           [class.in-preview-mode]="!containerAInPip && activeContainer === 'A'"
+           [class.hidden]="activeContainer !== 'A' && !containerAInPip || !containerAUrl">
+        <div class="video-header" *ngIf="containerAInPip">
+          <span class="video-title">{{ containerAArticle?.title }}</span>
           <div class="video-actions">
             <button class="video-btn" (click)="openPipInPreview()" title="Move to Preview Pane">⛶</button>
             <button class="video-btn" (click)="closePipOverlay()" title="Close">✕</button>
           </div>
         </div>
-        <div class="video-iframe-wrapper">
+        <div class="video-iframe-wrapper" *ngIf="containerAUrl && (activeContainer === 'A' || containerAInPip)">
           <iframe 
-            [src]="currentVideoUrl" 
+            [src]="containerAUrl" 
             frameborder="0" 
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-            allowfullscreen>
+            allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen
+            title="YouTube video player">
           </iframe>
+          <!-- Blocking overlay when PIP is active and this is the preview video -->
+          <div class="video-overlay" *ngIf="isVideoInPipMode && activeContainer === 'A' && !containerAInPip"></div>
         </div>
       </div>
 
-      <div class="preview-image" *ngIf="selectedArticleForPreview.imageUrl && !currentVideoUrl">
+      <!-- Container B - can be in preview or PIP -->
+      <div class="video-container" 
+           [class.in-pip-mode]="containerBInPip"
+           [class.in-preview-mode]="!containerBInPip && activeContainer === 'B'"
+           [class.hidden]="activeContainer !== 'B' && !containerBInPip || !containerBUrl">
+        <div class="video-header" *ngIf="containerBInPip">
+          <span class="video-title">{{ containerBArticle?.title }}</span>
+          <div class="video-actions">
+            <button class="video-btn" (click)="openPipInPreview()" title="Move to Preview Pane">⛶</button>
+            <button class="video-btn" (click)="closePipOverlay()" title="Close">✕</button>
+          </div>
+        </div>
+        <div class="video-iframe-wrapper" *ngIf="containerBUrl && (activeContainer === 'B' || containerBInPip)">
+          <iframe 
+            [src]="containerBUrl" 
+            frameborder="0" 
+            allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen
+            title="YouTube video player">
+          </iframe>
+          <!-- Blocking overlay when PIP is active and this is the preview video -->
+          <div class="video-overlay" *ngIf="isVideoInPipMode && activeContainer === 'B' && !containerBInPip"></div>
+        </div>
+      </div>
+
+      <div class="preview-image" *ngIf="selectedArticleForPreview.imageUrl && !((activeContainer === 'A' ? containerAUrl : containerBUrl))">
         <img [src]="selectedArticleForPreview.imageUrl" [alt]="selectedArticleForPreview.title" />
       </div>
 

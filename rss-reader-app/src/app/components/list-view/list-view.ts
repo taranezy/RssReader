@@ -27,12 +27,24 @@ export class ListViewComponent implements OnInit {
   };
   selectedArticle: RssItem | null = null;
   selectedArticleForPreview: RssItem | null = null;
-  pipArticle: RssItem | null = null; // Article shown in floating PIP overlay
   
-  // Single video that can be in preview or PIP mode
-  currentVideoArticle: RssItem | null = null;
-  currentVideoUrl: SafeResourceUrl | null = null;
-  isVideoInPipMode = false; // true = show as PIP, false = show in preview
+  // Container A - can be in preview or PIP
+  containerAArticle: RssItem | null = null;
+  containerAUrl: SafeResourceUrl | null = null;
+  containerAInPip = false; // true = A is in PIP, false = A is in preview or hidden
+  
+  // Container B - can be in preview or PIP
+  containerBArticle: RssItem | null = null;
+  containerBUrl: SafeResourceUrl | null = null;
+  containerBInPip = false; // true = B is in PIP, false = B is in preview or hidden
+  
+  // Which container is currently active (showing in preview or PIP)
+  activeContainer: 'A' | 'B' = 'A'; // The container displayed in preview when no PIP
+  
+  // PIP state
+  isVideoInPipMode = false; // true = one of the containers is in PIP
+  pipContainer: 'A' | 'B' | null = null; // Track which container is in PIP
+  hasEverHadVideoPIP = false; // true = user has manually closed a video from PIP at least once
   
   isLargeScreen = false;
   showPreviewPane = true; // User preference to show/hide preview pane
@@ -43,6 +55,9 @@ export class ListViewComponent implements OnInit {
 
   @ViewChild('previewVideoContainer', { read: ElementRef }) previewVideoContainer?: ElementRef;
   @ViewChild('pipVideoContainer', { read: ElementRef }) pipVideoContainer?: ElementRef;
+  
+  private transitionInProgress = false; // Prevent rapid successive transitions
+  private closedContainerId: 'A' | 'B' | null = null; // Track which container was closed during delay
 
   constructor(
     private feedService: RssFeedService,
@@ -114,6 +129,9 @@ export class ListViewComponent implements OnInit {
   }
 
   openArticle(item: RssItem): void {
+    // Skip if transition is in progress (prevents audio issues from rapid switching)
+    if (this.transitionInProgress) return;
+    
     // ALWAYS mark change detection when user explicitly clicks
     console.log('[LIST-VIEW] User clicked item - allowing change detection');
     this.feedService.markAsRead(item.id);
@@ -122,32 +140,49 @@ export class ListViewComponent implements OnInit {
     if (this.isLargeScreen && this.showPreviewPane) {
       const clickedItemHasVideo = this.getYouTubeVideoId(item.link);
       
-      // If there's currently a video playing AND user clicks a different item
-      if (this.currentVideoArticle && this.currentVideoUrl && 
-          this.currentVideoArticle.id !== item.id && 
-          this.getYouTubeVideoId(this.currentVideoArticle.link)) {
-        // Move current video to PIP
-        this.pipArticle = this.currentVideoArticle;
-        this.isVideoInPipMode = true;
-      }
-      
       // Show clicked item in preview
       this.selectedArticleForPreview = item;
       
-      // If clicked item has video, make it the current video
       if (clickedItemHasVideo) {
-        this.currentVideoArticle = item;
-        this.currentVideoUrl = this.getYouTubeEmbedUrl(item.link);
-        this.isVideoInPipMode = false; // Show in preview, not PIP
-        this.pipArticle = null; // Clear PIP since new video is in preview
-      } else {
-        // Clicked item has no video
-        // If there was a video in preview (not in PIP), clear it
-        if (!this.isVideoInPipMode) {
-          this.currentVideoArticle = null;
-          this.currentVideoUrl = null;
+        // If a container is in PIP, load new video into the inactive container
+        if (this.isVideoInPipMode) {
+          // Load into the inactive container
+          if (this.activeContainer === 'A') {
+            // A is active (in PIP or preview), load B
+            this.containerBArticle = item;
+            this.containerBUrl = this.getYouTubeEmbedUrl(item.link);
+            this.containerBInPip = false;
+            this.activeContainer = 'B'; // B becomes active for preview
+          } else {
+            // B is active (in PIP or preview), load A
+            this.containerAArticle = item;
+            this.containerAUrl = this.getYouTubeEmbedUrl(item.link);
+            this.containerAInPip = false;
+            this.activeContainer = 'A'; // A becomes active for preview
+          }
+        } else {
+          // No PIP, just load into the active container
+          if (this.activeContainer === 'A') {
+            this.containerAArticle = item;
+            this.containerAUrl = this.getYouTubeEmbedUrl(item.link);
+            this.containerAInPip = false;
+          } else {
+            this.containerBArticle = item;
+            this.containerBUrl = this.getYouTubeEmbedUrl(item.link);
+            this.containerBInPip = false;
+          }
         }
-        // If video is in PIP, keep it there
+      } else {
+        // Clicked item has no video - clear the active container only if not in PIP
+        if (!this.isVideoInPipMode) {
+          if (this.activeContainer === 'A') {
+            this.containerAArticle = null;
+            this.containerAUrl = null;
+          } else {
+            this.containerBArticle = null;
+            this.containerBUrl = null;
+          }
+        }
       }
       
       this.cdr.markForCheck();
@@ -165,36 +200,90 @@ export class ListViewComponent implements OnInit {
   }
 
   closePreviewPane(): void {
-    // If there's a video playing, move it to PIP before closing
-    if (this.currentVideoArticle && this.currentVideoUrl) {
-      this.pipArticle = this.currentVideoArticle;
-      this.isVideoInPipMode = true;
-    }
     this.selectedArticleForPreview = null;
   }
 
   closePipOverlay(): void {
-    this.pipArticle = null;
-    this.currentVideoArticle = null;
-    this.currentVideoUrl = null;
+    // Skip if transition is in progress
+    if (this.transitionInProgress) return;
+    
+    this.transitionInProgress = true;
+    
+    // Mark that user has manually closed a video from PIP
+    this.hasEverHadVideoPIP = true;
+    
+    // Simply hide the PIP - don't clear URLs to keep iframes stable
+    if (this.containerAInPip) {
+      this.containerAInPip = false;
+      this.containerAArticle = null; // Clear article reference but keep URL
+      // If B has content, make it active in preview
+      if (this.containerBArticle && this.containerBUrl) {
+        this.activeContainer = 'B';
+      }
+    } else if (this.containerBInPip) {
+      this.containerBInPip = false;
+      this.containerBArticle = null; // Clear article reference but keep URL
+      // If A has content, make it active in preview
+      if (this.containerAArticle && this.containerAUrl) {
+        this.activeContainer = 'A';
+      }
+    }
+    
     this.isVideoInPipMode = false;
+    this.pipContainer = null; // Clear PIP container tracker
     this.cdr.markForCheck();
+    
+    // Release transition lock after CSS transition completes
+    setTimeout(() => {
+      this.transitionInProgress = false;
+    }, 350);
+  }
+
+  createPipManually(): void {
+    // Prevent rapid successive transitions that confuse YouTube iframe state
+    if (this.transitionInProgress) return;
+    
+    this.transitionInProgress = true;
+    
+    // Send the active container to PIP - keep other container's iframe in DOM to avoid state issues
+    if (this.activeContainer === 'A') {
+      if (this.containerAArticle && this.containerAUrl) {
+        this.containerAInPip = true;
+        this.pipContainer = 'A'; // Track that A is in PIP
+        // Hide container B but keep its URL (iframe stays in DOM)
+        this.containerBArticle = null;
+        this.containerBInPip = false;
+        this.isVideoInPipMode = true;
+      }
+    } else {
+      if (this.containerBArticle && this.containerBUrl) {
+        this.containerBInPip = true;
+        this.pipContainer = 'B'; // Track that B is in PIP
+        // Hide container A but keep its URL (iframe stays in DOM)
+        this.containerAArticle = null;
+        this.containerAInPip = false;
+        this.isVideoInPipMode = true;
+      }
+    }
+    this.cdr.markForCheck();
+    
+    // Release the transition lock after CSS transition completes (300ms + buffer)
+    setTimeout(() => {
+      this.transitionInProgress = false;
+    }, 350);
   }
 
   openPipInPreview(): void {
-    // Simply toggle between PIP and preview mode
-    // The same video stays loaded, just changes position
-    this.isVideoInPipMode = !this.isVideoInPipMode;
-    
-    if (!this.isVideoInPipMode) {
-      // Moving back to preview
-      this.selectedArticleForPreview = this.currentVideoArticle;
-      this.pipArticle = null;
-    } else {
-      // Moving to PIP
-      this.pipArticle = this.currentVideoArticle;
+    // Move the PIP container back to preview
+    if (this.containerAInPip) {
+      this.containerAInPip = false;
+      this.activeContainer = 'A';
+    } else if (this.containerBInPip) {
+      this.containerBInPip = false;
+      this.activeContainer = 'B';
     }
-    
+    this.isVideoInPipMode = false;
+    this.selectedArticleForPreview = this.activeContainer === 'A' ? this.containerAArticle : this.containerBArticle;
     this.cdr.markForCheck();
   }
 
