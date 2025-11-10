@@ -271,6 +271,114 @@ body.dark-mode .items-list {
   color: #999;
 }
 
+// Single video container that repositions with CSS
+.video-container {
+  transition: all 0.3s ease;
+  
+  // When in preview mode - inside preview pane
+  &.in-preview-mode {
+    margin-bottom: 25px;
+    border-radius: 8px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    
+    .video-header {
+      display: none; // No header in preview mode
+    }
+    
+    .video-iframe-wrapper {
+      position: relative;
+      padding-bottom: 56.25%; // 16:9 aspect ratio
+      height: 0;
+      
+      iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 8px;
+      }
+    }
+  }
+  
+  // When in PIP mode - floating overlay
+  &.in-pip-mode {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 400px;
+    max-width: calc(100vw - 40px);
+    background: #1e1e1e;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    overflow: hidden;
+    animation: slideIn 0.3s ease-out;
+    
+    .video-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 2px 16px;
+      background: #2a2a2a;
+      border-bottom: 1px solid #3a3a3a;
+      
+      .video-title {
+        font-size: 12px;
+        font-weight: 500;
+        color: #e0e0e0;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-right: 8px;
+      }
+      
+      .video-actions {
+        display: flex;
+        gap: 4px;
+        
+        .video-btn {
+          background: transparent;
+          border: none;
+          color: #e0e0e0;
+          cursor: pointer;
+          padding: 1px 4px;
+          border-radius: 3px;
+          font-size: 14px;
+          transition: all 0.2s;
+          
+          &:hover {
+            background: rgba(255, 255, 255, 0.1);
+          }
+        }
+      }
+    }
+    
+    .video-iframe-wrapper {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; // 16:9 aspect ratio
+      background: #000;
+      
+      iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+      }
+    }
+  }
+}
+
 .preview-video {
   margin-bottom: 25px;
   border-radius: 8px;

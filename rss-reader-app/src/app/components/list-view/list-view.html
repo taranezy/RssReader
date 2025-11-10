@@ -122,17 +122,29 @@
         <span class="preview-date">{{ selectedArticleForPreview.pubDate | date:'medium' }}</span>
       </div>
 
-      <!-- YouTube Video Embed -->
-      <div class="preview-video" *ngIf="previewEmbedUrl">
-        <iframe 
-          [src]="previewEmbedUrl" 
-          frameborder="0" 
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-          allowfullscreen>
-        </iframe>
+      <!-- YouTube Video Embed - Single iframe that repositions with CSS -->
+      <div class="video-container" 
+           *ngIf="currentVideoUrl"
+           [class.in-pip-mode]="isVideoInPipMode"
+           [class.in-preview-mode]="!isVideoInPipMode">
+        <div class="video-header" *ngIf="isVideoInPipMode">
+          <span class="video-title">{{ currentVideoArticle?.title }}</span>
+          <div class="video-actions">
+            <button class="video-btn" (click)="openPipInPreview()" title="Move to Preview Pane">⛶</button>
+            <button class="video-btn" (click)="closePipOverlay()" title="Close">✕</button>
+          </div>
+        </div>
+        <div class="video-iframe-wrapper">
+          <iframe 
+            [src]="currentVideoUrl" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+          </iframe>
+        </div>
       </div>
 
-      <div class="preview-image" *ngIf="selectedArticleForPreview.imageUrl && !previewEmbedUrl">
+      <div class="preview-image" *ngIf="selectedArticleForPreview.imageUrl && !currentVideoUrl">
         <img [src]="selectedArticleForPreview.imageUrl" [alt]="selectedArticleForPreview.title" />
       </div>
 
@@ -144,25 +156,6 @@
         </a>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- Floating PIP Video Overlay -->
-<div class="pip-overlay" *ngIf="pipArticle && pipEmbedUrl">
-  <div class="pip-header">
-    <span class="pip-title">{{ pipArticle.title }}</span>
-    <div class="pip-actions">
-      <button class="pip-btn" (click)="openPipInPreview()" title="Move to Preview Pane">⛶</button>
-      <button class="pip-btn" (click)="closePipOverlay()" title="Close">✕</button>
-    </div>
-  </div>
-  <div class="pip-video">
-    <iframe 
-      [src]="pipEmbedUrl" 
-      frameborder="0" 
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-      allowfullscreen>
-    </iframe>
   </div>
 </div>
 

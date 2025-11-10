@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, HostListener, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { RssItem, RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
@@ -29,9 +29,10 @@ export class ListViewComponent implements OnInit {
   selectedArticleForPreview: RssItem | null = null;
   pipArticle: RssItem | null = null; // Article shown in floating PIP overlay
   
-  // Cached embed URLs to prevent iframe recreation
-  previewEmbedUrl: SafeResourceUrl | null = null;
-  pipEmbedUrl: SafeResourceUrl | null = null;
+  // Single video that can be in preview or PIP mode
+  currentVideoArticle: RssItem | null = null;
+  currentVideoUrl: SafeResourceUrl | null = null;
+  isVideoInPipMode = false; // true = show as PIP, false = show in preview
   
   isLargeScreen = false;
   showPreviewPane = true; // User preference to show/hide preview pane
@@ -40,11 +41,15 @@ export class ListViewComponent implements OnInit {
   resizeStartX = 0;
   resizeStartWidth = 0;
 
+  @ViewChild('previewVideoContainer', { read: ElementRef }) previewVideoContainer?: ElementRef;
+  @ViewChild('pipVideoContainer', { read: ElementRef }) pipVideoContainer?: ElementRef;
+
   constructor(
     private feedService: RssFeedService,
     private userSettingsService: UserSettingsService,
     private sanitizer: DomSanitizer,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private renderer: Renderer2
   ) {}
 
   ngOnInit(): void {
@@ -116,21 +121,35 @@ export class ListViewComponent implements OnInit {
     // On large screens with preview pane enabled and showing, always show in preview
     if (this.isLargeScreen && this.showPreviewPane) {
       const clickedItemHasVideo = this.getYouTubeVideoId(item.link);
-      const previewHasVideo = this.selectedArticleForPreview && 
-                              this.getYouTubeVideoId(this.selectedArticleForPreview.link);
       
-      // If there's a video in preview and user clicks a different item
-      if (this.selectedArticleForPreview && 
-          this.selectedArticleForPreview.id !== item.id && 
-          previewHasVideo) {
-        // Move current video to PIP (regardless of what user clicked)
-        this.pipArticle = this.selectedArticleForPreview;
-        this.pipEmbedUrl = this.previewEmbedUrl; // Cache the URL
+      // If there's currently a video playing AND user clicks a different item
+      if (this.currentVideoArticle && this.currentVideoUrl && 
+          this.currentVideoArticle.id !== item.id && 
+          this.getYouTubeVideoId(this.currentVideoArticle.link)) {
+        // Move current video to PIP
+        this.pipArticle = this.currentVideoArticle;
+        this.isVideoInPipMode = true;
       }
       
-      // Always show the clicked item in preview
+      // Show clicked item in preview
       this.selectedArticleForPreview = item;
-      this.previewEmbedUrl = this.getYouTubeEmbedUrl(item.link); // Cache the URL
+      
+      // If clicked item has video, make it the current video
+      if (clickedItemHasVideo) {
+        this.currentVideoArticle = item;
+        this.currentVideoUrl = this.getYouTubeEmbedUrl(item.link);
+        this.isVideoInPipMode = false; // Show in preview, not PIP
+        this.pipArticle = null; // Clear PIP since new video is in preview
+      } else {
+        // Clicked item has no video
+        // If there was a video in preview (not in PIP), clear it
+        if (!this.isVideoInPipMode) {
+          this.currentVideoArticle = null;
+          this.currentVideoUrl = null;
+        }
+        // If video is in PIP, keep it there
+      }
+      
       this.cdr.markForCheck();
     } else if (this.preferences.openInNewTab) {
       // Open in new tab
@@ -147,41 +166,36 @@ export class ListViewComponent implements OnInit {
 
   closePreviewPane(): void {
     // If there's a video playing, move it to PIP before closing
-    if (this.selectedArticleForPreview && 
-        this.getYouTubeVideoId(this.selectedArticleForPreview.link)) {
-      this.pipArticle = this.selectedArticleForPreview;
-      this.pipEmbedUrl = this.previewEmbedUrl; // Cache the URL
+    if (this.currentVideoArticle && this.currentVideoUrl) {
+      this.pipArticle = this.currentVideoArticle;
+      this.isVideoInPipMode = true;
     }
     this.selectedArticleForPreview = null;
-    this.previewEmbedUrl = null;
   }
 
   closePipOverlay(): void {
     this.pipArticle = null;
-    this.pipEmbedUrl = null;
+    this.currentVideoArticle = null;
+    this.currentVideoUrl = null;
+    this.isVideoInPipMode = false;
     this.cdr.markForCheck();
   }
 
   openPipInPreview(): void {
-    if (this.pipArticle) {
-      // If preview has a video, swap them
-      if (this.selectedArticleForPreview && 
-          this.getYouTubeVideoId(this.selectedArticleForPreview.link)) {
-        const temp = this.selectedArticleForPreview;
-        const tempUrl = this.previewEmbedUrl;
-        this.selectedArticleForPreview = this.pipArticle;
-        this.previewEmbedUrl = this.pipEmbedUrl;
-        this.pipArticle = temp;
-        this.pipEmbedUrl = tempUrl;
-      } else {
-        // Just move PIP to preview
-        this.selectedArticleForPreview = this.pipArticle;
-        this.previewEmbedUrl = this.pipEmbedUrl;
-        this.pipArticle = null;
-        this.pipEmbedUrl = null;
-      }
-      this.cdr.markForCheck();
+    // Simply toggle between PIP and preview mode
+    // The same video stays loaded, just changes position
+    this.isVideoInPipMode = !this.isVideoInPipMode;
+    
+    if (!this.isVideoInPipMode) {
+      // Moving back to preview
+      this.selectedArticleForPreview = this.currentVideoArticle;
+      this.pipArticle = null;
+    } else {
+      // Moving to PIP
+      this.pipArticle = this.currentVideoArticle;
     }
+    
+    this.cdr.markForCheck();
   }
 
   openPreviewInFullscreen(): void {
