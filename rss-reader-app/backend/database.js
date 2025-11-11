@@ -131,6 +131,17 @@ class DatabaseService {
       }
     }
 
+    // Add enable_pip column if it doesn't exist (migration for existing databases)
+    try {
+      this.db.exec(`ALTER TABLE user_settings ADD COLUMN enable_pip INTEGER NOT NULL DEFAULT 1;`);
+      console.log('Enable PIP column added successfully');
+    } catch (err) {
+      // Column already exists, ignore error (duplicate column name)
+      if (!err.message.includes('duplicate column name')) {
+        console.error('Error adding enable_pip column:', err);
+      }
+    }
+
     // Create indexes for better performance
     this.db.exec(`
       CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
@@ -443,10 +454,10 @@ class DatabaseService {
     if (!settings) {
       // Create default settings if not found
       this.db.prepare(`
-        INSERT INTO user_settings (user_id, font, show_left_menu, show_feed_images, header_color, dark_mode)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(userId, 'default', 1, 1, 'purple', 0);
-      return { font: 'default', showLeftMenu: true, showFeedImages: true, headerColor: 'purple', darkMode: false };
+        INSERT INTO user_settings (user_id, font, show_left_menu, show_feed_images, header_color, dark_mode, enable_pip)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(userId, 'default', 1, 1, 'purple', 0, 1);
+      return { font: 'default', showLeftMenu: true, showFeedImages: true, headerColor: 'purple', darkMode: false, enablePIP: true };
     }
 
     return {
@@ -454,14 +465,15 @@ class DatabaseService {
       showLeftMenu: settings.show_left_menu === 1,
       showFeedImages: settings.show_feed_images === 1,
       headerColor: settings.header_color || 'purple',
-      darkMode: settings.dark_mode === 1 || false // Handle undefined/null
+      darkMode: settings.dark_mode === 1 || false, // Handle undefined/null
+      enablePIP: settings.enable_pip === 1 || true // Handle undefined/null, default to true
     };
   }
 
   updateUserSettings(userId, settings) {
     const stmt = this.db.prepare(`
       UPDATE user_settings 
-      SET font = ?, show_left_menu = ?, show_feed_images = ?, header_color = ?, dark_mode = ?, updated_at = CURRENT_TIMESTAMP
+      SET font = ?, show_left_menu = ?, show_feed_images = ?, header_color = ?, dark_mode = ?, enable_pip = ?, updated_at = CURRENT_TIMESTAMP
       WHERE user_id = ?
     `);
 
@@ -471,6 +483,7 @@ class DatabaseService {
       settings.showFeedImages ? 1 : 0,
       settings.headerColor || 'purple',
       settings.darkMode ? 1 : 0,
+      settings.enablePIP ? 1 : 0,
       userId
     );
   }

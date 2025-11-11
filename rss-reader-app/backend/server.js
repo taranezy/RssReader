@@ -857,6 +857,8 @@ app.get('/api/export', isAuthenticated, (req, res) => {
     xml += '    <show-left-menu>' + settings.showLeftMenu + '</show-left-menu>\n';
     xml += '    <show-feed-images>' + settings.showFeedImages + '</show-feed-images>\n';
     xml += '    <header-color>' + escapeXml(settings.headerColor) + '</header-color>\n';
+    xml += '    <dark-mode>' + settings.darkMode + '</dark-mode>\n';
+    xml += '    <enable-pip>' + settings.enablePIP + '</enable-pip>\n';
     xml += '  </settings>\n';
     
     // Export feeds
