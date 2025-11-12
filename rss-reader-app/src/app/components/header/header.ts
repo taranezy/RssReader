@@ -212,7 +212,6 @@ export class HeaderComponent implements OnInit {
     // Save to database via API (fire and forget, but with error handling)
     this.userSettingsService.updateFont(fontId).subscribe(
       () => {
-        console.log('Font setting updated successfully');
       },
       error => {
         console.error('Error updating font setting:', error);
@@ -232,7 +231,6 @@ export class HeaderComponent implements OnInit {
     this.userSettingsService.updateShowLeftMenu(checkbox.checked).subscribe(
       () => {
         this.leftMenuToggled.emit(checkbox.checked);
-        console.log('Left menu setting updated successfully');
       },
       error => {
         console.error('Error updating left menu setting:', error);
@@ -252,7 +250,6 @@ export class HeaderComponent implements OnInit {
     // Save to database via API
     this.userSettingsService.updateShowFeedImages(checkbox.checked).subscribe(
       () => {
-        console.log('Feed images setting updated successfully');
       },
       error => {
         console.error('Error updating feed images setting:', error);
@@ -271,7 +268,6 @@ export class HeaderComponent implements OnInit {
     // Save to database via API
     this.userSettingsService.updateDarkMode(checkbox.checked).subscribe(
       () => {
-        console.log('Dark mode setting updated successfully');
       },
       error => {
         console.error('Error updating dark mode setting:', error);
@@ -294,7 +290,6 @@ export class HeaderComponent implements OnInit {
     const current = this.userSettingsService.getCurrentSettings();
     this.userSettingsService.updateSettings({ ...current, enablePIP: checkbox.checked }).subscribe(
       () => {
-        console.log('PIP setting updated successfully');
       },
       error => {
         console.error('Error updating PIP setting:', error);
@@ -315,7 +310,6 @@ export class HeaderComponent implements OnInit {
     // Save to database via API
     this.userSettingsService.updateHeaderColor(colorId).subscribe(
       () => {
-        console.log('Header color setting updated successfully');
       },
       error => {
         console.error('Error updating header color setting:', error);
@@ -341,27 +335,31 @@ export class HeaderComponent implements OnInit {
   }
 
   loadUserSettings(): void {
-    this.userSettingsService.getSettings().subscribe(
-      settings => {
+    this.userSettingsService.getSettings().subscribe({
+      next: (settings) => {
         this.userSettings = settings;
         this.userSettingsService.applyFontImmediately(settings.font);
         this.applyHeaderColor(settings.headerColor);
         this.userSettingsService.applyDarkMode(settings.darkMode);
       },
-      error => {
-        console.error('Error loading user settings:', error);
-        // Fall back to localStorage if API fails
+      error: (error) => {
+        console.error('[Header] Error loading user settings:', error);
+        // Fall back to localStorage or defaults
         if (typeof localStorage !== 'undefined') {
           const saved = localStorage.getItem('userSettings');
           if (saved) {
-            this.userSettings = JSON.parse(saved);
-            this.userSettingsService.applyFontImmediately(this.userSettings.font);
-            this.applyHeaderColor(this.userSettings.headerColor);
-            this.userSettingsService.applyDarkMode(this.userSettings.darkMode);
+            try {
+              this.userSettings = JSON.parse(saved);
+              this.userSettingsService.applyFontImmediately(this.userSettings.font);
+              this.applyHeaderColor(this.userSettings.headerColor);
+              this.userSettingsService.applyDarkMode(this.userSettings.darkMode);
+            } catch (e) {
+              console.error('[Header] Failed to parse localStorage settings:', e);
+            }
           }
         }
       }
-    );
+    });
   }
 
   exportData(): void {

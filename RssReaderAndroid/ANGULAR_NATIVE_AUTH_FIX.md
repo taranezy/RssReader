@@ -218,15 +218,7 @@ export class LoginComponent implements OnInit {
     const idToken = localStorage.getItem('streamlet_id_token');
     const email = localStorage.getItem('streamlet_email');
 
-    console.log('[Native App Check]', {
-      skipLogin,
-      hasToken: !!idToken,
-      hasEmail: !!email,
-      allPresent: !!(skipLogin && idToken && email)
-    });
-
     if (skipLogin && idToken && email) {
-      console.log('[Native App] ✓ Detected! Setting user and navigating to feeds...');
       this.isNativeAppAuth = true;
 
       // Set authenticated state in auth service
@@ -237,7 +229,6 @@ export class LoginComponent implements OnInit {
         this.router.navigate(['/list']);
       }, 500);
     } else {
-      console.log('[Web App] Showing login form');
     }
   }
 
@@ -269,7 +260,6 @@ Add this method to your AuthService:
  * Called when app detects native authentication tokens
  */
 setNativeAppAuthenticated(email: string, idToken: string) {
-  console.log('[AuthService] Setting native app authenticated:', email);
   
   // Store credentials for API calls
   localStorage.setItem('streamlet_email', email);
@@ -405,8 +395,8 @@ If it still doesn't skip login:
 
 2. **Check localStorage:**
    ```javascript
-   console.log(localStorage.getItem('streamlet_skip_login'));
-   console.log(localStorage.getItem('streamlet_id_token'));
+   (localStorage.getItem('streamlet_skip_login'));
+   (localStorage.getItem('streamlet_id_token'));
    ```
 
 3. **If not detected**, check Android logs:

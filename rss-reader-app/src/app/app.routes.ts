@@ -6,7 +6,7 @@ import { SuggestedFeedsComponent } from './components/suggested-feeds/suggested-
 import { authGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
-  { path: 'list', component: ListViewComponent, canActivate: [authGuard] },
+  { path: 'list', component: ListViewComponent },
   { path: 'grid', component: GridViewComponent, canActivate: [authGuard] },
   { path: 'news', component: NewsLookComponent, canActivate: [authGuard] },
   { path: 'suggested', component: SuggestedFeedsComponent, canActivate: [authGuard] },

@@ -2,20 +2,33 @@
  * Auth Routes - Single Responsibility: Route all authentication-related endpoints
  * Depends on AuthController and Middleware (Dependency Injection)
  */
-module.exports = function createAuthRoutes(app, authController, passport, isAuthenticated) {
+module.exports = function createAuthRoutes(app, authController, passport, isAuthenticated, config) {
   
   /**
    * GET /api/auth/google - Start Google OAuth flow
    */
-  app.get('/api/auth/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
-  );
+  app.get('/api/auth/google', (req, res, next) => {
+    // Check if Google OAuth is configured
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      return res.status(503).json({
+        success: false,
+        error: 'Google OAuth not configured',
+        message: 'Google OAuth credentials are missing. Please contact the administrator.',
+        code: 'OAUTH_NOT_CONFIGURED'
+      });
+    }
+    
+    passport.authenticate('google', { scope: ['profile', 'email'] })(req, res, next);
+  });
 
   /**
    * GET /api/auth/google/callback - Google OAuth callback
    */
   app.get('/api/auth/google/callback',
-    passport.authenticate('google', { failureRedirect: '/' }),
+    passport.authenticate('google', { 
+      failureRedirect: `${config.FRONTEND_URL}/?error=auth_failed`,
+      failureMessage: true 
+    }),
     (req, res) => {
       authController.googleAuthCallback(req, res);
     }

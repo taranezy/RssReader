@@ -14,10 +14,41 @@ export class ApiStorageService {
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Extract data from wrapped API response {success, data}
+   * Falls back to original response if not wrapped
+   */
+  private extractData<T>(response: any): T {
+    // Handle both wrapped {success, data} and direct data formats
+    if (response && typeof response === 'object' && response.data !== undefined) {
+      return response.data;
+    }
+    return response;
+  }
+
   // ==================== FEEDS ====================
   
   getAllFeeds(): Observable<RssFeed[]> {
-    return this.http.get<RssFeed[]>(`${this.apiUrl}/feeds`, this.httpOptions).pipe(
+    return this.http.get<any>(`${this.apiUrl}/feeds`, this.httpOptions).pipe(
+      map(response => {
+        // Extract data from {success, data} wrapper using extractData
+        let feeds = this.extractData<RssFeed[]>(response);
+        
+        // Ensure feeds is an array, handle stringified JSON
+        if (!Array.isArray(feeds)) {
+          console.warn('getAllFeeds: feeds is not an array:', typeof feeds, feeds);
+          try {
+            if (typeof feeds === 'string') {
+              feeds = JSON.parse(feeds);
+            }
+          } catch (e) {
+            console.error('Failed to parse feeds:', e);
+            feeds = [];
+          }
+        }
+        
+        return Array.isArray(feeds) ? feeds : [];
+      }),
       catchError(error => {
         console.error('Error fetching feeds:', error);
         return of([]);
@@ -26,7 +57,8 @@ export class ApiStorageService {
   }
 
   getFeedById(id: string): Observable<RssFeed | null> {
-    return this.http.get<RssFeed>(`${this.apiUrl}/feeds/${id}`, this.httpOptions).pipe(
+    return this.http.get<any>(`${this.apiUrl}/feeds/${id}`, this.httpOptions).pipe(
+      map(response => this.extractData<RssFeed>(response) || null),
       catchError(error => {
         console.error('Error fetching feed:', error);
         return of(null);
@@ -35,11 +67,15 @@ export class ApiStorageService {
   }
 
   createFeed(feed: RssFeed): Observable<RssFeed> {
-    return this.http.post<RssFeed>(`${this.apiUrl}/feeds`, feed, this.httpOptions);
+    return this.http.post<any>(`${this.apiUrl}/feeds`, feed, this.httpOptions).pipe(
+      map(response => this.extractData<RssFeed>(response))
+    );
   }
 
   updateFeed(id: string, updates: Partial<RssFeed>): Observable<RssFeed> {
-    return this.http.put<RssFeed>(`${this.apiUrl}/feeds/${id}`, updates, this.httpOptions);
+    return this.http.put<any>(`${this.apiUrl}/feeds/${id}`, updates, this.httpOptions).pipe(
+      map(response => this.extractData<RssFeed>(response))
+    );
   }
 
   deleteFeed(id: string): Observable<void> {
@@ -49,8 +85,25 @@ export class ApiStorageService {
   // ==================== ITEMS ====================
   
   getAllItems(): Observable<RssItem[]> {
-    return this.http.get<RssItem[]>(`${this.apiUrl}/items`, this.httpOptions).pipe(
-      map(items => items.map(item => this.convertItemDates(item))),
+    return this.http.get<any>(`${this.apiUrl}/items`, this.httpOptions).pipe(
+      map(response => {
+        // Extract data from {success, data} wrapper using extractData
+        let items = this.extractData<RssItem[]>(response);
+        
+        // Ensure items is an array, handle stringified JSON
+        if (!Array.isArray(items)) {
+          try {
+            if (typeof items === 'string') {
+              items = JSON.parse(items);
+            }
+          } catch (e) {
+            console.error('Failed to parse items:', e);
+            items = [];
+          }
+        }
+        
+        return Array.isArray(items) ? items.map(item => this.convertItemDates(item)) : [];
+      }),
       catchError(error => {
         console.error('Error fetching items:', error);
         return of([]);
@@ -59,8 +112,26 @@ export class ApiStorageService {
   }
 
   getItemsByFeed(feedId: string): Observable<RssItem[]> {
-    return this.http.get<RssItem[]>(`${this.apiUrl}/feeds/${feedId}/items`, this.httpOptions).pipe(
-      map(items => items.map(item => this.convertItemDates(item))),
+    return this.http.get<any>(`${this.apiUrl}/feeds/${feedId}/items`, this.httpOptions).pipe(
+      map(response => {
+        // Extract data from {success, data} wrapper using extractData
+        let items = this.extractData<RssItem[]>(response);
+        
+        // Ensure items is an array, handle stringified JSON
+        if (!Array.isArray(items)) {
+          console.warn('getItemsByFeed: items is not an array:', typeof items, items);
+          try {
+            if (typeof items === 'string') {
+              items = JSON.parse(items);
+            }
+          } catch (e) {
+            console.error('Failed to parse items:', e);
+            items = [];
+          }
+        }
+        
+        return Array.isArray(items) ? items.map(item => this.convertItemDates(item)) : [];
+      }),
       catchError(error => {
         console.error('Error fetching feed items:', error);
         return of([]);
@@ -69,37 +140,85 @@ export class ApiStorageService {
   }
 
   createItem(item: RssItem): Observable<RssItem> {
-    return this.http.post<RssItem>(`${this.apiUrl}/items`, item, this.httpOptions);
-  }
-
-  createItems(items: RssItem[]): Observable<{ created: number }> {
-    return this.http.post<{ created: number }>(`${this.apiUrl}/items/bulk`, items, this.httpOptions);
-  }
-
-  updateItem(id: string, updates: Partial<RssItem>): Observable<{ success: boolean }> {
-    return this.http.put<{ success: boolean }>(`${this.apiUrl}/items/${id}`, updates, this.httpOptions);
-  }
-
-  markAllAsRead(feedId?: string): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(`${this.apiUrl}/items/mark-all-read`, { feedId }, this.httpOptions);
-  }
-
-  getSavedItems(): Observable<RssItem[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/items/saved`, this.httpOptions).pipe(
-      map(items => items.map(item => this.convertItemDates(item)))
+    return this.http.post<any>(`${this.apiUrl}/items`, item, this.httpOptions).pipe(
+      map(response => this.extractData<RssItem>(response))
     );
   }
 
-  cleanupOldItems(): Observable<number> {
-    return this.http.post<{ success: boolean; deletedCount: number }>(`${this.apiUrl}/items/cleanup-old`, {}, this.httpOptions).pipe(
-      map(response => response.deletedCount)
+  createItems(items: RssItem[]): Observable<{ created: number }> {
+    return this.http.post<any>(`${this.apiUrl}/items/bulk`, items, this.httpOptions).pipe(
+      map(response => this.extractData<{ created: number }>(response))
+    );
+  }
+
+  updateItem(id: string, updates: Partial<RssItem>): Observable<{ success: boolean }> {
+    return this.http.put<any>(`${this.apiUrl}/items/${id}`, updates, this.httpOptions).pipe(
+      map(response => this.extractData<{ success: boolean }>(response))
+    );
+  }
+
+  markAllAsRead(feedId?: string): Observable<{ success: boolean }> {
+    return this.http.post<any>(`${this.apiUrl}/items/mark-all-read`, { feedId }, this.httpOptions).pipe(
+      map(response => this.extractData<{ success: boolean }>(response))
+    );
+  }
+
+  getSavedItems(): Observable<RssItem[]> {
+    return this.http.get<any>(`${this.apiUrl}/items/saved`, this.httpOptions).pipe(
+      map(response => {
+        // Extract data from {success, data} wrapper using extractData
+        let items = this.extractData<RssItem[]>(response);
+        
+        // Ensure items is an array, handle stringified JSON
+        if (!Array.isArray(items)) {
+          console.warn('getSavedItems: items is not an array:', typeof items);
+          try {
+            if (typeof items === 'string') {
+              items = JSON.parse(items);
+            }
+          } catch (e) {
+            console.error('Failed to parse items:', e);
+            items = [];
+          }
+        }
+        
+        return Array.isArray(items) ? items.map(item => this.convertItemDates(item)) : [];
+      }),
+      catchError(error => {
+        console.error('Error fetching saved items:', error);
+        return of([]);
+      })
+    );
+  }
+
+  cleanupOldItems(feedId: string, daysOld: number = 30): Observable<number> {
+    return this.http.post<any>(`${this.apiUrl}/items/cleanup-old`, { feedId, daysOld }, this.httpOptions).pipe(
+      map(response => {
+        // Extract data from {success, data} wrapper using extractData
+        const data = this.extractData<any>(response);
+        return data?.deletedCount || 0;
+      }),
+      catchError(error => {
+        console.error('Error cleaning up old items:', error);
+        return of(0);
+      })
     );
   }
 
   // ==================== PREFERENCES ====================
   
   getPreferences(): Observable<FeedViewPreference> {
-    return this.http.get<FeedViewPreference>(`${this.apiUrl}/preferences`, this.httpOptions).pipe(
+    return this.http.get<any>(`${this.apiUrl}/preferences`, this.httpOptions).pipe(
+      map(response => {
+        // Extract data from {success, data} wrapper using extractData
+        const prefs = this.extractData<FeedViewPreference>(response);
+        return prefs || {
+          viewType: 'list' as 'list' | 'grid',
+          selectedFeeds: [],
+          showOnlyUnread: false,
+          openInNewTab: true
+        };
+      }),
       catchError(error => {
         console.error('Error fetching preferences:', error);
         return of({
@@ -113,7 +232,17 @@ export class ApiStorageService {
   }
 
   updatePreferences(preferences: FeedViewPreference): Observable<FeedViewPreference> {
-    return this.http.put<FeedViewPreference>(`${this.apiUrl}/preferences`, preferences, this.httpOptions);
+    return this.http.put<any>(`${this.apiUrl}/preferences`, preferences, this.httpOptions).pipe(
+      map(response => {
+        // Extract data from {success, data} wrapper using extractData
+        const updated = this.extractData<FeedViewPreference>(response);
+        return updated || preferences;
+      }),
+      catchError(error => {
+        console.error('Error updating preferences:', error);
+        return of(preferences);
+      })
+    );
   }
 
   // ==================== UTILITY ====================
@@ -123,9 +252,26 @@ export class ApiStorageService {
   }
 
   private convertItemDates(item: any): RssItem {
-    return {
-      ...item,
-      pubDate: new Date(item.pubDate)
-    };
+    try {
+      const pubDate = item.pubDate ? new Date(item.pubDate) : new Date();
+      // Check if date is valid
+      if (isNaN(pubDate.getTime())) {
+        console.warn('Invalid pubDate for item:', item.title, 'using current date');
+        return {
+          ...item,
+          pubDate: new Date()
+        };
+      }
+      return {
+        ...item,
+        pubDate: pubDate
+      };
+    } catch (error) {
+      console.warn('Error converting item dates:', error, 'using current date');
+      return {
+        ...item,
+        pubDate: new Date()
+      };
+    }
   }
 }

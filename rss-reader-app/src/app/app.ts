@@ -39,7 +39,9 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Load user settings immediately (works without auth, uses defaults if needed)
     this.loadUserSettings();
+    
     this.checkScreenSize();
     
     // Check auth status and navigate accordingly

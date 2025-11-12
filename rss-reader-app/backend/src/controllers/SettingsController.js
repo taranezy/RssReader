@@ -12,7 +12,31 @@ class SettingsController {
    */
   getSettings(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user?.id;
+      
+      // Demo user returns default settings without database access
+      if (userId === 'demo-user') {
+        return res.json({
+          success: true,
+          data: {
+            font: 'default',
+            showLeftMenu: true,
+            showFeedImages: true,
+            headerColor: 'purple',
+            darkMode: false,
+            enablePIP: true
+          }
+        });
+      }
+      
+      if (!userId) {
+        console.error('[SettingsController] ERROR: userId is not set!');
+        return res.status(401).json({
+          success: false,
+          error: 'User not authenticated'
+        });
+      }
+      
       const settings = this.settingsRepository.getSettings(userId);
 
       res.json({
@@ -20,6 +44,7 @@ class SettingsController {
         data: settings
       });
     } catch (error) {
+      console.error('[SettingsController] Error:', error.message);
       res.status(500).json({
         success: false,
         error: error.message
@@ -35,12 +60,26 @@ class SettingsController {
       const userId = req.user.id;
       const settings = req.body;
 
+      // Demo user settings are read-only (just return default)
+      if (userId === 'demo-user') {
+        return res.json({
+          success: true,
+          data: {
+            font: 'default',
+            showLeftMenu: true,
+            showFeedImages: true,
+            headerColor: 'purple',
+            darkMode: false,
+            enablePIP: true
+          }
+        });
+      }
+
       const updatedSettings = this.settingsRepository.updateSettings(userId, settings);
 
       res.json({
         success: true,
-        data: updatedSettings,
-        message: 'Settings updated successfully'
+        data: updatedSettings
       });
     } catch (error) {
       res.status(500).json({
@@ -56,6 +95,20 @@ class SettingsController {
   getPreferences(req, res) {
     try {
       const userId = req.user.id;
+      
+      // Demo user returns default preferences
+      if (userId === 'demo-user') {
+        return res.json({
+          success: true,
+          data: {
+            viewType: 'list',
+            selectedFeeds: [],
+            showOnlyUnread: false,
+            openInNewTab: true
+          }
+        });
+      }
+      
       const preferences = this.settingsRepository.getPreferences(userId);
 
       res.json({
@@ -78,12 +131,24 @@ class SettingsController {
       const userId = req.user.id;
       const preferences = req.body;
 
+      // Demo user preferences are read-only
+      if (userId === 'demo-user') {
+        return res.json({
+          success: true,
+          data: {
+            viewType: 'list',
+            selectedFeeds: [],
+            showOnlyUnread: false,
+            openInNewTab: true
+          }
+        });
+      }
+
       const updatedPreferences = this.settingsRepository.updatePreferences(userId, preferences);
 
       res.json({
         success: true,
-        data: updatedPreferences,
-        message: 'Preferences updated successfully'
+        data: updatedPreferences
       });
     } catch (error) {
       res.status(500).json({

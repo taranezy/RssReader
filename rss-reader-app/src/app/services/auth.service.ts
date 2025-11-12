@@ -19,26 +19,34 @@ export class AuthService {
   public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient) {
-    this.checkAuthStatus().subscribe();
+    // Don't check auth in constructor - let App component control when to check
   }
 
   /**
    * Check if user is authenticated by fetching user data from backend
    */
   checkAuthStatus(): Observable<User | null> {
-    console.log('Checking auth status...');
-    return this.http.get<User>(`${this.apiUrl}/auth/user`, { withCredentials: true })
+    return this.http.get<any>(`${this.apiUrl}/auth/user`, { withCredentials: true })
       .pipe(
-        tap(user => {
-          console.log('User authenticated:', user);
+        tap(response => {
+          // Extract user from wrapped response {success, data}
+          const user = response?.data || response;
           this.currentUserSubject.next(user);
         }),
         catchError((error) => {
-          console.log('Not authenticated:', error.status);
+          // Silently handle not authenticated - don't log errors
           this.currentUserSubject.next(null);
           return of(null);
         })
       );
+  }
+
+  /**
+   * Extract data from wrapped response (backwards compatible)
+   * @private
+   */
+  private extractData<T>(response: any): T {
+    return response?.data !== undefined ? response.data : response;
   }
 
   /**
@@ -65,12 +73,17 @@ export class AuthService {
    * @returns Observable that completes when session is established
    */
   setNativeAppAuthenticated(email: string, idToken: string): Observable<any> {
-    console.log('[AuthService] Setting native app authentication:', email);
     
-    // Store credentials from native app
-    localStorage.setItem('streamlet_email', email);
-    localStorage.setItem('streamlet_id_token', idToken);
-    localStorage.setItem('streamlet_authenticated', 'true');
+    // Store credentials from native app (only in browser)
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.setItem('streamlet_email', email);
+        localStorage.setItem('streamlet_id_token', idToken);
+        localStorage.setItem('streamlet_authenticated', 'true');
+      }
+    } catch (e) {
+      console.warn('[AuthService] Failed to set localStorage:', e);
+    }
 
     // Send token to backend to establish session
     return this.http.post(`${this.apiUrl}/auth/native-app`, 
@@ -78,11 +91,11 @@ export class AuthService {
       { withCredentials: true }
     ).pipe(
       tap((response: any) => {
-        console.log('[AuthService] Native app session established:', response);
         
-        // Update current user with data from backend
-        if (response.user) {
-          this.currentUserSubject.next(response.user);
+        // Extract user from wrapped response {success, data}
+        const user = response?.data || response?.user || response;
+        if (user) {
+          this.currentUserSubject.next(user);
         }
       }),
       catchError((error) => {
@@ -104,17 +117,19 @@ export class AuthService {
    * Initiate Google OAuth login (redirects to backend)
    */
   loginWithGoogle(): void {
-    // Use current origin to support both development and production
-    const origin = window.location.origin;
-    window.location.href = `${origin}${this.apiUrl}/auth/google`;
+    // Use relative URL - proxy will route /api to backend:3000
+    // Backend will redirect back using relative path
+    window.location.href = '/api/auth/google';
   }
 
   /**
    * Login as demo user (read-only mode with pre-populated feeds)
    */
   loginAsDemo(): void {
-    const origin = window.location.origin;
-    window.location.href = `${origin}${this.apiUrl}/auth/demo`;
+    // Use relative URL - proxy will route /api to backend:3000
+    // Backend will redirect back using relative path
+    window.location.href = '/api/auth/demo';
+    window.location.href = '/api/auth/demo';
   }
 
   /**
@@ -123,6 +138,7 @@ export class AuthService {
   logout(): Observable<any> {
     return this.http.post(`${this.apiUrl}/auth/logout`, {}, { withCredentials: true })
       .pipe(
+        map(response => this.extractData<any>(response)),
         tap(() => {
           this.currentUserSubject.next(null);
         })

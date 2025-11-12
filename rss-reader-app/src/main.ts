@@ -20,8 +20,6 @@ bootstrapApplication(App, appConfig)
           ApplicationRef: applicationRef
         }
       };
-      
-      console.log('✓ Angular DevTools enabled - Extension should now detect Angular');
     }
     return moduleRef;
   })

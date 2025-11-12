@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 @Component({
@@ -25,15 +25,21 @@ import { AuthService } from '../services/auth.service';
           <p>Sign in to access your personalized RSS feeds</p>
         </div>
 
+        <!-- Error message -->
+        <div class="error-message" *ngIf="errorMessage">
+          <strong>⚠️ Authentication Error</strong>
+          <p>{{ errorMessage }}</p>
+        </div>
+
         <div class="login-body">
-          <button class="google-login-btn" (click)="loginWithGoogle()">
+          <button class="google-login-btn" (click)="loginWithGoogle()" [disabled]="isGoogleDisabled">
             <svg class="google-icon" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            <span>Sign in with Google</span>
+            <span>{{ isGoogleDisabled ? 'Google Login Not Available' : 'Sign in with Google' }}</span>
           </button>
 
           <div class="divider">
@@ -85,8 +91,41 @@ import { AuthService } from '../services/auth.service';
       font-size: 16px;
     }
 
+    .error-message {
+      background: #fee;
+      border: 1px solid #fcc;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin: 0 0 20px 0;
+      text-align: left;
+      font-size: 14px;
+      color: #c33;
+    }
+
+    .error-message strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .error-message p {
+      margin: 0;
+    }
+
     .login-body {
       margin: 30px 0;
+    }
+
+    .google-login-btn:disabled,
+    .google-login-btn[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: #f5f5f5;
+    }
+
+    .google-login-btn:disabled:hover,
+    .google-login-btn[disabled]:hover {
+      background: #f5f5f5;
+      box-shadow: none;
     }
 
     .google-login-btn {
@@ -230,14 +269,25 @@ import { AuthService } from '../services/auth.service';
 })
 export class LoginComponent implements OnInit {
   isNativeAppAuth = false;
+  isGoogleDisabled = false;
+  errorMessage = '';
   private authCheckInProgress = false;
 
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    // Check for error messages from query parameters
+    this.route.queryParams.subscribe(params => {
+      const error = params['error'];
+      if (error) {
+        this.handleAuthError(error);
+      }
+    });
+
     // Check if user is coming from Android native app with token
     // Only run in browser, not during SSR
     if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
@@ -256,22 +306,44 @@ export class LoginComponent implements OnInit {
       
       // Listen for storage events from Android WebView
       window.addEventListener('storage', () => {
-        console.log('[LoginComponent] Storage event detected, rechecking auth...');
         this.checkNativeAppAuth();
       });
       
       // Listen for custom event from Android app
       window.addEventListener('androidAuthReady', () => {
-        console.log('[LoginComponent] Android auth ready event received');
         this.checkNativeAppAuth();
       });
       
       // Listen for the actual event name that Android app sends
       window.addEventListener('streamletNativeLogin', (event: any) => {
-        console.log('[LoginComponent] Streamlet native login event received:', event.detail);
         this.checkNativeAppAuth();
       });
     }
+  }
+
+  /**
+   * Handle authentication errors
+   */
+  private handleAuthError(errorCode: string): void {
+    const errorMessages: Record<string, string> = {
+      'auth_failed': 'Google authentication was cancelled or failed. Please try again.',
+      'auth_error': 'An error occurred during authentication. Please try again.',
+      'google_auth_failed': 'Google authentication failed. Please try again or use the demo login.',
+      'oauth_not_configured': 'Google OAuth is not configured on this server. Please use the demo login or contact the administrator.',
+      'OAUTH_NOT_CONFIGURED': 'Google OAuth is not configured. Please use the demo login.'
+    };
+
+    this.errorMessage = errorMessages[errorCode] || 'An authentication error occurred. Please try again.';
+
+    // Disable Google login if OAuth is not configured
+    if (errorCode === 'oauth_not_configured' || errorCode === 'OAUTH_NOT_CONFIGURED') {
+      this.isGoogleDisabled = true;
+    }
+
+    // Clear error message after 10 seconds
+    setTimeout(() => {
+      this.errorMessage = '';
+    }, 10000);
   }
 
   /**
@@ -290,32 +362,14 @@ export class LoginComponent implements OnInit {
     const email = localStorage.getItem('streamlet_email');
     const isNativeApp = localStorage.getItem('streamlet_native_app') === 'true';
 
-    console.log('[LoginComponent] Native App Auth Check:', {
-      skipLogin,
-      hasToken: !!idToken,
-      hasEmail: !!email,
-      isNativeApp,
-      allPresent: skipLogin && idToken && email && isNativeApp,
-      localStorage: {
-        streamlet_skip_login: localStorage.getItem('streamlet_skip_login'),
-        streamlet_id_token: idToken ? idToken.substring(0, 20) + '...' : null,
-        streamlet_email: email,
-        streamlet_native_app: localStorage.getItem('streamlet_native_app')
-      }
-    });
-
     // If all required data is present, user is authenticated via native app
     if (skipLogin && idToken && email && isNativeApp) {
-      console.log('[LoginComponent] ✓ Native app authentication detected!');
-      console.log('[LoginComponent] User:', email);
-      
       this.authCheckInProgress = true;
       this.isNativeAppAuth = true;
 
       // Set auth state in service and wait for session to be established
       this.authService.setNativeAppAuthenticated(email, idToken).subscribe({
         next: (response) => {
-          console.log('[LoginComponent] Session established, navigating to /list...');
           // Navigate after session is confirmed
           setTimeout(() => {
             this.router.navigate(['/list']);
@@ -328,14 +382,6 @@ export class LoginComponent implements OnInit {
             this.router.navigate(['/list']);
           }, 500);
         }
-      });
-    } else {
-      console.log('[LoginComponent] ✗ No native app auth detected, showing login form');
-      console.log('[LoginComponent] Missing:', {
-        skipLogin: !skipLogin,
-        idToken: !idToken,
-        email: !email,
-        isNativeApp: !isNativeApp
       });
     }
   }

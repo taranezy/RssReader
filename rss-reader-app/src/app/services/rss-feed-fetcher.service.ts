@@ -17,6 +17,14 @@ export class RssFeedFetcherService implements IRssFeedFetcher {
   
   constructor(private http: HttpClient) {}
 
+  /**
+   * Extract data from wrapped API response {success, data}
+   * Falls back to original response if not wrapped
+   */
+  private extractData<T>(response: any): T {
+    return response?.data !== undefined ? response.data : response;
+  }
+
   fetchFeed(url: string): Observable<string> {
     // First, test if URL is a standard feed or needs conversion
     return this.testFeedUrl$(url).pipe(
@@ -26,12 +34,10 @@ export class RssFeedFetcherService implements IRssFeedFetcher {
           return this.fetchStandardFeed(url);
         } else {
           // Use web-to-feed proxy for HTML pages
-          console.log(`Converting non-RSS URL to feed: ${url}`);
           return this.fetchConvertedFeed(url);
         }
       }),
       catchError(error => {
-        console.error('Error in feed detection, trying standard fetch:', error);
         // Fallback to standard fetch if test fails
         return this.fetchStandardFeed(url);
       })
@@ -48,6 +54,7 @@ export class RssFeedFetcherService implements IRssFeedFetcher {
     return this.http.get<any>(testUrl, {
       withCredentials: true
     }).pipe(
+      map(response => this.extractData<any>(response)),
       catchError(error => {
         console.error('Error testing feed URL:', error);
         // Default to standard feed on error

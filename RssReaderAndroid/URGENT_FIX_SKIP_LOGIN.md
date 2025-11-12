@@ -30,14 +30,7 @@ export class AppComponent implements OnInit {
     const skipLogin = localStorage.getItem('streamlet_skip_login') === 'true';
     const idToken = localStorage.getItem('streamlet_id_token');
     
-    console.log('[Native App Check]', {
-      skipLogin,
-      hasToken: !!idToken,
-      email: localStorage.getItem('streamlet_email')
-    });
-    
     if (skipLogin && idToken) {
-      console.log('[Native App] Detected! Skipping login page...');
       
       // TODO: Change '/feeds' to your main page route
       // Examples:
@@ -50,7 +43,6 @@ export class AppComponent implements OnInit {
       return;
     }
     
-    console.log('[Web App] Showing normal login page');
   }
 }
 ```
@@ -77,7 +69,6 @@ export class LoginComponent implements OnInit {
     const idToken = localStorage.getItem('streamlet_id_token');
     
     if (skipLogin && idToken) {
-      console.log('[Native App] Skipping login, navigating to feeds...');
       this.router.navigate(['/feeds']); // ← CHANGE THIS
       return;
     }

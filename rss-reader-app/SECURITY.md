@@ -59,10 +59,10 @@ The following sensitive files are automatically excluded from version control vi
 2. **Generate secure secrets:**
    ```bash
    # Generate SESSION_SECRET
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   node -e "require('crypto').randomBytes(32).toString('hex')"
    
    # Generate JWT_SECRET
-   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   node -e "require('crypto').randomBytes(32).toString('hex')"
    ```
 
 3. **Configure Google OAuth:**

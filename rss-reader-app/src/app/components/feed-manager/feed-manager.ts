@@ -62,6 +62,9 @@ export class FeedManagerComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Initialize feeds service when component loads
+    this.feedService.initialize();
+    
     // Load user settings for header color
     this.userSettingsService.settings$.subscribe(settings => {
       this.headerColor = settings.headerColor;
@@ -180,7 +183,6 @@ export class FeedManagerComponent implements OnInit {
   refreshAllFeeds(): void {
     // Prevent multiple simultaneous refreshes
     if (this.isRefreshing) {
-      console.log('Refresh already in progress, please wait...');
       return;
     }
     
@@ -190,11 +192,6 @@ export class FeedManagerComponent implements OnInit {
     this.feedService.refreshAllFeeds().subscribe({
       next: (count) => {
         this.isRefreshing = false;
-        console.log(`Refresh completed: ${count} new items`);
-        // Optional: show non-blocking notification instead of alert
-        if (count > 0) {
-          console.log(`✓ ${count} new item(s) loaded`);
-        }
       },
       error: (err) => {
         this.isRefreshing = false;
@@ -212,7 +209,6 @@ export class FeedManagerComponent implements OnInit {
 
   // View selection
   selectView(view: 'today' | 'all' | 'unread' | 'saved'): void {
-    console.log('Selecting view:', view);
     this.selectedView = view;
     
     if (view === 'saved') {

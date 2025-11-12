@@ -6,9 +6,9 @@ Open your website in a browser and paste this into the DevTools Console:
 
 ```javascript
 // Check everything that should be injected
-console.log('%c=== STREAMLET AUTH DEBUG ===', 'color: blue; font-size: 14px; font-weight: bold;');
+('%c=== STREAMLET AUTH DEBUG ===', 'color: blue; font-size: 14px; font-weight: bold;');
 
-console.log('localStorage:', {
+('localStorage:', {
   email: localStorage.getItem('streamlet_email'),
   token: localStorage.getItem('streamlet_id_token'),
   authenticated: localStorage.getItem('streamlet_authenticated'),
@@ -16,12 +16,12 @@ console.log('localStorage:', {
   nativeApp: localStorage.getItem('streamlet_native_app'),
 });
 
-console.log('window globals:', {
+('window globals:', {
   authenticated: window.streamletAuthenticated,
   email: window.streamletEmail,
 });
 
-console.log('URL params:', {
+('URL params:', {
   skipLogin: new URLSearchParams(window.location.search).get('skip_login'),
   nativeApp: new URLSearchParams(window.location.search).get('native_app'),
 });
@@ -58,24 +58,20 @@ export class AppComponent implements OnInit {
   constructor(private router: Router) {}
 
   ngOnInit() {
-    console.log('[Streamlet] AppComponent initializing...');
     
     // Check if native app authentication is available
     const skipLogin = localStorage.getItem('streamlet_skip_login');
     const token = localStorage.getItem('streamlet_id_token');
     const email = localStorage.getItem('streamlet_email');
     
-    console.log('[Streamlet] Auth check:', { skipLogin, hasToken: !!token, email });
     
     if (skipLogin === 'true' && token) {
-      console.log('[Streamlet] ✓ Native app detected! Skipping login...');
       // Skip login page - go directly to main content
       this.router.navigate(['/feeds']); // or wherever your main page is
       return;
     }
     
     // Otherwise show login normally
-    console.log('[Streamlet] Web login, showing login page');
   }
 }
 ```

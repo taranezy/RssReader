@@ -1,92 +1,128 @@
 /**
- * UserRepository - Single Responsibility: User data access
- * Implements Repository Pattern for user operations
+ * UserRepository - Single Responsibility: User data access operations
+ * Wraps existing database.js methods and provides consistent interface
+ * Adapter pattern for legacy database service
  */
 class UserRepository {
-  constructor(database) {
-    this.db = database.getDb();
+  constructor(databaseService) {
+    this.db = databaseService;
   }
 
   /**
    * Find user by email
    */
   findByEmail(email) {
-    const stmt = this.db.prepare('SELECT * FROM users WHERE email = ?');
-    return stmt.get(email);
+    try {
+      return this.db.findUserByEmail(email);
+    } catch (error) {
+      throw new Error(`Failed to find user by email: ${error.message}`);
+    }
   }
 
   /**
    * Find user by Google ID
    */
   findByGoogleId(googleId) {
-    const stmt = this.db.prepare('SELECT * FROM users WHERE google_id = ?');
-    return stmt.get(googleId);
+    try {
+      return this.db.findUserByGoogleId(googleId);
+    } catch (error) {
+      throw new Error(`Failed to find user by Google ID: ${error.message}`);
+    }
   }
 
   /**
    * Find user by ID
    */
   findById(id) {
-    const stmt = this.db.prepare('SELECT * FROM users WHERE id = ?');
-    return stmt.get(id);
+    try {
+      return this.db.findUserById(id);
+    } catch (error) {
+      throw new Error(`Failed to find user by ID: ${error.message}`);
+    }
   }
 
   /**
    * Create new user
    */
-  create(user) {
-    const stmt = this.db.prepare(`
-      INSERT INTO users (email, username, google_id)
-      VALUES (?, ?, ?)
-    `);
-    return stmt.run(user.email, user.username, user.googleId || null);
+  create(userData) {
+    try {
+      const userId = this.db.createUser(
+        userData.email,
+        userData.username,
+        userData.googleId || null
+      );
+
+      return { lastInsertRowid: userId };
+    } catch (error) {
+      throw new Error(`Failed to create user: ${error.message}`);
+    }
   }
 
   /**
-   * Update last login timestamp
+   * Update user last login timestamp
    */
   updateLastLogin(userId) {
-    const stmt = this.db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?');
-    return stmt.run(userId);
+    try {
+      this.db.updateUserLastLogin(userId);
+      return true;
+    } catch (error) {
+      throw new Error(`Failed to update last login: ${error.message}`);
+    }
   }
 
   /**
    * Get user with all related data
    */
   getUserWithData(userId) {
-    const user = this.findById(userId);
-    if (!user) return null;
+    try {
+      const user = this.db.findUserById(userId);
+      if (!user) {
+        throw new Error('User not found');
+      }
 
-    return {
-      ...user,
-      feeds: this.getUserFeeds(userId),
-      preferences: this.getUserPreferences(userId),
-      settings: this.getUserSettings(userId)
-    };
+      return {
+        ...user,
+        feeds: this.db.getAllFeeds(userId),
+        items: this.db.getAllItems(userId),
+        preferences: this.db.getPreferences(userId),
+        settings: this.db.getUserSettings(userId)
+      };
+    } catch (error) {
+      throw new Error(`Failed to get user with data: ${error.message}`);
+    }
   }
 
   /**
    * Get user feeds
    */
   getUserFeeds(userId) {
-    const stmt = this.db.prepare('SELECT * FROM rss_feeds WHERE user_id = ? AND is_active = 1 ORDER BY added_date DESC');
-    return stmt.all(userId);
+    try {
+      return this.db.getAllFeeds(userId);
+    } catch (error) {
+      throw new Error(`Failed to get user feeds: ${error.message}`);
+    }
   }
 
   /**
    * Get user preferences
    */
   getUserPreferences(userId) {
-    const stmt = this.db.prepare('SELECT * FROM user_preferences WHERE user_id = ?');
-    return stmt.get(userId);
+    try {
+      return this.db.getPreferences(userId);
+    } catch (error) {
+      throw new Error(`Failed to get user preferences: ${error.message}`);
+    }
   }
 
   /**
    * Get user settings
    */
   getUserSettings(userId) {
-    const stmt = this.db.prepare('SELECT * FROM user_settings WHERE user_id = ?');
-    return stmt.get(userId);
+    try {
+      return this.db.getUserSettings(userId);
+    } catch (error) {
+      throw new Error(`Failed to get user settings: ${error.message}`);
+    }
   }
 }
 

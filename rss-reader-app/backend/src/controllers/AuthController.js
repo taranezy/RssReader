@@ -3,8 +3,11 @@
  * Depends on AuthenticationService (Dependency Injection)
  */
 class AuthController {
-  constructor(authenticationService) {
+  constructor(authenticationService, config, feedRepository, feedDataService) {
     this.authenticationService = authenticationService;
+    this.config = config;
+    this.feedRepository = feedRepository;
+    this.feedDataService = feedDataService;
   }
 
   /**
@@ -74,29 +77,26 @@ class AuthController {
         created_at: new Date().toISOString()
       };
 
+      // Check if demo user has feeds, if not populate them
+      const existingFeeds = this.feedRepository.getAllFeeds('demo-user');
+      if (!existingFeeds || existingFeeds.length === 0) {
+        this.feedDataService.populateInitialFeeds('demo-user');
+      }
+
       req.login(demoUser, (err) => {
         if (err) {
-          return res.status(500).json({
-            success: false,
-            error: err.message
-          });
+          const errorUrl = `${this.config.FRONTEND_URL}/?error=demo_login_failed`;
+          return res.redirect(errorUrl);
         }
 
-        res.json({
-          success: true,
-          message: 'Demo login successful',
-          data: {
-            id: demoUser.id,
-            email: demoUser.email,
-            username: demoUser.username
-          }
-        });
+        // Redirect to frontend /list
+        const redirectUrl = `${this.config.FRONTEND_URL}/list`;
+        res.redirect(redirectUrl);
       });
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
+      console.error('❌ Error in demoLogin:', error.message);
+      const errorUrl = `${this.config.FRONTEND_URL}/?error=demo_login_error`;
+      res.redirect(errorUrl);
     }
   }
 
@@ -140,26 +140,22 @@ class AuthController {
 
   /**
    * Handle Google OAuth callback (called from routes)
+   * Should redirect to frontend after successful authentication
    */
   googleAuthCallback(req, res) {
     try {
       if (!req.user) {
-        return res.status(401).json({
-          success: false,
-          error: 'Google authentication failed'
-        });
+        const errorUrl = `${this.config.FRONTEND_URL}/?error=auth_failed`;
+        return res.redirect(errorUrl);
       }
 
-      res.json({
-        success: true,
-        message: 'Google authentication successful',
-        data: req.user
-      });
+      // Redirect to frontend /list
+      const redirectUrl = `${this.config.FRONTEND_URL}/list`;
+      res.redirect(redirectUrl);
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error.message
-      });
+      console.error('❌ Error in googleAuthCallback:', error.message);
+      const errorUrl = `${this.config.FRONTEND_URL}/?error=auth_error`;
+      res.redirect(errorUrl);
     }
   }
 }

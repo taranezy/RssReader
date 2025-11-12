@@ -123,7 +123,6 @@ class DatabaseService {
     // Add dark_mode column if it doesn't exist (migration for existing databases)
     try {
       this.db.exec(`ALTER TABLE user_settings ADD COLUMN dark_mode INTEGER NOT NULL DEFAULT 0;`);
-      console.log('Dark mode column added successfully');
     } catch (err) {
       // Column already exists, ignore error (duplicate column name)
       if (!err.message.includes('duplicate column name')) {
@@ -134,7 +133,6 @@ class DatabaseService {
     // Add enable_pip column if it doesn't exist (migration for existing databases)
     try {
       this.db.exec(`ALTER TABLE user_settings ADD COLUMN enable_pip INTEGER NOT NULL DEFAULT 1;`);
-      console.log('Enable PIP column added successfully');
     } catch (err) {
       // Column already exists, ignore error (duplicate column name)
       if (!err.message.includes('duplicate column name')) {
@@ -201,13 +199,35 @@ class DatabaseService {
 
   // Feed operations (with user_id)
   getAllFeeds(userId) {
-    return this.db.prepare(`
+    const feeds = this.db.prepare(`
       SELECT * FROM rss_feeds WHERE user_id = ? ORDER BY added_date DESC
     `).all(userId);
+    return feeds.map(feed => this.formatFeed(feed));
   }
 
   getFeedById(id, userId) {
-    return this.db.prepare('SELECT * FROM rss_feeds WHERE id = ? AND user_id = ?').get(id, userId);
+    const feed = this.db.prepare('SELECT * FROM rss_feeds WHERE id = ? AND user_id = ?').get(id, userId);
+    return feed ? this.formatFeed(feed) : null;
+  }
+
+  /**
+   * Format database feed row to API format (snake_case to camelCase)
+   */
+  formatFeed(dbFeed) {
+    return {
+      id: dbFeed.id,
+      userId: dbFeed.user_id,
+      url: dbFeed.url,
+      title: dbFeed.title,
+      description: dbFeed.description,
+      color: dbFeed.color,
+      category: dbFeed.category,
+      isActive: dbFeed.is_active === 1,
+      lastFetched: dbFeed.last_fetched,
+      addedDate: dbFeed.added_date,
+      createdAt: dbFeed.created_at,
+      updatedAt: dbFeed.updated_at
+    };
   }
 
   createFeed(feed, userId) {
@@ -279,15 +299,54 @@ class DatabaseService {
 
   // Item operations (with user_id)
   getAllItems(userId) {
-    return this.db.prepare(`
+    const items = this.db.prepare(`
       SELECT * FROM rss_items WHERE user_id = ? ORDER BY pub_date DESC
     `).all(userId);
+    return items.map(item => this.formatItem(item));
   }
 
   getItemsByFeed(feedId, userId) {
-    return this.db.prepare(`
+    const items = this.db.prepare(`
       SELECT * FROM rss_items WHERE feed_id = ? AND user_id = ? ORDER BY pub_date DESC
     `).all(feedId, userId);
+    return items.map(item => this.formatItem(item));
+  }
+
+  /**
+   * Format database item row to API format (snake_case to camelCase)
+   */
+  formatItem(dbItem) {
+    let categories = [];
+    // Parse categories JSON if stored as string
+    if (dbItem.categories) {
+      if (typeof dbItem.categories === 'string') {
+        try {
+          categories = JSON.parse(dbItem.categories);
+        } catch (e) {
+          categories = [];
+        }
+      } else if (Array.isArray(dbItem.categories)) {
+        categories = dbItem.categories;
+      }
+    }
+    
+    return {
+      id: dbItem.id,
+      userId: dbItem.user_id,
+      feedId: dbItem.feed_id,
+      feedTitle: dbItem.feed_title,
+      title: dbItem.title,
+      link: dbItem.link,
+      description: dbItem.description,
+      pubDate: dbItem.pub_date,
+      isRead: dbItem.is_read === 1,
+      author: dbItem.author,
+      categories: categories,
+      content: dbItem.content,
+      imageUrl: dbItem.image_url,
+      createdAt: dbItem.created_at,
+      updatedAt: dbItem.updated_at
+    };
   }
 
   createItem(item, userId) {
@@ -419,6 +478,23 @@ class DatabaseService {
     return result.changes; // Return number of deleted items
   }
 
+  // Delete old items for a specific feed
+  deleteOldItemsByFeed(feedId, userId, daysOld = 30) {
+    const dateThreshold = new Date();
+    dateThreshold.setDate(dateThreshold.getDate() - daysOld);
+    const dateStr = dateThreshold.toISOString();
+
+    const result = this.db.prepare(`
+      DELETE FROM rss_items 
+      WHERE feed_id = ? 
+      AND user_id = ? 
+      AND is_saved = 0 
+      AND pub_date < ?
+    `).run(feedId, userId, dateStr);
+
+    return result.changes; // Return number of deleted items
+  }
+
   // Preferences operations (with user_id)
   getPreferences(userId) {
     const prefs = this.db.prepare('SELECT * FROM user_preferences WHERE user_id = ?').get(userId);
@@ -451,6 +527,7 @@ class DatabaseService {
   // User settings operations
   getUserSettings(userId) {
     const settings = this.db.prepare('SELECT * FROM user_settings WHERE user_id = ?').get(userId);
+    
     if (!settings) {
       // Create default settings if not found
       this.db.prepare(`
@@ -465,8 +542,8 @@ class DatabaseService {
       showLeftMenu: settings.show_left_menu === 1,
       showFeedImages: settings.show_feed_images === 1,
       headerColor: settings.header_color || 'purple',
-      darkMode: settings.dark_mode === 1 || false, // Handle undefined/null
-      enablePIP: settings.enable_pip === 1 || true // Handle undefined/null, default to true
+      darkMode: settings.dark_mode === 1,
+      enablePIP: settings.enable_pip === 1
     };
   }
 

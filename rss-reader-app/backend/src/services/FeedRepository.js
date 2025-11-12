@@ -1,11 +1,11 @@
 /**
  * FeedRepository - Single Responsibility: Feed data access operations
- * Handles all database operations related to RSS feeds
- * Encapsulates SQL queries for feeds
+ * Wraps existing database.js methods and provides consistent interface
+ * Adapter pattern for legacy database service
  */
 class FeedRepository {
-  constructor(database) {
-    this.db = database;
+  constructor(databaseService) {
+    this.db = databaseService;
   }
 
   /**
@@ -13,15 +13,7 @@ class FeedRepository {
    */
   getAllFeeds(userId) {
     try {
-      const feeds = this.db.prepare(`
-        SELECT id, user_id, title, url, description, favicon_url, 
-               last_updated, created_at, update_frequency
-        FROM feeds
-        WHERE user_id = ?
-        ORDER BY title ASC
-      `).all(userId);
-
-      return feeds;
+      return this.db.getAllFeeds(userId);
     } catch (error) {
       throw new Error(`Failed to get feeds: ${error.message}`);
     }
@@ -32,17 +24,10 @@ class FeedRepository {
    */
   getFeed(feedId, userId) {
     try {
-      const feed = this.db.prepare(`
-        SELECT id, user_id, title, url, description, favicon_url,
-               last_updated, created_at, update_frequency
-        FROM feeds
-        WHERE id = ? AND user_id = ?
-      `).get(feedId, userId);
-
+      const feed = this.db.getFeedById(feedId, userId);
       if (!feed) {
         throw new Error('Feed not found');
       }
-
       return feed;
     } catch (error) {
       throw new Error(`Failed to get feed: ${error.message}`);
@@ -54,19 +39,19 @@ class FeedRepository {
    */
   addFeed(userId, feedData) {
     try {
-      const result = this.db.prepare(`
-        INSERT INTO feeds (user_id, title, url, description, favicon_url, update_frequency)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `).run(
-        userId,
-        feedData.title,
-        feedData.url,
-        feedData.description || null,
-        feedData.faviconUrl || null,
-        feedData.updateFrequency || 3600
-      );
+      const feed = {
+        id: `feed-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        url: feedData.url,
+        title: feedData.title,
+        description: feedData.description || '',
+        color: feedData.color || '#4ECDC4',
+        category: feedData.category || '',
+        isActive: true,
+        addedDate: new Date().toISOString()
+      };
 
-      return this.getFeed(result.lastInsertRowid, userId);
+      this.db.createFeed(feed, userId);
+      return this.db.getFeedById(feed.id, userId);
     } catch (error) {
       throw new Error(`Failed to add feed: ${error.message}`);
     }
@@ -80,21 +65,14 @@ class FeedRepository {
       // Verify feed belongs to user
       this.getFeed(feedId, userId);
 
-      this.db.prepare(`
-        UPDATE feeds
-        SET title = ?, description = ?, favicon_url = ?, update_frequency = ?, last_updated = ?
-        WHERE id = ? AND user_id = ?
-      `).run(
-        feedData.title || undefined,
-        feedData.description || undefined,
-        feedData.faviconUrl || undefined,
-        feedData.updateFrequency || undefined,
-        new Date().toISOString(),
-        feedId,
-        userId
-      );
+      const updates = {};
+      if (feedData.title !== undefined) updates.title = feedData.title;
+      if (feedData.description !== undefined) updates.description = feedData.description;
+      if (feedData.color !== undefined) updates.color = feedData.color;
+      if (feedData.category !== undefined) updates.category = feedData.category;
 
-      return this.getFeed(feedId, userId);
+      this.db.updateFeed(feedId, userId, updates);
+      return this.db.getFeedById(feedId, userId);
     } catch (error) {
       throw new Error(`Failed to update feed: ${error.message}`);
     }
@@ -107,63 +85,10 @@ class FeedRepository {
     try {
       // Verify feed belongs to user
       this.getFeed(feedId, userId);
-
-      // Delete associated items
-      this.db.prepare(`
-        DELETE FROM feed_items
-        WHERE feed_id = ?
-      `).run(feedId);
-
-      // Delete feed
-      const result = this.db.prepare(`
-        DELETE FROM feeds
-        WHERE id = ? AND user_id = ?
-      `).run(feedId, userId);
-
-      return result.changes > 0;
+      this.db.deleteFeed(feedId, userId);
+      return true;
     } catch (error) {
       throw new Error(`Failed to delete feed: ${error.message}`);
-    }
-  }
-
-  /**
-   * Update feed's last_updated timestamp
-   */
-  updateFeedTimestamp(feedId, userId) {
-    try {
-      // Verify feed belongs to user
-      this.getFeed(feedId, userId);
-
-      this.db.prepare(`
-        UPDATE feeds
-        SET last_updated = ?
-        WHERE id = ? AND user_id = ?
-      `).run(new Date().toISOString(), feedId, userId);
-
-      return this.getFeed(feedId, userId);
-    } catch (error) {
-      throw new Error(`Failed to update feed timestamp: ${error.message}`);
-    }
-  }
-
-  /**
-   * Get feeds that need updating
-   */
-  getFeedsToUpdate(maxAgeSeconds = 3600) {
-    try {
-      const cutoffTime = new Date(Date.now() - maxAgeSeconds * 1000).toISOString();
-      
-      const feeds = this.db.prepare(`
-        SELECT id, user_id, title, url, description, favicon_url,
-               last_updated, created_at, update_frequency
-        FROM feeds
-        WHERE last_updated IS NULL OR last_updated < ?
-        ORDER BY last_updated ASC
-      `).all(cutoffTime);
-
-      return feeds;
-    } catch (error) {
-      throw new Error(`Failed to get feeds to update: ${error.message}`);
     }
   }
 
@@ -172,12 +97,8 @@ class FeedRepository {
    */
   hasDuplicateFeed(userId, feedUrl) {
     try {
-      const feed = this.db.prepare(`
-        SELECT id FROM feeds
-        WHERE user_id = ? AND url = ?
-      `).get(userId, feedUrl);
-
-      return !!feed;
+      const feeds = this.db.getAllFeeds(userId);
+      return feeds.some(feed => feed.url === feedUrl);
     } catch (error) {
       throw new Error(`Failed to check duplicate feed: ${error.message}`);
     }

@@ -269,6 +269,44 @@ class ItemController {
       });
     }
   }
+
+  /**
+   * Bulk create items
+   */
+  createItems(req, res) {
+    try {
+      const userId = req.user.id;
+      const items = req.body;
+
+      if (!Array.isArray(items)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Request body must be an array of items'
+        });
+      }
+
+      if (items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Items array cannot be empty'
+        });
+      }
+
+      const createdItemIds = this.itemRepository.createItems(userId, items);
+
+      res.status(201).json({
+        success: true,
+        data: createdItemIds,
+        count: createdItemIds.length,
+        message: `Created ${createdItemIds.length} items`
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = ItemController;

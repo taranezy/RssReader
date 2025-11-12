@@ -12,6 +12,13 @@ module.exports = function createItemRoutes(app, itemController, isAuthenticated)
   });
 
   /**
+   * POST /api/items/bulk - Bulk create items
+   */
+  app.post('/api/items/bulk', isAuthenticated, (req, res) => {
+    itemController.createItems(req, res);
+  });
+
+  /**
    * GET /api/feeds/:feedId/items - Get items for specific feed
    */
   app.get('/api/feeds/:feedId/items', isAuthenticated, (req, res) => {

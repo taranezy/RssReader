@@ -1,73 +1,62 @@
 /**
  * SettingsRepository - Single Responsibility: User settings data access
- * Manages all user-related settings in the database
+ * Wraps existing database.js methods and provides consistent interface
+ * Adapter pattern for legacy database service
  */
 class SettingsRepository {
-  constructor(database) {
-    this.db = database.getDb();
+  constructor(databaseService) {
+    this.db = databaseService;
   }
 
   /**
-   * Get user settings, create default if not found
+   * Get user settings
    */
   getSettings(userId) {
-    const stmt = this.db.prepare('SELECT * FROM user_settings WHERE user_id = ?');
-    let settings = stmt.get(userId);
-
-    if (!settings) {
-      settings = this.createDefaultSettings(userId);
+    try {
+      // Note: database.js already returns formatted settings with proper booleans
+      // So we just pass it through without re-formatting
+      const settings = this.db.getUserSettings(userId);
+      return settings;  // Already formatted by database.js
+    } catch (error) {
+      console.error('[SettingsRepository] Error:', error.message);
+      throw new Error(`Failed to get settings: ${error.message}`);
     }
-
-    return this.formatSettings(settings);
-  }
-
-  /**
-   * Create default settings for new user
-   */
-  createDefaultSettings(userId) {
-    const stmt = this.db.prepare(`
-      INSERT INTO user_settings (user_id, font, show_left_menu, show_feed_images, header_color, dark_mode, enable_pip)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run(userId, 'default', 1, 1, 'purple', 0, 1);
-    return this.getSettings(userId);
   }
 
   /**
    * Update user settings
    */
   updateSettings(userId, settings) {
-    const stmt = this.db.prepare(`
-      UPDATE user_settings 
-      SET font = ?, show_left_menu = ?, show_feed_images = ?, header_color = ?, dark_mode = ?, enable_pip = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = ?
-    `);
-
-    stmt.run(
-      settings.font || 'default',
-      settings.showLeftMenu ? 1 : 0,
-      settings.showFeedImages ? 1 : 0,
-      settings.headerColor || 'purple',
-      settings.darkMode ? 1 : 0,
-      settings.enablePIP ? 1 : 0,
-      userId
-    );
-
-    return this.getSettings(userId);
+    try {
+      this.db.updateUserSettings(userId, settings);
+      return this.getSettings(userId);
+    } catch (error) {
+      throw new Error(`Failed to update settings: ${error.message}`);
+    }
   }
 
   /**
    * Format database settings to API format (convert SQL integers to booleans)
    */
   formatSettings(settings) {
+    if (!settings) {
+      return {
+        font: 'default',
+        showLeftMenu: true,
+        showFeedImages: true,
+        headerColor: 'purple',
+        darkMode: false,
+        enablePIP: true
+      };
+    }
+
     return {
-      font: settings.font,
+      font: settings.font || 'default',
       showLeftMenu: settings.show_left_menu === 1,
       showFeedImages: settings.show_feed_images === 1,
       headerColor: settings.header_color || 'purple',
-      darkMode: settings.dark_mode === 1 || false,
-      enablePIP: settings.enable_pip === 1 || true
+      darkMode: settings.dark_mode === 1,
+      enablePIP: settings.enable_pip === 1
     };
   }
 
@@ -75,59 +64,42 @@ class SettingsRepository {
    * Get preferences for user
    */
   getPreferences(userId) {
-    const stmt = this.db.prepare('SELECT * FROM user_preferences WHERE user_id = ?');
-    let prefs = stmt.get(userId);
-
-    if (!prefs) {
-      prefs = this.createDefaultPreferences(userId);
+    try {
+      // Note: database.js already returns formatted preferences
+      return this.db.getPreferences(userId);
+    } catch (error) {
+      throw new Error(`Failed to get preferences: ${error.message}`);
     }
-
-    return this.formatPreferences(prefs);
-  }
-
-  /**
-   * Create default preferences for new user
-   */
-  createDefaultPreferences(userId) {
-    const stmt = this.db.prepare(`
-      INSERT INTO user_preferences (user_id, view_type, selected_feeds, show_only_unread, open_in_new_tab)
-      VALUES (?, ?, ?, ?, ?)
-    `);
-
-    stmt.run(userId, 'list', '[]', 0, 1);
-    return this.getPreferences(userId);
   }
 
   /**
    * Update preferences
    */
   updatePreferences(userId, preferences) {
-    const stmt = this.db.prepare(`
-      UPDATE user_preferences 
-      SET view_type = ?, selected_feeds = ?, show_only_unread = ?, open_in_new_tab = ?, updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = ?
-    `);
-
-    stmt.run(
-      preferences.viewType || 'list',
-      JSON.stringify(preferences.selectedFeeds || []),
-      preferences.showOnlyUnread ? 1 : 0,
-      preferences.openInNewTab ? 1 : 0,
-      userId
-    );
-
-    return this.getPreferences(userId);
+    try {
+      this.db.updatePreferences(userId, preferences);
+      return this.getPreferences(userId);
+    } catch (error) {
+      throw new Error(`Failed to update preferences: ${error.message}`);
+    }
   }
 
   /**
    * Format preferences from database to API format
    */
   formatPreferences(prefs) {
+    if (!prefs) {
+      return {
+        viewType: 'list',
+        selectedFeeds: [],
+        showOnlyUnread: false
+      };
+    }
+
     return {
-      viewType: prefs.view_type,
+      viewType: prefs.view_type || 'list',
       selectedFeeds: prefs.selected_feeds ? JSON.parse(prefs.selected_feeds) : [],
-      showOnlyUnread: prefs.show_only_unread === 1,
-      openInNewTab: prefs.open_in_new_tab === 1
+      showOnlyUnread: prefs.show_only_unread === 1 || false
     };
   }
 }

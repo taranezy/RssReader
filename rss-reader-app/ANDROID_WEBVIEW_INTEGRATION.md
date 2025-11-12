@@ -31,7 +31,6 @@ webView.settings.domStorageEnabled = true
 fun setWebViewAuth(email: String, idToken: String) {
     val jsCode = """
         (function() {
-            console.log('[Android] Setting authentication...');
             
             // Set all required localStorage items
             localStorage.setItem('streamlet_email', '$email');
@@ -40,7 +39,6 @@ fun setWebViewAuth(email: String, idToken: String) {
             localStorage.setItem('streamlet_skip_login', 'true');
             localStorage.setItem('streamlet_authenticated', 'true');
             
-            console.log('[Android] Tokens set, notifying Angular...');
             
             // Notify Angular that auth is ready
             if (typeof window.notifyAngularAuthReady === 'function') {
@@ -50,7 +48,6 @@ fun setWebViewAuth(email: String, idToken: String) {
             // Dispatch storage event manually
             window.dispatchEvent(new Event('storage'));
             
-            console.log('[Android] Auth setup complete');
         })();
     """.trimIndent()
     
@@ -132,7 +129,6 @@ class MainActivity : AppCompatActivity() {
     private fun injectAuthCredentials(email: String, idToken: String) {
         val jsCode = """
             (function() {
-                console.log('[Android] Injecting auth credentials...');
                 localStorage.setItem('streamlet_email', '$email');
                 localStorage.setItem('streamlet_id_token', '$idToken');
                 localStorage.setItem('streamlet_native_app', 'true');
@@ -141,9 +137,7 @@ class MainActivity : AppCompatActivity() {
                 // Notify Angular
                 if (typeof window.notifyAngularAuthReady === 'function') {
                     window.notifyAngularAuthReady();
-                    console.log('[Android] Notification sent to Angular');
                 } else {
-                    console.log('[Android] WARNING: notifyAngularAuthReady not found!');
                 }
             })();
         """.trimIndent()
@@ -294,7 +288,7 @@ window.checkAndroidAuth()
 
 Check which specific values are missing:
 ```javascript
-console.log({
+({
   email: localStorage.getItem('streamlet_email'),
   token: localStorage.getItem('streamlet_id_token') ? 'present' : 'MISSING',
   native: localStorage.getItem('streamlet_native_app'),

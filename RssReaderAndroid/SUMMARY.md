@@ -361,7 +361,7 @@ adb shell pm clear com.streamlet.app
 ### For Debugging Website Integration
 ```javascript
 // Console: Check everything
-console.log({
+({
   email: localStorage.getItem('streamlet_email'),
   token: localStorage.getItem('streamlet_id_token'),
   skipLogin: localStorage.getItem('streamlet_skip_login'),
@@ -389,7 +389,7 @@ jq -R 'split(".") | .[1] | @base64d | fromjson' <<< $TOKEN
 
 1. **Check logs:** `adb logcat | grep Streamlet`
 2. **Check console:** Chrome DevTools (chrome://inspect)
-3. **Check localStorage:** `console.log(localStorage)`
+3. **Check localStorage:** `(localStorage)`
 4. **Check build:** `./gradlew.bat assembleDebug`
 5. **Read docs:** Start with QUICK_START_NATIVE_AUTH.md
 

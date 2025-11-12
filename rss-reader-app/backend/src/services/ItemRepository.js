@@ -1,11 +1,11 @@
 /**
  * ItemRepository - Single Responsibility: Feed item/article data access operations
- * Handles all database operations related to RSS items/articles
- * Encapsulates SQL queries for items
+ * Wraps existing database.js methods and provides consistent interface
+ * Adapter pattern for legacy database service
  */
 class ItemRepository {
-  constructor(database) {
-    this.db = database;
+  constructor(databaseService) {
+    this.db = databaseService;
   }
 
   /**
@@ -13,29 +13,11 @@ class ItemRepository {
    */
   getItemsByFeed(feedId, userId, options = {}) {
     try {
-      const limit = options.limit || 100;
+      const items = this.db.getItemsByFeed(feedId, userId);
+      const limit = options.limit || items.length;
       const offset = options.offset || 0;
-      const onlyUnread = options.onlyUnread || false;
 
-      let query = `
-        SELECT fi.id, fi.feed_id, fi.title, fi.description, fi.link,
-               fi.author, fi.published_date, fi.guid, fi.is_read,
-               fi.is_saved, fi.created_at, f.title as feed_title
-        FROM feed_items fi
-        JOIN feeds f ON fi.feed_id = f.id
-        WHERE fi.feed_id = ? AND f.user_id = ?
-      `;
-
-      const params = [feedId, userId];
-
-      if (onlyUnread) {
-        query += ` AND fi.is_read = 0`;
-      }
-
-      query += ` ORDER BY fi.published_date DESC LIMIT ? OFFSET ?`;
-      params.push(limit, offset);
-
-      return this.db.prepare(query).all(...params);
+      return items.slice(offset, offset + limit);
     } catch (error) {
       throw new Error(`Failed to get items by feed: ${error.message}`);
     }
@@ -46,29 +28,11 @@ class ItemRepository {
    */
   getUserItems(userId, options = {}) {
     try {
-      const limit = options.limit || 100;
+      const items = this.db.getAllItems(userId);
+      const limit = options.limit || items.length;
       const offset = options.offset || 0;
-      const onlyUnread = options.onlyUnread || false;
 
-      let query = `
-        SELECT fi.id, fi.feed_id, fi.title, fi.description, fi.link,
-               fi.author, fi.published_date, fi.guid, fi.is_read,
-               fi.is_saved, fi.created_at, f.title as feed_title, f.id as feed_id
-        FROM feed_items fi
-        JOIN feeds f ON fi.feed_id = f.id
-        WHERE f.user_id = ?
-      `;
-
-      const params = [userId];
-
-      if (onlyUnread) {
-        query += ` AND fi.is_read = 0`;
-      }
-
-      query += ` ORDER BY fi.published_date DESC LIMIT ? OFFSET ?`;
-      params.push(limit, offset);
-
-      return this.db.prepare(query).all(...params);
+      return items.slice(offset, offset + limit);
     } catch (error) {
       throw new Error(`Failed to get user items: ${error.message}`);
     }
@@ -79,14 +43,8 @@ class ItemRepository {
    */
   getItem(itemId, userId) {
     try {
-      const item = this.db.prepare(`
-        SELECT fi.id, fi.feed_id, fi.title, fi.description, fi.link,
-               fi.author, fi.published_date, fi.guid, fi.is_read,
-               fi.is_saved, fi.created_at, f.title as feed_title
-        FROM feed_items fi
-        JOIN feeds f ON fi.feed_id = f.id
-        WHERE fi.id = ? AND f.user_id = ?
-      `).get(itemId, userId);
+      const items = this.db.getAllItems(userId);
+      const item = items.find(i => i.id === itemId);
 
       if (!item) {
         throw new Error('Item not found');
@@ -101,22 +59,24 @@ class ItemRepository {
   /**
    * Add new item (article) to feed
    */
-  addItem(feedId, itemData) {
+  addItem(feedId, itemData, userId) {
     try {
-      const result = this.db.prepare(`
-        INSERT INTO feed_items (feed_id, title, description, link, author, published_date, guid)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        feedId,
-        itemData.title,
-        itemData.description || null,
-        itemData.link,
-        itemData.author || null,
-        itemData.publishedDate || new Date().toISOString(),
-        itemData.guid || itemData.link
-      );
+      const item = {
+        id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        feed_id: feedId,
+        title: itemData.title,
+        link: itemData.link,
+        description: itemData.description || '',
+        pub_date: itemData.publishedDate || new Date().toISOString(),
+        is_read: 0,
+        author: itemData.author || '',
+        categories: itemData.categories || '',
+        content: itemData.content || '',
+        image_url: itemData.imageUrl || ''
+      };
 
-      return result.lastInsertRowid;
+      this.db.createItem(item, userId);
+      return item.id;
     } catch (error) {
       throw new Error(`Failed to add item: ${error.message}`);
     }
@@ -127,16 +87,9 @@ class ItemRepository {
    */
   markItemAsRead(itemId, userId, isRead = true) {
     try {
-      // Verify item belongs to user
-      this.getItem(itemId, userId);
-
-      this.db.prepare(`
-        UPDATE feed_items
-        SET is_read = ?
-        WHERE id = ?
-      `).run(isRead ? 1 : 0, itemId);
-
-      return this.getItem(itemId, userId);
+      const item = this.getItem(itemId, userId);
+      this.db.updateItem(itemId, userId, { is_read: isRead ? 1 : 0 });
+      return { ...item, is_read: isRead ? 1 : 0 };
     } catch (error) {
       throw new Error(`Failed to mark item as read: ${error.message}`);
     }
@@ -147,17 +100,7 @@ class ItemRepository {
    */
   markFeedAsRead(feedId, userId) {
     try {
-      // Verify feed belongs to user
-      this.db.prepare(`
-        SELECT id FROM feeds WHERE id = ? AND user_id = ?
-      `).get(feedId, userId);
-
-      this.db.prepare(`
-        UPDATE feed_items
-        SET is_read = 1
-        WHERE feed_id = ?
-      `).run(feedId);
-
+      this.db.markAllAsRead(userId, feedId);
       return true;
     } catch (error) {
       throw new Error(`Failed to mark feed as read: ${error.message}`);
@@ -171,51 +114,10 @@ class ItemRepository {
     try {
       const item = this.getItem(itemId, userId);
       const newStatus = item.is_saved ? 0 : 1;
-
-      this.db.prepare(`
-        UPDATE feed_items
-        SET is_saved = ?
-        WHERE id = ?
-      `).run(newStatus, itemId);
-
-      return this.getItem(itemId, userId);
+      this.db.toggleSavedStatus(itemId, userId, newStatus);
+      return { ...item, is_saved: newStatus };
     } catch (error) {
       throw new Error(`Failed to toggle item saved: ${error.message}`);
-    }
-  }
-
-  /**
-   * Search items
-   */
-  searchItems(userId, searchQuery, options = {}) {
-    try {
-      const limit = options.limit || 50;
-      const offset = options.offset || 0;
-
-      const query = `
-        SELECT fi.id, fi.feed_id, fi.title, fi.description, fi.link,
-               fi.author, fi.published_date, fi.guid, fi.is_read,
-               fi.is_saved, fi.created_at, f.title as feed_title
-        FROM feed_items fi
-        JOIN feeds f ON fi.feed_id = f.id
-        WHERE f.user_id = ? AND (
-          fi.title LIKE ? OR fi.description LIKE ? OR fi.author LIKE ?
-        )
-        ORDER BY fi.published_date DESC
-        LIMIT ? OFFSET ?
-      `;
-
-      const searchPattern = `%${searchQuery}%`;
-      return this.db.prepare(query).all(
-        userId,
-        searchPattern,
-        searchPattern,
-        searchPattern,
-        limit,
-        offset
-      );
-    } catch (error) {
-      throw new Error(`Failed to search items: ${error.message}`);
     }
   }
 
@@ -224,19 +126,11 @@ class ItemRepository {
    */
   getSavedItems(userId, options = {}) {
     try {
-      const limit = options.limit || 100;
+      const items = this.db.getSavedItems(userId);
+      const limit = options.limit || items.length;
       const offset = options.offset || 0;
 
-      return this.db.prepare(`
-        SELECT fi.id, fi.feed_id, fi.title, fi.description, fi.link,
-               fi.author, fi.published_date, fi.guid, fi.is_read,
-               fi.is_saved, fi.created_at, f.title as feed_title
-        FROM feed_items fi
-        JOIN feeds f ON fi.feed_id = f.id
-        WHERE f.user_id = ? AND fi.is_saved = 1
-        ORDER BY fi.published_date DESC
-        LIMIT ? OFFSET ?
-      `).all(userId, limit, offset);
+      return items.slice(offset, offset + limit);
     } catch (error) {
       throw new Error(`Failed to get saved items: ${error.message}`);
     }
@@ -247,16 +141,33 @@ class ItemRepository {
    */
   getUnreadCount(userId) {
     try {
-      const result = this.db.prepare(`
-        SELECT COUNT(*) as count
-        FROM feed_items fi
-        JOIN feeds f ON fi.feed_id = f.id
-        WHERE f.user_id = ? AND fi.is_read = 0
-      `).get(userId);
-
-      return result.count || 0;
+      const items = this.db.getAllItems(userId);
+      return items.filter(item => !item.is_read).length;
     } catch (error) {
       throw new Error(`Failed to get unread count: ${error.message}`);
+    }
+  }
+
+  /**
+   * Search items
+   */
+  searchItems(userId, searchQuery, options = {}) {
+    try {
+      const items = this.db.getAllItems(userId);
+      const query = searchQuery.toLowerCase();
+
+      const results = items.filter(item =>
+        item.title?.toLowerCase().includes(query) ||
+        item.description?.toLowerCase().includes(query) ||
+        item.author?.toLowerCase().includes(query)
+      );
+
+      const limit = options.limit || results.length;
+      const offset = options.offset || 0;
+
+      return results.slice(offset, offset + limit);
+    } catch (error) {
+      throw new Error(`Failed to search items: ${error.message}`);
     }
   }
 
@@ -265,19 +176,8 @@ class ItemRepository {
    */
   deleteOldItems(feedId, userId, daysOld = 30) {
     try {
-      // Verify feed belongs to user
-      this.db.prepare(`
-        SELECT id FROM feeds WHERE id = ? AND user_id = ?
-      `).get(feedId, userId);
-
-      const cutoffDate = new Date(Date.now() - daysOld * 24 * 60 * 60 * 1000).toISOString();
-
-      const result = this.db.prepare(`
-        DELETE FROM feed_items
-        WHERE feed_id = ? AND published_date < ? AND is_saved = 0
-      `).run(feedId, cutoffDate);
-
-      return result.changes;
+      const deletedCount = this.db.deleteOldItemsByFeed(feedId, userId, daysOld);
+      return deletedCount;
     } catch (error) {
       throw new Error(`Failed to delete old items: ${error.message}`);
     }
@@ -288,14 +188,42 @@ class ItemRepository {
    */
   itemExists(feedId, guid) {
     try {
-      const item = this.db.prepare(`
-        SELECT id FROM feed_items
-        WHERE feed_id = ? AND guid = ?
-      `).get(feedId, guid);
-
-      return !!item;
+      const items = this.db.getItemsByFeed(feedId);
+      return items.some(item => item.id === guid);
     } catch (error) {
       throw new Error(`Failed to check if item exists: ${error.message}`);
+    }
+  }
+
+  /**
+   * Bulk create items
+   */
+  createItems(userId, items) {
+    try {
+      if (!Array.isArray(items) || items.length === 0) {
+        throw new Error('Items must be a non-empty array');
+      }
+
+      // Transform items to database format
+      const formattedItems = items.map(item => ({
+        id: item.id || `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        feedId: item.feedId || item.feed_id,
+        feedTitle: item.feedTitle || item.feed_title || '',
+        title: item.title || '',
+        link: item.link || '',
+        description: item.description || '',
+        pubDate: item.pubDate || item.pub_date || new Date().toISOString(),
+        isRead: item.isRead ? 1 : 0,
+        author: item.author || '',
+        categories: item.categories || [],
+        content: item.content || '',
+        imageUrl: item.imageUrl || item.image_url || ''
+      }));
+
+      this.db.createItems(formattedItems, userId);
+      return formattedItems.map(item => item.id);
+    } catch (error) {
+      throw new Error(`Failed to create items: ${error.message}`);
     }
   }
 }

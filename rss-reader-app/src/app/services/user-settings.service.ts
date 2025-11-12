@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { tap, map, catchError } from 'rxjs/operators';
 
 export interface UserSettings {
   font: string;
@@ -49,18 +49,89 @@ export class UserSettingsService {
   });
 
   public settings$ = this.settingsSubject.asObservable();
+  private settingsLoaded = false; // Track if settings have been successfully loaded
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+    // Try to restore settings from localStorage on init
+    this.restoreFromLocalStorage();
+  }
+
+  /**
+   * Restore settings from localStorage if available
+   */
+  private restoreFromLocalStorage(): void {
+    try {
+      // Only access localStorage in browser environment
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        return;
+      }
+      
+      const saved = localStorage.getItem('userSettings');
+      if (saved) {
+        const settings = JSON.parse(saved);
+        // Validate that it has the required properties
+        if (settings.font && settings.headerColor !== undefined) {
+          this.settingsSubject.next(settings);
+        }
+      }
+    } catch (e) {
+      console.warn('[UserSettingsService] Failed to restore from localStorage:', e);
+    }
+  }
+
+  /**
+   * Extract data from wrapped API response {success, data}
+   * Falls back to original response if not wrapped
+   */
+  private extractData<T>(response: any): T {
+    return response?.data !== undefined ? response.data : response;
+  }
 
   getSettings(): Observable<UserSettings> {
-    return this.http.get<UserSettings>('/api/user-settings').pipe(
-      tap(settings => this.settingsSubject.next(settings))
+    return this.http.get<any>('/api/user-settings', { withCredentials: true }).pipe(
+      map(response => {
+        const settings = this.extractData<UserSettings>(response);
+        return settings;
+      }),
+      tap(settings => {
+        this.settingsSubject.next(settings);
+        this.settingsLoaded = true;
+        // Save to localStorage for future offline access
+        try {
+          if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+            localStorage.setItem('userSettings', JSON.stringify(settings));
+          }
+        } catch (e) {
+          console.warn('[UserSettingsService] Failed to save to localStorage:', e);
+        }
+      }),
+      catchError(error => {
+        console.error('[UserSettingsService] Error fetching settings:', error);
+        // Don't overwrite current settings on error - keep what we have
+        return of(this.settingsSubject.value);
+      })
     );
   }
 
   updateSettings(settings: UserSettings): Observable<UserSettings> {
-    return this.http.put<UserSettings>('/api/user-settings', settings).pipe(
-      tap(updated => this.settingsSubject.next(updated))
+    return this.http.put<any>('/api/user-settings', settings, { withCredentials: true }).pipe(
+      map(response => this.extractData<UserSettings>(response)),
+      tap(updated => {
+        this.settingsSubject.next(updated);
+        // Save to localStorage
+        try {
+          if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+            localStorage.setItem('userSettings', JSON.stringify(updated));
+          }
+        } catch (e) {
+          console.warn('[UserSettingsService] Failed to save updated settings to localStorage:', e);
+        }
+      }),
+      catchError((error: any) => {
+        console.error('[UserSettingsService] Error updating settings:', error);
+        // On error, keep the current settings - don't reset
+        return of(this.settingsSubject.value);
+      })
     );
   }
 
@@ -100,18 +171,22 @@ export class UserSettingsService {
   applyDarkMode(darkMode: boolean): void {
     // Cache to localStorage for instant application on next load
     try {
-      localStorage.setItem('darkMode', String(darkMode));
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.setItem('darkMode', String(darkMode));
+      }
     } catch (e) {
       // localStorage might not be available
     }
 
-    // Apply to both html and body elements
-    if (darkMode) {
-      document.documentElement.classList.add('dark-mode');
-      document.body.classList.add('dark-mode');
-    } else {
-      document.documentElement.classList.remove('dark-mode');
-      document.body.classList.remove('dark-mode');
+    // Apply to both html and body elements (only in browser)
+    if (typeof document !== 'undefined') {
+      if (darkMode) {
+        document.documentElement.classList.add('dark-mode');
+        document.body.classList.add('dark-mode');
+      } else {
+        document.documentElement.classList.remove('dark-mode');
+        document.body.classList.remove('dark-mode');
+      }
     }
   }
 
@@ -131,16 +206,29 @@ export class UserSettingsService {
   /**
    * Export all user data as XML
    */
-  exportData(): Observable<Blob> {
-    return this.http.get('/api/export', { 
-      responseType: 'blob'
-    });
+  exportData(): Observable<any> {
+    return this.http.get<any>('/api/export', { 
+      responseType: 'json',
+      withCredentials: true
+    }).pipe(
+      map(response => this.extractData<any>(response)),
+      catchError((error: any) => {
+        console.error('[UserSettingsService] Error exporting data:', error);
+        return of(null);
+      })
+    );
   }
 
   /**
    * Import user data from XML
    */
   importData(xmlData: string): Observable<any> {
-    return this.http.post('/api/import', { xmlData });
+    return this.http.post<any>('/api/import', { xmlData }, { withCredentials: true }).pipe(
+      map(response => this.extractData<any>(response)),
+      catchError((error: any) => {
+        console.error('[UserSettingsService] Error importing data:', error);
+        return of(null);
+      })
+    );
   }
 }

@@ -194,7 +194,7 @@ webView.settings.apply {
 
 ### Inject JavaScript into WebView
 ```kotlin
-webView.evaluateJavascript("javascript:console.log('Hello from Android')") {}
+webView.evaluateJavascript("javascript:alert('Hello from Android')") {}
 ```
 
 ### Deep Linking (OAuth Callback)

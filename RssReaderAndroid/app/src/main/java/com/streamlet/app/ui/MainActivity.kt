@@ -160,7 +160,6 @@ class MainActivity : AppCompatActivity() {
                         try {
                             window.BACKEND_API_URL = '$backendUrl';
                             localStorage.setItem('backend_api_url', '$backendUrl');
-                            console.log('[Streamlet] Backend URL configured: $backendUrl');
                         } catch(e) {
                             console.error('[Streamlet] Failed to set backend URL: ' + e);
                         }
@@ -182,7 +181,6 @@ class MainActivity : AppCompatActivity() {
                                 localStorage.setItem('streamlet_authenticated', 'true');
                                 localStorage.setItem('streamlet_skip_login', 'true');
                                 localStorage.setItem('streamlet_native_app', 'true');
-                                console.log('[Streamlet] Auth credentials injected from native app');
                                 window.streamletAuthenticated = true;
                                 window.streamletEmail = '$userEmail';
                             } catch(e) {
@@ -218,7 +216,6 @@ class MainActivity : AppCompatActivity() {
                                 // Verify data is set
                                 const token = localStorage.getItem('streamlet_id_token');
                                 const auth = localStorage.getItem('streamlet_authenticated');
-                                console.log('[Streamlet] Auth verified - authenticated: ' + auth + ', has token: ' + !!token);
                                 
                                 // Emit event for Angular app to detect native login
                                 const event = new CustomEvent('streamletNativeLogin', { 
@@ -291,7 +288,6 @@ class MainActivity : AppCompatActivity() {
                         // Mark as native app login
                         localStorage.setItem('streamlet_native_app', 'true');
                         
-                        console.log('Auth data set successfully');
                     } catch(e) {
                         console.error('Failed to set auth data: ' + e);
                     }

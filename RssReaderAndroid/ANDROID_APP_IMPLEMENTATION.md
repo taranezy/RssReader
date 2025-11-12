@@ -89,7 +89,6 @@ private fun setupWebView() {
                             window.streamletAuthenticated = true;
                             window.streamletEmail = '$userEmail';
                             
-                            console.log('[Streamlet] Auth data injected early');
                         } catch(e) {
                             console.error('[Streamlet] Error injecting auth: ' + e);
                         }
@@ -113,7 +112,6 @@ private fun setupWebView() {
                             // Verify data is set
                             const token = localStorage.getItem('streamlet_id_token');
                             const auth = localStorage.getItem('streamlet_authenticated');
-                            console.log('[Streamlet] Auth verified - authenticated: ' + auth + ', has token: ' + !!token);
                             
                             // Emit custom event for Angular to detect
                             const event = new CustomEvent('streamletNativeLogin', { 
@@ -240,7 +238,7 @@ chrome://inspect
 In DevTools Console:
 ```javascript
 // Check localStorage
-console.log('localStorage:', {
+('localStorage:', {
   email: localStorage.getItem('streamlet_email'),
   token: localStorage.getItem('streamlet_id_token'),
   authenticated: localStorage.getItem('streamlet_authenticated'),
@@ -249,13 +247,13 @@ console.log('localStorage:', {
 });
 
 // Check window globals
-console.log('window globals:', {
+('window globals:', {
   authenticated: window.streamletAuthenticated,
   email: window.streamletEmail,
 });
 
 // Check URL
-console.log('URL:', window.location.href);
+('URL:', window.location.href);
 ```
 
 ### Monitor Logs

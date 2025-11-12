@@ -18,6 +18,12 @@ class RssProxyService {
    */
   async isStandardFeed(url) {
     try {
+      // YouTube RSS feeds are special - they don't fetch well with standard headers
+      // but they are valid RSS feeds, so recognize them as standard
+      if (url.includes('youtube.com/feeds/videos.xml')) {
+        return true;
+      }
+
       const response = await axios.get(url, {
         headers: this.headers,
         timeout: this.timeout,
@@ -35,6 +41,76 @@ class RssProxyService {
     } catch (error) {
       console.error('Error checking feed type:', error.message);
       return false;
+    }
+  }
+
+  /**
+   * Convert YouTube channel/playlist/user URL to RSS feed URL
+   * YouTube provides RSS feeds at special endpoints:
+   * - Channel: https://www.youtube.com/feeds/videos.xml?channel_id=CHANNEL_ID
+   * - Playlist: https://www.youtube.com/feeds/videos.xml?playlist_id=PLAYLIST_ID
+   * - User: https://www.youtube.com/feeds/videos.xml?user=USERNAME
+   */
+  convertYouTubeToRss(url) {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+
+      // Check if it's a YouTube URL
+      if (!hostname.includes('youtube.com') && !hostname.includes('youtu.be')) {
+        return null;
+      }
+
+      const pathname = urlObj.pathname;
+      const searchParams = urlObj.searchParams;
+
+      // Already a YouTube RSS feed
+      if (pathname.includes('/feeds/videos.xml')) {
+        return url;
+      }
+
+      // Pattern 1: /channel/CHANNEL_ID
+      const channelMatch = pathname.match(/\/channel\/([^/?]+)/);
+      if (channelMatch) {
+        return `https://www.youtube.com/feeds/videos.xml?channel_id=${channelMatch[1]}`;
+      }
+
+      // Pattern 2: /user/USERNAME
+      const userMatch = pathname.match(/\/user\/([^/?]+)/);
+      if (userMatch) {
+        return `https://www.youtube.com/feeds/videos.xml?user=${userMatch[1]}`;
+      }
+
+      // Pattern 3: /c/CHANNEL_NAME (vanity URL) - need to convert to channel ID
+      // This one needs extra work to look up the channel ID
+      // For now, we'll handle it by fetching the page and looking for channel_id meta tag
+      if (pathname.match(/^\/c\/[^/?]+/)) {
+        return null; // Will fall through to regular HTML parsing
+      }
+
+      // Pattern 4: Direct playlist URL (not RSS)
+      const playlistId = searchParams.get('list');
+      if (playlistId) {
+        return `https://www.youtube.com/feeds/videos.xml?playlist_id=${playlistId}`;
+      }
+
+      // Pattern 5: URL already contains channel_id, user, or playlist_id
+      if (searchParams.has('channel_id') || searchParams.has('user') || searchParams.has('playlist_id')) {
+        const params = new URLSearchParams();
+        if (searchParams.has('channel_id')) {
+          params.set('channel_id', searchParams.get('channel_id'));
+        } else if (searchParams.has('user')) {
+          params.set('user', searchParams.get('user'));
+        } else if (searchParams.has('playlist_id')) {
+          params.set('playlist_id', searchParams.get('playlist_id'));
+        }
+        return `https://www.youtube.com/feeds/videos.xml?${params.toString()}`;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error converting YouTube URL:', error.message);
+      return null;
     }
   }
 
@@ -69,7 +145,6 @@ class RssProxyService {
 
       // If found in head, return immediately
       if (feedLinks.length > 0) {
-        console.log(`[RSS Proxy] Found feed URL in HTML head: ${feedLinks[0].href}`);
         return feedLinks[0].href;
       }
 
@@ -109,7 +184,6 @@ class RssProxyService {
       });
 
       if (feedLinks.length > 0) {
-        console.log(`[RSS Proxy] Found potential feed URL in page: ${feedLinks[0].href}`);
         return feedLinks[0].href;
       }
 
@@ -128,6 +202,24 @@ class RssProxyService {
    */
   async convertHtmlToRss(url, siteTitle = null) {
     try {
+      // SPECIAL HANDLING: YouTube channels/playlists
+      const youtubeRssUrl = this.convertYouTubeToRss(url);
+      if (youtubeRssUrl && youtubeRssUrl !== url) {
+        try {
+          const response = await axios.get(youtubeRssUrl, {
+            headers: this.headers,
+            timeout: this.timeout,
+            responseType: 'text'
+          });
+          if (response.data.includes('<rss') || response.data.includes('<feed')) {
+            return response.data;
+          }
+        } catch (error) {
+          console.error(`[RSS Proxy] Failed to fetch YouTube RSS: ${error.message}`);
+          // Fall through to regular HTML conversion
+        }
+      }
+
       const response = await axios.get(url, {
         headers: this.headers,
         timeout: this.timeout
@@ -145,7 +237,6 @@ class RssProxyService {
       
       if (feedUrl && feedUrl !== url) {
         // Found a feed link! Fetch it directly
-        console.log(`[RSS Proxy] Following feed URL: ${feedUrl}`);
         try {
           const feedResponse = await axios.get(feedUrl, {
             headers: this.headers,
@@ -156,16 +247,13 @@ class RssProxyService {
           // Verify it's actually a valid feed
           const feedContent = feedResponse.data;
           if (feedContent.includes('<rss') || feedContent.includes('<feed') || feedContent.includes('<?xml')) {
-            console.log(`[RSS Proxy] Successfully fetched feed from: ${feedUrl}`);
             return feedContent; // Return the actual feed directly
           }
         } catch (feedError) {
-          console.log(`[RSS Proxy] Could not fetch feed from ${feedUrl}, falling back to article extraction: ${feedError.message}`);
         }
       }
 
       // STEP 2: No valid feed found, proceed with article extraction
-      console.log(`[RSS Proxy] No feed link found, extracting articles from: ${url}`);
       const articles = [];
 
       // Extract articles using common patterns
@@ -199,7 +287,6 @@ class RssProxyService {
       }
 
       // STEP 3: Enrich articles with full content from their pages
-      console.log(`[RSS Proxy] Fetching full content for ${articles.length} articles...`);
       const enrichedArticles = [];
       for (const article of articles) {
         try {
@@ -213,7 +300,6 @@ class RssProxyService {
           }
           enrichedArticles.push(article);
         } catch (error) {
-          console.log(`Error enriching article: ${error.message}`);
           enrichedArticles.push(article);
         }
       }
@@ -290,7 +376,6 @@ class RssProxyService {
 
       return fullContent;
     } catch (error) {
-      console.log(`Could not fetch full content from ${articleUrl}: ${error.message}`);
       return null;
     }
   }

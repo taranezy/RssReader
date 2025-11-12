@@ -54,22 +54,10 @@ export class RssParserService implements IRssParser {
       const contentNode = item.querySelector('content\\:encoded');
       const content = contentNode?.textContent?.trim() || description;
       
-      // Debug logging
-      if (contentNode) {
-        console.log('=== DEBUG: Content:encoded found ===');
-        console.log('Raw textContent:', contentNode.textContent?.substring(0, 500));
-        console.log('Has img tag:', contentNode.textContent?.includes('<img'));
-      }
-      
       // Extract image URL from various sources
       const imageUrl = this.extractImageUrl(item, description, content);
       
-      // Debug: Log the result
-      console.log('Extracted image for item:', title?.substring(0, 50), '-> imageUrl:', imageUrl);
-      
       if (content && content.includes('<img')) {
-        console.log('=== DEBUG: Image extraction ===');
-        console.log('Content has img tag, extracted imageUrl:', imageUrl);
       }
       
       // Get categories
@@ -158,7 +146,6 @@ export class RssParserService implements IRssParser {
     if (mediaThumbnail) {
       const url = mediaThumbnail.getAttribute('url');
       if (url) {
-        console.log('Found image in media:thumbnail:', url);
         return url;
       }
     }
@@ -170,7 +157,6 @@ export class RssParserService implements IRssParser {
       for (let i = 0; i < mediaContentElements.length; i++) {
         const url = mediaContentElements[i].getAttribute('url');
         if (url) {
-          console.log('Found image in media:content:', url);
           return url;
         }
       }
@@ -183,7 +169,6 @@ export class RssParserService implements IRssParser {
     if (mediaContentTyped) {
       const url = mediaContentTyped.getAttribute('url');
       if (url) {
-        console.log('Found image in media:content[typed]:', url);
         return url;
       }
     }
@@ -229,7 +214,6 @@ export class RssParserService implements IRssParser {
     const ytVideoIdElement = element.querySelector('yt\\:videoId');
     if (ytVideoIdElement?.textContent) {
       videoId = ytVideoIdElement.textContent.trim();
-      console.log('Found YouTube video ID via yt:videoId:', videoId);
       return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
     }
 
@@ -240,7 +224,6 @@ export class RssParserService implements IRssParser {
       if (url) {
         videoId = this.extractVideoIdFromUrl(url);
         if (videoId) {
-          console.log('Found YouTube video ID from media:content:', videoId);
           return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         }
       }
@@ -253,7 +236,6 @@ export class RssParserService implements IRssParser {
       if (href && (href.includes('youtube.com') || href.includes('youtu.be'))) {
         videoId = this.extractVideoIdFromUrl(href);
         if (videoId) {
-          console.log('Found YouTube video ID from link:', videoId);
           return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         }
       }
@@ -268,7 +250,6 @@ export class RssParserService implements IRssParser {
       if (urlMatch && urlMatch[0]) {
         videoId = this.extractVideoIdFromUrl(urlMatch[0]);
         if (videoId) {
-          console.log('Found YouTube video ID from description:', videoId);
           return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
         }
       }

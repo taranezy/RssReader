@@ -18,8 +18,6 @@ export const backendUrlInterceptor: HttpInterceptorFn = (req, next) => {
     // Replace /api with http://192.168.100.10:3000/api
     const directUrl = `${backendUrl}${req.url}`;
     
-    console.log(`[Backend Interceptor] Rewriting ${req.url} → ${directUrl}`);
-    
     const modifiedReq = req.clone({
       url: directUrl,
       withCredentials: true  // Ensure cookies are sent

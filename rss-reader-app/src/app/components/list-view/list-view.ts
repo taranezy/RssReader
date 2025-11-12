@@ -13,10 +13,45 @@ import { ArticleReaderComponent } from '../article-reader/article-reader';
   imports: [CommonModule, ArticleReaderComponent],
   templateUrl: './list-view.html',
   styleUrl: './list-view.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.Default
 })
 export class ListViewComponent implements OnInit {
-  items: RssItem[] = [];
+  private _items: RssItem[] = [];
+  
+  get items(): RssItem[] {
+    // Always ensure _items is an array
+    if (!Array.isArray(this._items)) {
+      if (typeof this._items === 'string') {
+        try {
+          this._items = JSON.parse(this._items);
+        } catch (e) {
+          console.error('[LIST-VIEW] Failed to parse:', e);
+          this._items = [];
+        }
+      } else {
+        this._items = [];
+      }
+    }
+    return this._items;
+  }
+  
+  set items(value: any) {
+    if (typeof value === 'string') {
+      try {
+        this._items = JSON.parse(value);
+      } catch (e) {
+        console.error('[LIST-VIEW] Failed to parse string:', e);
+        this._items = [];
+      }
+    } else if (Array.isArray(value)) {
+      this._items = value;
+    } else if (value === undefined || value === null) {
+      this._items = [];
+    } else {
+      this._items = [];
+    }
+  }
+
   feeds: RssFeed[] = [];
   currentUrl: string | null = null;
   showFeedImages = true;
@@ -80,14 +115,12 @@ export class ListViewComponent implements OnInit {
     
     // Subscribe to filtered items - updates in real-time
     this.feedService.getFilteredItems().subscribe((items: RssItem[]) => {
-      console.log('[LIST-VIEW] Received items update:', items.length);
       this.items = items;
       // Always update - trackBy will protect iframe
       this.cdr.markForCheck();
     });
 
     this.feedService.feeds$.subscribe(feeds => {
-      console.log('[LIST-VIEW] Received feeds update:', feeds.length);
       this.feeds = feeds;
       this.cdr.markForCheck();
     });
@@ -107,7 +140,6 @@ export class ListViewComponent implements OnInit {
     this.pipState$.subscribe((pipState: any) => {
       if (pipState.isActive && pipState.article && !this.selectedArticleForPreview) {
         // Restore the preview article from PIP state when user returns to list view
-        console.log('[LIST-VIEW] Restoring preview article from global PIP state:', pipState.article.title);
         this.selectedArticleForPreview = pipState.article;
         this.cdr.markForCheck();
       }
@@ -152,7 +184,6 @@ export class ListViewComponent implements OnInit {
     if (this.transitionInProgress) return;
     
     // ALWAYS mark change detection when user explicitly clicks
-    console.log('[LIST-VIEW] User clicked item - allowing change detection');
     this.feedService.markAsRead(item.id);
     
     // On large screens with preview pane enabled and showing, always show in preview
@@ -265,7 +296,6 @@ export class ListViewComponent implements OnInit {
   createPipManually(): void {
     // Check if PIP is enabled in user settings
     if (!this.isPIPEnabled) {
-      console.log('[LIST-VIEW] PIP is disabled in settings');
       return;
     }
     

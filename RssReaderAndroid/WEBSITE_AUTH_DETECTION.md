@@ -51,7 +51,6 @@ const idToken = localStorage.getItem('streamlet_id_token');
 
 if (shouldSkipLogin && idToken) {
   // Skip login page, go directly to main content
-  console.log('[Streamlet] Native app detected, using injected token');
   skipLoginPage(userEmail, idToken);
 }
 ```
@@ -63,8 +62,6 @@ Set at the same time as localStorage:
 ```javascript
 // Check window globals (available immediately)
 if (window.streamletAuthenticated && window.streamletEmail) {
-  console.log('[Streamlet] Window globals detected, skipping login');
-  console.log('Email:', window.streamletEmail);
   skipLoginPage(window.streamletEmail);
 }
 ```
@@ -79,7 +76,6 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     // Listen for native app authentication
     window.addEventListener('streamletNativeLogin', (event: any) => {
-      console.log('[Streamlet] Native login event received', event.detail);
       const { authenticated, email } = event.detail;
       
       if (authenticated) {
@@ -114,7 +110,6 @@ const isNativeApp = params.get('native_app') === 'true';
 if (skipLogin && isNativeApp) {
   const token = localStorage.getItem('streamlet_id_token');
   if (token) {
-    console.log('[Streamlet] URL parameters indicate native app');
     skipLoginPage();
   }
 }
@@ -145,7 +140,6 @@ export class AuthService {
       const email = localStorage.getItem('streamlet_email');
       const token = localStorage.getItem('streamlet_id_token');
       if (token) {
-        console.log('[Streamlet] Native app detected via localStorage');
         this.isNativeApp$.next(true);
         this.nativeAppEmail$.next(email);
         return;
@@ -154,7 +148,6 @@ export class AuthService {
     
     // 2. Check window globals
     if ((window as any).streamletAuthenticated) {
-      console.log('[Streamlet] Native app detected via window globals');
       this.isNativeApp$.next(true);
       this.nativeAppEmail$.next((window as any).streamletEmail);
       return;
@@ -165,7 +158,6 @@ export class AuthService {
     if (params.get('native_app') === 'true') {
       const token = localStorage.getItem('streamlet_id_token');
       if (token) {
-        console.log('[Streamlet] Native app detected via URL parameters');
         this.isNativeApp$.next(true);
         this.nativeAppEmail$.next(params.get('email') || '');
         return;
@@ -174,7 +166,6 @@ export class AuthService {
     
     // 4. Listen for custom event as fallback
     window.addEventListener('streamletNativeLogin', (event: any) => {
-      console.log('[Streamlet] Native login event received');
       this.isNativeApp$.next(true);
       this.nativeAppEmail$.next(event.detail?.email);
     });
@@ -206,7 +197,6 @@ export class LoginComponent implements OnInit {
   ngOnInit() {
     // Check if native app authentication is available
     if (this.authService.isNativeAuthenticated()) {
-      console.log('[Streamlet] Native app detected, skipping login page');
       
       // Set user session
       const email = this.authService.getNativeAppEmail();
@@ -407,7 +397,7 @@ app.post('/api/validate-token', async (req, res) => {
 
 1. **Check localStorage is set:**
    ```javascript
-   console.log('localStorage:', {
+   ('localStorage:', {
      email: localStorage.getItem('streamlet_email'),
      token: localStorage.getItem('streamlet_id_token'),
      skipLogin: localStorage.getItem('streamlet_skip_login'),
@@ -416,7 +406,7 @@ app.post('/api/validate-token', async (req, res) => {
 
 2. **Check window globals:**
    ```javascript
-   console.log('window globals:', {
+   ('window globals:', {
      authenticated: window.streamletAuthenticated,
      email: window.streamletEmail,
    });
@@ -425,13 +415,13 @@ app.post('/api/validate-token', async (req, res) => {
 3. **Listen for event:**
    ```javascript
    window.addEventListener('streamletNativeLogin', (e) => {
-     console.log('[Streamlet] Event received!', e.detail);
+     ('[Streamlet] Event received!', e.detail);
    });
    ```
 
 4. **Check URL parameters:**
    ```javascript
-   console.log('URL:', window.location.search);
+   ('URL:', window.location.search);
    ```
 
 ### API Calls Fail with 401

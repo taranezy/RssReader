@@ -19,7 +19,7 @@ class FeedController {
       res.json({
         success: true,
         data: feeds,
-        count: feeds.length
+        count: feeds ? feeds.length : 0
       });
     } catch (error) {
       res.status(500).json({

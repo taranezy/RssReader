@@ -22,7 +22,6 @@ export class AppComponent implements OnInit {
     const idToken = localStorage.getItem('streamlet_id_token');
     
     if (shouldSkipLogin && idToken) {
-      console.log('Native app detected, skipping login');
       this.router.navigate(['/home']);
     }
   }
@@ -96,7 +95,6 @@ window.streamletEmail = 'user@example.com';
 
 ```javascript
 window.addEventListener('streamletNativeLogin', (event) => {
-  console.log('Native login:', event.detail);
   // { authenticated: true, email: 'user@example.com' }
 });
 ```
@@ -111,8 +109,8 @@ window.addEventListener('streamletNativeLogin', (event) => {
 4. **Wait for page load** → App switches to WebView
 5. **Check DevTools Console:**
    ```javascript
-   console.log(localStorage.getItem('streamlet_id_token')); // Should show token
-   console.log(window.streamletAuthenticated); // Should show true
+   (localStorage.getItem('streamlet_id_token')); // Should show token
+   (window.streamletAuthenticated); // Should show true
    ```
 6. **Login page should be skipped** → Directly to main content
 
@@ -138,7 +136,6 @@ console.table({
 ```javascript
 // Add to console
 window.addEventListener('streamletNativeLogin', (event) => {
-  console.log('[DEBUG] Native login event received:', event.detail);
 });
 ```
 
@@ -146,7 +143,7 @@ window.addEventListener('streamletNativeLogin', (event) => {
 
 ```javascript
 const params = new URLSearchParams(window.location.search);
-console.log({
+({
   skipLogin: params.get('skip_login'),
   nativeApp: params.get('native_app'),
   email: params.get('email')

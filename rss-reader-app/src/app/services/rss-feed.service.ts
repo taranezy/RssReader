@@ -46,21 +46,34 @@ export class RssFeedService {
     private parser: RssParserService,
     private fetcher: RssFeedFetcherService
   ) {
-    this.loadFeeds();
-    this.loadItems();
-    this.loadPreferences();
+    // Don't load ANY data in constructor - wait for authentication
+    // Preferences will be loaded when initialize() is called
     
     // Auto-refresh all feeds every 60 seconds
     this.startAutoRefresh();
   }
 
+  /**
+   * Initialize service - load feeds, items, and preferences after authentication
+   */
+  public initialize(): void {
+    this.loadFeeds();
+    this.loadItems();
+    this.loadPreferences();
+    
+    // After loading feeds, refresh them to fetch latest content (especially YouTube feeds)
+    setTimeout(() => {
+      this.refreshAllFeeds().subscribe({
+        error: (err) => console.error('[RSS-FEED-SERVICE] Error during initial refresh:', err)
+      });
+    }, 500);
+  }
+
   // Auto-refresh all feeds every 60 seconds
   private startAutoRefresh(): void {
     interval(600000).subscribe(() => {
-      console.log('Starting auto-refresh in background...');
       this.refreshAllFeeds().subscribe({
         next: (count) => {
-          console.log(`Auto-refresh completed: ${count} new items`);
         },
         error: (error) => {
           console.error('Error during auto-refresh:', error);
@@ -186,7 +199,6 @@ export class RssFeedService {
                   // Emit items immediately for real-time updates
                   // Preview lock in list-view will prevent interruption
                   this.loadItems();
-                  console.log('[DEBUG] refreshFeed: added', uniqueNewItems.length, 'items, emitting for real-time update');
                 }),
                 map(() => uniqueNewItems.length)
               );
@@ -273,11 +285,23 @@ export class RssFeedService {
       }),
       toArray(), // Wait for all to complete
       switchMap(() => {
-        // After refreshing all feeds, just cleanup old items
-        return this.apiStorage.cleanupOldItems().pipe(
-          tap(deletedCount => {
-            console.log(`Refresh complete: ${totalNewItems} new items, ${deletedCount} cleaned up`);
-            
+        // After refreshing all feeds, cleanup old items for each feed
+        if (activeFeeds.length === 0) {
+          return of(0);
+        }
+        
+        // Clean up old items for each feed sequentially
+        return from(activeFeeds).pipe(
+          concatMap(feed => 
+            this.apiStorage.cleanupOldItems(feed.id).pipe(
+              catchError(error => {
+                console.error(`Error cleaning up old items for feed ${feed.title}:`, error);
+                return of(0); // Continue even if cleanup fails for one feed
+              })
+            )
+          ),
+          toArray(),
+          tap(() => {
             // Clear refreshing flag - items were already emitted per-feed
             this.isRefreshing = false;
             this.refreshingSubject.next(false);
@@ -287,7 +311,7 @@ export class RssFeedService {
           }),
           map(() => totalNewItems),
           catchError(error => {
-            console.error('Error cleaning up old items:', error);
+            console.error('Error in cleanup phase:', error);
             // Clear refreshing flag
             this.isRefreshing = false;
             this.refreshingSubject.next(false);
@@ -302,19 +326,15 @@ export class RssFeedService {
 
   // Item Management
   markAsRead(itemId: string): void {
-    console.log('[DEBUG] markAsRead called for:', itemId);
     this.apiStorage.updateItem(itemId, { isRead: true }).pipe(
       tap(() => {
         // Update the specific item in place to avoid creating new references
         const currentItems = this.itemsSubject.value;
         const item = currentItems.find(i => i.id === itemId);
         if (item && !item.isRead) {
-          console.log('[DEBUG] markAsRead: updating item in-place, emitting SAME array');
           item.isRead = true;
           // Emit to trigger count updates in feed-manager, but trackBy prevents DOM recreation
           this.itemsSubject.next(currentItems);
-        } else {
-          console.log('[DEBUG] markAsRead: item already read or not found, NOT emitting');
         }
       }),
       catchError(error => {
@@ -379,10 +399,8 @@ export class RssFeedService {
   }
 
   loadSavedItems(): void {
-    console.log('Loading saved items...');
     this.apiStorage.getSavedItems().pipe(
       tap(items => {
-        console.log(`Loaded ${items.length} saved items`);
         this.itemsSubject.next(items);
       }),
       catchError(error => {
@@ -409,10 +427,8 @@ export class RssFeedService {
   // Filtered Items
   getFilteredItems(): Observable<RssItem[]> {
     return combineLatest([this.items$, this.preferences$]).pipe(
-      tap(([items, prefs]) => console.log('[DEBUG] combineLatest triggered, items:', items.length)),
       // Process normally - no blocking during refresh
       map(([items, prefs]) => {
-        console.log('[DEBUG] Processing items, length:', items.length);
         let filtered = items;
 
         // Filter by selected feeds
@@ -427,14 +443,12 @@ export class RssFeedService {
 
         // Sort by date (newest first) - slice first to avoid mutating original
         const sorted = filtered.slice().sort((a, b) => b.pubDate.getTime() - a.pubDate.getTime());
-        console.log('[DEBUG] After filter/sort, length:', sorted.length);
         return sorted;
       }),
       // Only emit when the filtered/sorted result actually changes (not on every items$ emission)
       distinctUntilChanged((prev, curr) => {
         // Quick length check first
         if (prev.length !== curr.length) {
-          console.log('[DEBUG] distinctUntilChanged: length changed', prev.length, '→', curr.length, 'EMITTING');
           return false;
         }
         
@@ -446,21 +460,22 @@ export class RssFeedService {
                  item.isSaved === currItem.isSaved;
         });
         
-        console.log('[DEBUG] distinctUntilChanged: same items?', same, same ? 'BLOCKING' : 'EMITTING');
         return same;
-      }),
-      tap((items) => console.log('[DEBUG] getFilteredItems EMITTING to list-view:', items.length, 'items'))
+      })
     );
   }
 
   // Helper Methods
   private loadFeeds(): void {
     this.apiStorage.getAllFeeds().pipe(
-      map(feeds => feeds.map(feed => ({
-        ...feed,
-        addedDate: new Date(feed.addedDate),
-        lastFetched: feed.lastFetched ? new Date(feed.lastFetched) : undefined
-      }))),
+      map(feeds => {
+        // Feeds should already be an array from api-storage, but convert dates
+        return Array.isArray(feeds) ? feeds.map(feed => ({
+          ...feed,
+          addedDate: new Date(feed.addedDate),
+          lastFetched: feed.lastFetched ? new Date(feed.lastFetched) : undefined
+        })) : [];
+      }),
       tap(feeds => this.feedsSubject.next(feeds)),
       catchError(error => {
         console.error('Error loading feeds:', error);
@@ -471,6 +486,7 @@ export class RssFeedService {
 
   public loadItems(): void {
     this.apiStorage.getAllItems().pipe(
+      // Items already come with converted dates and array validation from api-storage
       tap(items => this.itemsSubject.next(items)),
       catchError(error => {
         console.error('Error loading items:', error);
