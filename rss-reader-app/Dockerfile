@@ -22,12 +22,19 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install production dependencies only
+# Install production dependencies for root
 COPY package*.json ./
 RUN npm ci --only=production
 
 # Copy backend code
 COPY backend ./backend
+
+# Install backend dependencies
+WORKDIR /app/backend
+RUN npm ci --only=production
+
+# Back to app root
+WORKDIR /app
 
 # Copy built frontend from previous stage
 COPY --from=frontend-builder /app/dist/rss-reader-app/browser ./dist/rss-reader-app/browser

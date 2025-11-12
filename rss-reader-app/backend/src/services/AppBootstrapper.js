@@ -43,6 +43,10 @@ class AppBootstrapper {
    * Setup all Express middleware
    */
   setupMiddleware() {
+    // Trust proxy - CRITICAL for secure cookies behind reverse proxy
+    // Allows express to trust X-Forwarded-* headers from nginx
+    this.app.set('trust proxy', 1);
+    
     // Request logging
     this.app.use(this.loggerMiddleware());
 
@@ -81,13 +85,29 @@ class AppBootstrapper {
     this.app.use(cookieParser());
 
     // Session
+    let cookieDomain = undefined;
+    let cookieSecure = this.config.isProduction;
+    
+    if (this.config.isProduction && this.config.FRONTEND_URL) {
+      try {
+        const url = new URL(this.config.FRONTEND_URL);
+        cookieDomain = url.hostname;
+        cookieSecure = url.protocol === 'https:';
+      } catch (err) {
+        console.warn('[AppBootstrapper] Warning: Could not parse FRONTEND_URL for cookie domain:', err.message);
+      }
+    }
+
     const sessionCookieConfig = {
-      secure: this.config.isProduction, // true on HTTPS, false on HTTP
-      httpOnly: false,
+      secure: cookieSecure,
+      httpOnly: true,  // CRITICAL: Must be true for security
       sameSite: 'lax',
       maxAge: this.config.SESSION_MAX_AGE,
-      path: '/'
+      path: '/',
+      ...(cookieDomain && { domain: cookieDomain })
     };
+
+    console.log('[AppBootstrapper] Session cookie config:', sessionCookieConfig);
     
     this.app.use(session({
       secret: this.config.SESSION_SECRET,
