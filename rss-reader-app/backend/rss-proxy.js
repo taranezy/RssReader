@@ -21,7 +21,7 @@ class RssProxyService {
       // YouTube RSS feeds are special - they don't fetch well with standard headers
       // but they are valid RSS feeds, so recognize them as standard
       if (url.includes('youtube.com/feeds/videos.xml')) {
-        return true;
+        return true;  // ALWAYS trust YouTube RSS URLs without fetching
       }
 
       const response = await axios.get(url, {
@@ -40,6 +40,11 @@ class RssProxyService {
       );
     } catch (error) {
       console.error('Error checking feed type:', error.message);
+      // IMPORTANT: Don't return false immediately on YouTube URLs
+      // Even if fetch fails, YouTube URLs should be treated as standard feeds
+      if (url.includes('youtube.com/feeds')) {
+        return true;
+      }
       return false;
     }
   }
