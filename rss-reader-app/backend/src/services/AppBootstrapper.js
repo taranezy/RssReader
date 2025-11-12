@@ -61,19 +61,14 @@ class AppBootstrapper {
     const sessionCookieConfig = {
       secure: this.config.isProduction, // true on HTTPS, false on HTTP
       httpOnly: false,
-      sameSite: this.config.isProduction ? 'none' : 'lax',
-      maxAge: this.config.SESSION_MAX_AGE
+      // Use 'lax' on production if HTTPS cert isn't verified
+      // This allows same-site cookies. For cross-origin, need 'none' + secure: true
+      sameSite: this.config.isProduction ? 'lax' : 'lax',
+      maxAge: this.config.SESSION_MAX_AGE,
+      path: '/'  // Ensure cookie is sent to all paths
+      // Don't set domain - let browser use current domain automatically
+      // This works for same-origin requests and DDNS setups
     };
-    
-    // Only set domain if not on localhost
-    if (this.config.isProduction && this.config.FRONTEND_URL) {
-      try {
-        const url = new URL(this.config.FRONTEND_URL);
-        sessionCookieConfig.domain = url.hostname;
-      } catch (e) {
-        console.warn('Invalid FRONTEND_URL format:', this.config.FRONTEND_URL);
-      }
-    }
     
     this.app.use(session({
       secret: this.config.SESSION_SECRET,
