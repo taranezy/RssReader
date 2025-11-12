@@ -214,6 +214,16 @@ export class RssFeedService {
       }),
       catchError(error => {
         console.error('Error refreshing feed:', error);
+        // Remove invalid feed from database
+        this.apiStorage.deleteFeed(feedId).subscribe({
+          next: () => {
+            // Reload feeds after deletion
+            this.loadFeeds();
+          },
+          error: (deleteError) => {
+            console.error('Error deleting invalid feed:', deleteError);
+          }
+        });
         return of(0);
       })
     );

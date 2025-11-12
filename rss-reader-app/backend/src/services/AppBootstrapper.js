@@ -58,17 +58,28 @@ class AppBootstrapper {
     this.app.use(cookieParser());
 
     // Session
+    const sessionCookieConfig = {
+      secure: this.config.isProduction, // true on HTTPS, false on HTTP
+      httpOnly: false,
+      sameSite: this.config.isProduction ? 'none' : 'lax',
+      maxAge: this.config.SESSION_MAX_AGE
+    };
+    
+    // Only set domain if not on localhost
+    if (this.config.isProduction && this.config.FRONTEND_URL) {
+      try {
+        const url = new URL(this.config.FRONTEND_URL);
+        sessionCookieConfig.domain = url.hostname;
+      } catch (e) {
+        console.warn('Invalid FRONTEND_URL format:', this.config.FRONTEND_URL);
+      }
+    }
+    
     this.app.use(session({
       secret: this.config.SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
-      cookie: {
-        secure: false,
-        httpOnly: false,
-        sameSite: 'lax',
-        maxAge: this.config.SESSION_MAX_AGE,
-        domain: 'localhost'  // Set to localhost so cookie works on both :3000 and :4200
-      }
+      cookie: sessionCookieConfig
     }));
 
   }

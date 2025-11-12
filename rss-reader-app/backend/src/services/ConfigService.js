@@ -31,7 +31,9 @@ class ConfigService {
     this.GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/api/auth/google/callback';
 
     // CORS config
-    this.CORS_ORIGINS = this.isProduction ? false : [
+    this.CORS_ORIGINS = this.isProduction ? [
+      process.env.FRONTEND_URL || 'https://taranezy.ddns.net:8444'
+    ] : [
       'http://localhost:4200',
       'http://192.168.100.10:4200',
       'http://127.0.0.1:4200',
