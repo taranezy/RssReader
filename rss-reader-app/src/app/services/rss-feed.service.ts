@@ -214,17 +214,19 @@ export class RssFeedService {
       }),
       catchError(error => {
         console.error('Error refreshing feed:', error);
-        // Remove invalid feed from database
-        this.apiStorage.deleteFeed(feedId).subscribe({
-          next: () => {
-            // Reload feeds after deletion
-            this.loadFeeds();
-          },
-          error: (deleteError) => {
-            console.error('Error deleting invalid feed:', deleteError);
-          }
-        });
-        return of(0);
+        // Don't delete feeds on transient errors like network timeouts or temporary service unavailability
+        // Just update the last fetched time so we know we tried
+        // This is especially important for YouTube feeds which are being phased out by YouTube
+        return this.apiStorage.updateFeed(feedId, { 
+          lastFetched: new Date()
+        }).pipe(
+          tap(() => this.loadFeeds()),
+          map(() => 0),
+          catchError(updateError => {
+            console.error('Error updating feed:', updateError);
+            return of(0);
+          })
+        );
       })
     );
   }

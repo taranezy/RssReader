@@ -44,7 +44,7 @@ services:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
       - ./certbot/renew.sh:/scripts/renew.sh:ro
-    entrypoint: /bin/bash /scripts/renew.sh
+    entrypoint: /bin/sh /scripts/renew.sh
     healthcheck:
       test: ["CMD", "test", "-f", "/etc/letsencrypt/live"]
       interval: 3600s
