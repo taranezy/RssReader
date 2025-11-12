@@ -56,7 +56,7 @@ const itemRepository = new ItemRepository(db);
 const authenticationService = new AuthenticationService(userRepository);
 const feedDataService = new FeedDataService(feedRepository, config);
 const passportService = new PassportService(config, userRepository, feedDataService);
-const authController = new AuthController(authenticationService, config, feedRepository, feedDataService);
+const authController = new AuthController(authenticationService, config, feedRepository, feedDataService, userRepository);
 const feedController = new FeedController(feedRepository, userRepository);
 const itemController = new ItemController(itemRepository, feedRepository);
 const settingsController = new SettingsController(settingsRepository);
@@ -66,6 +66,15 @@ const proxyController = new ProxyController(rssProxyService);
 // Bootstrap app
 const appBootstrapper = new AppBootstrapper(config, passportService);
 const app = appBootstrapper.bootstrap();
+
+// Log startup configuration
+console.log('\n========== SERVER STARTUP ==========');
+console.log(`NODE_ENV: ${config.NODE_ENV}`);
+console.log(`isProduction: ${config.isProduction}`);
+console.log(`FRONTEND_URL: ${config.FRONTEND_URL}`);
+console.log(`CORS_ORIGINS: ${JSON.stringify(config.CORS_ORIGINS)}`);
+console.log(`SESSION_SECRET: ${config.SESSION_SECRET === 'your-secret-key-change-in-production' ? '⚠️ DEFAULT (NOT SECURE)' : '✓ Custom'}`);
+console.log('====================================\n');
 
 // Register routes
 createAuthRoutes(app, authController, passportService.getPassport(), isAuthenticated, config);

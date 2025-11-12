@@ -3,11 +3,12 @@
  * Depends on AuthenticationService (Dependency Injection)
  */
 class AuthController {
-  constructor(authenticationService, config, feedRepository, feedDataService) {
+  constructor(authenticationService, config, feedRepository, feedDataService, userRepository) {
     this.authenticationService = authenticationService;
     this.config = config;
     this.feedRepository = feedRepository;
     this.feedDataService = feedDataService;
+    this.userRepository = userRepository;
   }
 
   /**
@@ -15,7 +16,12 @@ class AuthController {
    */
   getCurrentUser(req, res) {
     try {
+      console.log('[AuthController.getCurrentUser] Session ID:', req.sessionID);
+      console.log('[AuthController.getCurrentUser] User:', req.user);
+      console.log('[AuthController.getCurrentUser] Cookies:', req.cookies);
+      
       if (!req.user) {
+        console.warn('[AuthController.getCurrentUser] ⚠️ No user in session');
         return res.status(401).json({
           success: false,
           error: 'Not authenticated'
@@ -70,25 +76,68 @@ class AuthController {
    */
   demoLogin(req, res) {
     try {
+      const DEMO_EMAIL = 'demo@example.com';
+      
+      let demoUserRecord = this.userRepository.findByEmail(DEMO_EMAIL);
+      
+      // If demo user doesn't exist in database, create it
+      if (!demoUserRecord) {
+        try {
+          console.log('[AuthController] Demo user not found, creating new demo user...');
+          this.userRepository.create({
+            email: DEMO_EMAIL,
+            username: 'Demo User',
+            googleId: null
+          });
+          demoUserRecord = this.userRepository.findByEmail(DEMO_EMAIL);
+          console.log(`[AuthController] Demo user created with ID: ${demoUserRecord?.id}`);
+        } catch (createError) {
+          console.error('[AuthController] Error creating demo user:', createError.message);
+          throw createError;
+        }
+      } else {
+        console.log(`[AuthController] Demo user already exists with ID: ${demoUserRecord.id}`);
+      }
+      
+      // Get the numeric user ID from database record
+      const demoUserId = demoUserRecord.id;
+
+      // Create session user object with ID from database
       const demoUser = {
-        id: 'demo-user',
-        email: 'demo@example.com',
+        id: demoUserId,
+        email: DEMO_EMAIL,
         username: 'Demo User',
+        isDemoUser: true,
         created_at: new Date().toISOString()
       };
 
-      // Check if demo user has feeds, if not populate them
-      const existingFeeds = this.feedRepository.getAllFeeds('demo-user');
+      // Always check and ensure demo user has feeds
+      // This handles cases where database is reset or feeds are deleted
+      let existingFeeds = this.feedRepository.getAllFeeds(demoUserId);
+      console.log(`[AuthController] Found ${existingFeeds?.length || 0} existing feeds for demo user`);
+      
       if (!existingFeeds || existingFeeds.length === 0) {
-        this.feedDataService.populateInitialFeeds('demo-user');
+        console.log('[AuthController] No feeds found, populating initial feeds...');
+        const feedsCreated = this.feedDataService.populateInitialFeeds(demoUserId);
+        console.log(`[AuthController] Populated ${feedsCreated} initial feeds`);
+        
+        // Verify feeds were actually created
+        existingFeeds = this.feedRepository.getAllFeeds(demoUserId);
+        console.log(`[AuthController] Verification: Now have ${existingFeeds?.length || 0} feeds in database`);
+        
+        if (!existingFeeds || existingFeeds.length === 0) {
+          console.error('[AuthController] ❌ CRITICAL: Feeds were not persisted to database!');
+        }
       }
 
       req.login(demoUser, (err) => {
         if (err) {
+          console.error('[AuthController] Login error:', err.message);
           const errorUrl = `${this.config.FRONTEND_URL}/?error=demo_login_failed`;
           return res.redirect(errorUrl);
         }
 
+        console.log(`[AuthController] Demo user logged in successfully with ID: ${demoUserId}`);
         // Redirect to frontend /list
         const redirectUrl = `${this.config.FRONTEND_URL}/list`;
         res.redirect(redirectUrl);

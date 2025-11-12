@@ -46,11 +46,34 @@ class AppBootstrapper {
     // Request logging
     this.app.use(this.loggerMiddleware());
 
-    // CORS
-    this.app.use(cors({
-      origin: this.config.CORS_ORIGINS,
-      credentials: true
-    }));
+    // CORS - with dynamic origin checking
+    const corsOptions = {
+      origin: (origin, callback) => {
+        const allowedOrigins = this.config.CORS_ORIGINS;
+        
+        // Allow requests with no origin (mobile apps, curl requests)
+        if (!origin) {
+          return callback(null, true);
+        }
+        
+        // Check if origin is in allowed list
+        const isAllowed = allowedOrigins.includes(origin);
+        
+        if (isAllowed) {
+          callback(null, true);
+        } else {
+          console.warn(`[CORS] Rejected origin: ${origin}`);
+          console.log(`[CORS] Allowed origins: ${allowedOrigins.join(', ')}`);
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+      optionsSuccessStatus: 200
+    };
+    
+    this.app.use(cors(corsOptions));
 
     // Body parsing
     this.app.use(bodyParser.json({ limit: this.config.BODY_PARSER_LIMIT }));
@@ -61,13 +84,9 @@ class AppBootstrapper {
     const sessionCookieConfig = {
       secure: this.config.isProduction, // true on HTTPS, false on HTTP
       httpOnly: false,
-      // Use 'lax' on production if HTTPS cert isn't verified
-      // This allows same-site cookies. For cross-origin, need 'none' + secure: true
-      sameSite: this.config.isProduction ? 'lax' : 'lax',
+      sameSite: 'lax',
       maxAge: this.config.SESSION_MAX_AGE,
-      path: '/'  // Ensure cookie is sent to all paths
-      // Don't set domain - let browser use current domain automatically
-      // This works for same-origin requests and DDNS setups
+      path: '/'
     };
     
     this.app.use(session({
@@ -77,6 +96,16 @@ class AppBootstrapper {
       cookie: sessionCookieConfig
     }));
 
+    // Debug middleware - log session info
+    this.app.use((req, res, next) => {
+      if (req.path.startsWith('/api/')) {
+        console.log(`[Session] ${req.method} ${req.path}:`);
+        console.log(`  - SessionID: ${req.sessionID}`);
+        console.log(`  - User: ${req.user ? req.user.email || req.user.id : 'none'}`);
+        console.log(`  - Cookies: ${Object.keys(req.cookies).join(', ') || 'none'}`);
+      }
+      next();
+    });
   }
 
   /**

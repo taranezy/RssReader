@@ -207,7 +207,6 @@ npm run docker:stop
 npm run deploy
 
 # Or with custom parameters
-.\deploy.ps1 -RemoteServer "andromeda" -RemoteUser "your-username"
 ```
 
 The deployment script will:

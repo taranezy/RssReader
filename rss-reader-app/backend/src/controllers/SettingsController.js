@@ -14,21 +14,6 @@ class SettingsController {
     try {
       const userId = req.user?.id;
       
-      // Demo user returns default settings without database access
-      if (userId === 'demo-user') {
-        return res.json({
-          success: true,
-          data: {
-            font: 'default',
-            showLeftMenu: true,
-            showFeedImages: true,
-            headerColor: 'purple',
-            darkMode: false,
-            enablePIP: true
-          }
-        });
-      }
-      
       if (!userId) {
         console.error('[SettingsController] ERROR: userId is not set!');
         return res.status(401).json({
@@ -60,21 +45,6 @@ class SettingsController {
       const userId = req.user.id;
       const settings = req.body;
 
-      // Demo user settings are read-only (just return default)
-      if (userId === 'demo-user') {
-        return res.json({
-          success: true,
-          data: {
-            font: 'default',
-            showLeftMenu: true,
-            showFeedImages: true,
-            headerColor: 'purple',
-            darkMode: false,
-            enablePIP: true
-          }
-        });
-      }
-
       const updatedSettings = this.settingsRepository.updateSettings(userId, settings);
 
       res.json({
@@ -95,19 +65,6 @@ class SettingsController {
   getPreferences(req, res) {
     try {
       const userId = req.user.id;
-      
-      // Demo user returns default preferences
-      if (userId === 'demo-user') {
-        return res.json({
-          success: true,
-          data: {
-            viewType: 'list',
-            selectedFeeds: [],
-            showOnlyUnread: false,
-            openInNewTab: true
-          }
-        });
-      }
       
       const preferences = this.settingsRepository.getPreferences(userId);
 
@@ -130,19 +87,6 @@ class SettingsController {
     try {
       const userId = req.user.id;
       const preferences = req.body;
-
-      // Demo user preferences are read-only
-      if (userId === 'demo-user') {
-        return res.json({
-          success: true,
-          data: {
-            viewType: 'list',
-            selectedFeeds: [],
-            showOnlyUnread: false,
-            openInNewTab: true
-          }
-        });
-      }
 
       const updatedPreferences = this.settingsRepository.updatePreferences(userId, preferences);
 

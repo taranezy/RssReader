@@ -93,22 +93,11 @@ class PassportService {
 
     passport.deserializeUser((id, done) => {
       try {
-        
-        // For demo user, return the demo object directly
-        if (id === 'demo-user') {
-          return done(null, {
-            id: 'demo-user',
-            email: 'demo@example.com',
-            username: 'Demo User',
-            created_at: new Date().toISOString()
-          });
-        }
-
-        // For real users, fetch from database
         if (!id) {
           return done(null, false);
         }
 
+        // All users are now fetched from database by numeric ID
         const user = userRepository.findById(id);
         
         if (!user) {
