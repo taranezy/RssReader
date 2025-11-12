@@ -92,7 +92,7 @@ class AppBootstrapper {
     this.app.use(session({
       secret: this.config.SESSION_SECRET,
       resave: false,
-      saveUninitialized: false,
+      saveUninitialized: true,
       cookie: sessionCookieConfig
     }));
 
