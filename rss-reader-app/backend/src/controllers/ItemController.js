@@ -14,7 +14,7 @@ class ItemController {
   getUserItems(req, res) {
     try {
       const userId = req.user.id;
-      const limit = req.query.limit ? parseInt(req.query.limit) : null;  // No default limit
+      const limit = req.query.limit ? parseInt(req.query.limit) : undefined;  // No default limit
       const offset = parseInt(req.query.offset) || 0;
       const onlyUnread = req.query.unread === 'true';
 
@@ -45,7 +45,7 @@ class ItemController {
     try {
       const userId = req.user.id;
       const feedId = req.params.feedId;
-      const limit = req.query.limit ? parseInt(req.query.limit) : null;  // No default limit
+      const limit = req.query.limit ? parseInt(req.query.limit) : undefined;  // No default limit
       const offset = parseInt(req.query.offset) || 0;
       const onlyUnread = req.query.unread === 'true';
 
@@ -155,7 +155,7 @@ class ItemController {
   getSavedItems(req, res) {
     try {
       const userId = req.user.id;
-      const limit = req.query.limit ? parseInt(req.query.limit) : null;  // No default limit
+      const limit = req.query.limit ? parseInt(req.query.limit) : undefined;  // No default limit
       const offset = parseInt(req.query.offset) || 0;
 
       const items = this.itemRepository.getSavedItems(userId, {
@@ -204,7 +204,7 @@ class ItemController {
     try {
       const userId = req.user.id;
       const { query } = req.query;
-      const limit = req.query.limit ? parseInt(req.query.limit) : null;  // No default limit
+      const limit = req.query.limit ? parseInt(req.query.limit) : undefined;  // No default limit
       const offset = parseInt(req.query.offset) || 0;
 
       if (!query) {
