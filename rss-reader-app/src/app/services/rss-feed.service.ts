@@ -55,18 +55,15 @@ export class RssFeedService {
 
   /**
    * Initialize service - load feeds, items, and preferences after authentication
+   * IMPORTANT: Only loads from cache/database - does NOT automatically refresh
+   * User must manually click refresh to get latest feed content
+   * Smart cache: If cache is fresh (< 10 min), returns cached data. Otherwise refreshes.
    */
   public initialize(): void {
     this.loadFeeds();
     this.loadItems();
     this.loadPreferences();
-    
-    // After loading feeds, refresh them to fetch latest content (especially YouTube feeds)
-    setTimeout(() => {
-      this.refreshAllFeeds().subscribe({
-        error: (err) => console.error('[RSS-FEED-SERVICE] Error during initial refresh:', err)
-      });
-    }, 500);
+    // NO automatic refresh on login - only manual refresh on user request
   }
 
   // Auto-refresh all feeds every 60 seconds
