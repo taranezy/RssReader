@@ -11,11 +11,12 @@ class FeedController {
 
   /**
    * GET /api/feeds - Get all feeds for authenticated user
+   * Uses Redis cache with 10-minute TTL
+   * Refreshes feed data from sources only if cache is older than 10 minutes
    */
   async getAllFeeds(req, res) {
     try {
       const userId = req.user?.id;
-      debugger;
       if (!userId) {
         return res.status(401).json({
           success: false,
@@ -28,7 +29,7 @@ class FeedController {
         const cacheKey = this.redisService.getUserFeedsKey(userId);
         const cachedFeeds = await this.redisService.get(cacheKey);
         if (cachedFeeds) {
-          console.log('[FeedController.getAllFeeds] Cache HIT for userId:', userId);
+          console.log('[FeedController.getAllFeeds] Cache HIT - returning cached feeds for userId:', userId);
           return res.json({
             success: true,
             data: cachedFeeds,
@@ -36,21 +37,24 @@ class FeedController {
             cached: true
           });
         }
+        console.log('[FeedController.getAllFeeds] Cache MISS - feeds older than 10 minutes, refreshing from source');
       }
 
-      // Get from database
+      // Cache miss or Redis disabled - get from database
       const feeds = this.feedRepository.getAllFeeds(userId);
       
-      // Cache the result
+      // Cache the fresh result
       if (this.redisService && this.redisService.isEnabled()) {
         const cacheKey = this.redisService.getUserFeedsKey(userId);
-        await this.redisService.set(cacheKey, feeds);
+        await this.redisService.set(cacheKey, feeds, this.redisService.ttl.feeds);
+        console.log('[FeedController.getAllFeeds] Updated Redis cache with fresh feeds');
       }
       
       res.json({
         success: true,
         data: feeds,
-        count: feeds ? feeds.length : 0
+        count: feeds ? feeds.length : 0,
+        cached: false
       });
     } catch (error) {
       console.error('[FeedController.getAllFeeds] Error:', error);

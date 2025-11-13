@@ -9,7 +9,7 @@ class RedisService {
     this.redis = null;
     this.enabled = false;
     this.ttl = {
-      feeds: 5 * 60, // 5 minutes for feed list
+      feeds: 10 * 60, // 10 minutes for feed list - only refresh if older than this
       feedItems: 10 * 60, // 10 minutes for feed items
       userFeeds: 15 * 60, // 15 minutes for user's feeds
       searchResults: 5 * 60 // 5 minutes for search results
