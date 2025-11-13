@@ -111,12 +111,12 @@ jobs:
       - name: Build Docker image on remote
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "cd ~/rss-reader && docker-compose -f docker-compose.prod.yml build rss-reader"
+            "cd ~/rss-reader && docker-compose -f docker-compose.prod.yml build --no-cache rss-reader"
       
-      - name: Stop old containers
+      - name: Stop and remove old containers
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "cd ~/rss-reader && docker-compose -f docker-compose.prod.yml down"
+            "cd ~/rss-reader && docker-compose -f docker-compose.prod.yml down --remove-orphans || true"
       
       - name: Start new containers
         run: |
