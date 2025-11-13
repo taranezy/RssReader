@@ -8,8 +8,11 @@ const path = require('path');
 
 class ConfigService {
   constructor() {
-    // Load environment variables
-    require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+    // Load environment variables from project root
+    // In development: rss-reader-app/.env
+    // In production (Docker): /app/.env
+    const envPath = path.join(__dirname, '../../../.env');
+    require('dotenv').config({ path: envPath });
 
     // Server config
     this.PORT = process.env.PORT || 3000;

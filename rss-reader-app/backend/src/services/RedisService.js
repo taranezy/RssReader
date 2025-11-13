@@ -24,14 +24,16 @@ class RedisService {
       // Try to import redis client
       const redis = require('redis');
       
-      // Create client with correct v4 API
+      const redisHost = process.env.REDIS_HOST || 'localhost';
+      const redisPort = parseInt(process.env.REDIS_PORT || '6379');
+      
+      console.log(`[RedisService] Attempting to connect to Redis at ${redisHost}:${redisPort}`);
+      
+      // Create client with correct v4 API - use url format
       this.redis = redis.createClient({
-        host: process.env.REDIS_HOST || 'localhost',
-        port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD || undefined,
-        legacyMode: false,
+        url: `redis://${redisHost}:${redisPort}`,
         socket: {
-          reconnectStrategy: false // Disable auto-reconnect
+          reconnectStrategy: false // Disable auto-reconnect to avoid spam
         }
       });
 
@@ -46,7 +48,7 @@ class RedisService {
       });
 
       this.redis.on('connect', () => {
-        console.log('[RedisService] ✓ Connected to Redis at', process.env.REDIS_HOST || 'localhost');
+        console.log('[RedisService] ✓ Connected to Redis at', redisHost);
         this.enabled = true;
       });
 
