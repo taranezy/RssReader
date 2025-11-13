@@ -9,9 +9,9 @@ const path = require('path');
 class ConfigService {
   constructor() {
     // Load environment variables from project root
-    // In development: rss-reader-app/.env
-    // In production (Docker): /app/.env
-    const envPath = path.join(__dirname, '../../../.env');
+    // __dirname = backend/src/services, so ../../ = rss-reader-app/
+    const envPath = path.join(__dirname, '../../.env');
+    console.log(`[ConfigService] Loading .env from: ${envPath}`);
     require('dotenv').config({ path: envPath });
 
     // Server config

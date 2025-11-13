@@ -27,6 +27,7 @@ class RedisService {
       const redisHost = process.env.REDIS_HOST || 'localhost';
       const redisPort = parseInt(process.env.REDIS_PORT || '6379');
       
+      console.log(`[RedisService] Environment - REDIS_HOST=${redisHost}, REDIS_PORT=${redisPort}`);
       console.log(`[RedisService] Attempting to connect to Redis at ${redisHost}:${redisPort}`);
       
       // Create client with correct v4 API - use url format
@@ -42,6 +43,7 @@ class RedisService {
       this.redis.on('error', (err) => {
         if (!errorLogged) {
           console.warn('[RedisService] Connection failed:', err.message);
+          console.warn(`[RedisService] Failed to connect to ${redisHost}:${redisPort}`);
           errorLogged = true;
         }
         this.enabled = false;
