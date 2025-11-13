@@ -11,8 +11,11 @@ class FeedController {
 
   /**
    * GET /api/feeds - Get all feeds for authenticated user
-   * Uses Redis cache with 10-minute TTL
-   * Refreshes feed data from sources only if cache is older than 10 minutes
+   * Smart caching strategy: Only refreshes if cache is older than 10 minutes
+   * - Cache HIT (< 10 min): Returns instantly from Redis
+   * - Cache MISS (> 10 min): Fetches from database and updates Redis
+   * - No automatic refresh: Only refreshes on actual requests
+   * Safe to call on every login/page load - won't waste resources
    */
   async getAllFeeds(req, res) {
     try {
@@ -37,7 +40,7 @@ class FeedController {
             cached: true
           });
         }
-        console.log('[FeedController.getAllFeeds] Cache MISS - feeds older than 10 minutes, refreshing from source');
+        console.log('[FeedController.getAllFeeds] Cache MISS for cacheKey:', cacheKey, '(cache expired or was invalidated - TTL: 10 minutes)');
       }
 
       // Cache miss or Redis disabled - get from database
