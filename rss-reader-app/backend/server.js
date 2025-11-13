@@ -9,7 +9,6 @@ const PassportService = require('./src/services/PassportService');
 const FeedDataService = require('./src/services/FeedDataService');
 const ProxyService = require('./src/services/ProxyService');
 const RedisService = require('./src/services/RedisService');
-const CacheRefreshScheduler = require('./src/services/CacheRefreshScheduler');
 
 // Database & Repositories  
 const DatabaseService = require('./database');
@@ -52,13 +51,10 @@ const db = new DatabaseService();
 
 // Initialize Redis service
 const redisService = new RedisService();
-const cacheRefreshScheduler = new CacheRefreshScheduler(redisService);
-
 const initializeRedis = async () => {
   try {
+    debugger;
     await redisService.initialize();
-    // Start cache refresh scheduler after Redis is ready
-    cacheRefreshScheduler.start();
   } catch (error) {
     console.warn('[Server] Redis initialization failed, continuing without cache:', error.message);
   }
@@ -123,7 +119,6 @@ app.use(errorHandler);
 
 process.on('SIGINT', async () => {
   console.log('\n[Server] Shutting down gracefully...');
-  cacheRefreshScheduler.stop();
   await redisService.close();
   db.close();
   process.exit(0);
