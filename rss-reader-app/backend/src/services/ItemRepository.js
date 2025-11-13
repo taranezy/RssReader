@@ -14,7 +14,7 @@ class ItemRepository {
   getItemsByFeed(feedId, userId, options = {}) {
     try {
       const items = this.db.getItemsByFeed(feedId, userId);
-      const limit = options.limit || items.length;
+      const limit = options.limit !== undefined ? options.limit : items.length;
       const offset = options.offset || 0;
 
       return items.slice(offset, offset + limit);
@@ -29,7 +29,7 @@ class ItemRepository {
   getUserItems(userId, options = {}) {
     try {
       const items = this.db.getAllItems(userId);
-      const limit = options.limit || items.length;
+      const limit = options.limit !== undefined ? options.limit : items.length;
       const offset = options.offset || 0;
 
       return items.slice(offset, offset + limit);
@@ -127,7 +127,7 @@ class ItemRepository {
   getSavedItems(userId, options = {}) {
     try {
       const items = this.db.getSavedItems(userId);
-      const limit = options.limit || items.length;
+      const limit = options.limit !== undefined ? options.limit : items.length;
       const offset = options.offset || 0;
 
       return items.slice(offset, offset + limit);
@@ -162,7 +162,7 @@ class ItemRepository {
         item.author?.toLowerCase().includes(query)
       );
 
-      const limit = options.limit || results.length;
+      const limit = options.limit !== undefined ? options.limit : results.length;
       const offset = options.offset || 0;
 
       return results.slice(offset, offset + limit);

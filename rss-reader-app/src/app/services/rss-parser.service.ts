@@ -100,7 +100,54 @@ export class RssParserService implements IRssParser {
       const title = this.getTextContent(entry, 'title');
       const linkElement = entry.querySelector('link[rel="alternate"]') || entry.querySelector('link');
       const link = linkElement?.getAttribute('href') || '';
-      const summary = this.getTextContent(entry, 'summary');
+      
+      // YouTube feeds use media:description instead of summary
+      let summary = this.getTextContent(entry, 'summary');
+      if (!summary) {
+        // Try to get description from media:group > media:description (YouTube feeds)
+        // Method 1: Direct querySelector with namespace
+        let mediaDescription = entry.querySelector('media\\:group media\\:description');
+        
+        // Method 2: Try direct media:description
+        if (!mediaDescription) {
+          mediaDescription = entry.querySelector('media\\:description');
+        }
+        
+        // Method 3: Try namespace-aware search
+        if (!mediaDescription) {
+          const mediaGroup = entry.querySelector('[*|group]') || entry.querySelector('media\\:group');
+          if (mediaGroup) {
+            mediaDescription = mediaGroup.querySelector('[*|description]') || 
+                              mediaGroup.querySelector('media\\:description');
+          }
+        }
+        
+        // Method 4: Raw XML text parsing as fallback
+        if (!mediaDescription) {
+          const entryXml = new XMLSerializer().serializeToString(entry);
+          const descMatch = entryXml.match(/<media:description[^>]*>([\s\S]*?)<\/media:description>/);
+          if (descMatch && descMatch[1]) {
+            summary = descMatch[1].trim();
+          }
+        }
+        
+        // Method 5: Last resort - try any child named 'description' in media namespace
+        if (!summary) {
+          const mediaGroup = entry.querySelector('media\\:group');
+          if (mediaGroup) {
+            const found = Array.from(mediaGroup.children).find(
+              child => child.localName === 'description' || child.nodeName.includes('description')
+            );
+            if (found) {
+              summary = found.textContent?.trim() || '';
+            }
+          }
+        }
+        
+        if (mediaDescription && !summary) {
+          summary = mediaDescription.textContent?.trim() || '';
+        }
+      }
       
       // Get content - use textContent to get full content including CDATA
       const contentNode = entry.querySelector('content');
