@@ -164,7 +164,7 @@
             <button class="video-btn" (click)="closePipOverlay()" title="Close">✕</button>
           </div>
         </div>
-        <div class="video-iframe-wrapper" *ngIf="containerBUrl && (activeContainer === 'B' && !containerBInPip)">
+        <div class="video-iframe-wrapper" *ngIf="containerBUrl && (activeContainer === 'B' || containerAInPip)">
           <iframe 
             [src]="containerBUrl" 
             frameborder="0" 

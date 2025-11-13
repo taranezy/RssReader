@@ -39,24 +39,19 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Load user settings immediately (works without auth, uses defaults if needed)
-    this.loadUserSettings();
-    
     this.checkScreenSize();
     
-    // Check auth status and navigate accordingly
-    this.authService.checkAuthStatus().subscribe(user => {
-      if (user && this.router.url === '/') {
-        this.router.navigate(['/list']);
+    // Load user settings when authenticated (handled by auth state)
+    this.isAuthenticated$.subscribe(isAuth => {
+      if (isAuth) {
+        this.loadUserSettings();
       }
     });
 
-    // Re-check auth status on navigation
+    // Auto-hide sidebar on mobile after navigation
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe(() => {
-      this.authService.checkAuthStatus().subscribe();
-      // Auto-hide sidebar on mobile after navigation
       if (this.isMobileScreen && !this.isSidebarCollapsed) {
         this.startAutoHideTimer();
       }
@@ -197,18 +192,24 @@ export class App implements OnInit, OnDestroy {
   }
 
   loadUserSettings(): void {
+    // User is authenticated, fetch settings from API
     this.userSettingsService.getSettings().subscribe(
       settings => {
         this.showLeftMenu = settings.showLeftMenu;
       },
       error => {
-        console.error('Error loading user settings:', error);
-        // Fall back to localStorage if API fails
+        // Silently handle error and fall back to localStorage
         if (typeof localStorage !== 'undefined') {
           const saved = localStorage.getItem('userSettings');
           if (saved) {
-            const settings = JSON.parse(saved);
-            this.showLeftMenu = settings.showLeftMenu !== false;
+            try {
+              const settings = JSON.parse(saved);
+              this.showLeftMenu = settings.showLeftMenu !== false;
+            } catch (e) {
+              this.showLeftMenu = true;
+            }
+          } else {
+            this.showLeftMenu = true;
           }
         }
       }

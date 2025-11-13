@@ -19,7 +19,8 @@ export class AuthService {
   public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient) {
-    // Don't check auth in constructor - let App component control when to check
+    // Check auth status immediately on service creation
+    this.checkAuthStatus().subscribe();
   }
 
   /**
