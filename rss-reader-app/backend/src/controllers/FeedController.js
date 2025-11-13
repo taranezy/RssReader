@@ -1,20 +1,51 @@
 /**
  * FeedController - Single Responsibility: Handle HTTP requests related to feeds
- * Depends on FeedRepository and UserRepository (Dependency Injection)
+ * Depends on FeedRepository, UserRepository, and RedisService (Dependency Injection)
  */
 class FeedController {
-  constructor(feedRepository, userRepository) {
+  constructor(feedRepository, userRepository, redisService = null) {
     this.feedRepository = feedRepository;
     this.userRepository = userRepository;
+    this.redisService = redisService;
   }
 
   /**
    * GET /api/feeds - Get all feeds for authenticated user
    */
-  getAllFeeds(req, res) {
+  async getAllFeeds(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user?.id;
+      debugger;
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          error: 'User not authenticated'
+        });
+      }
+      
+      // Try to get from cache
+      if (this.redisService && this.redisService.isEnabled()) {
+        const cacheKey = this.redisService.getUserFeedsKey(userId);
+        const cachedFeeds = await this.redisService.get(cacheKey);
+        if (cachedFeeds) {
+          console.log('[FeedController.getAllFeeds] Cache HIT for userId:', userId);
+          return res.json({
+            success: true,
+            data: cachedFeeds,
+            count: cachedFeeds.length,
+            cached: true
+          });
+        }
+      }
+
+      // Get from database
       const feeds = this.feedRepository.getAllFeeds(userId);
+      
+      // Cache the result
+      if (this.redisService && this.redisService.isEnabled()) {
+        const cacheKey = this.redisService.getUserFeedsKey(userId);
+        await this.redisService.set(cacheKey, feeds);
+      }
       
       res.json({
         success: true,
@@ -22,6 +53,7 @@ class FeedController {
         count: feeds ? feeds.length : 0
       });
     } catch (error) {
+      console.error('[FeedController.getAllFeeds] Error:', error);
       res.status(500).json({
         success: false,
         error: error.message
@@ -54,7 +86,7 @@ class FeedController {
   /**
    * POST /api/feeds - Add new feed
    */
-  addFeed(req, res) {
+  async addFeed(req, res) {
     try {
       const userId = req.user.id;
       const { url, title, description, faviconUrl, updateFrequency } = req.body;
@@ -82,6 +114,11 @@ class FeedController {
         updateFrequency
       });
 
+      // Invalidate user's feeds cache
+      if (this.redisService && this.redisService.isEnabled()) {
+        await this.redisService.invalidateUserCache(userId);
+      }
+
       res.status(201).json({
         success: true,
         data: feed
@@ -97,7 +134,7 @@ class FeedController {
   /**
    * PUT /api/feeds/:id - Update feed
    */
-  updateFeed(req, res) {
+  async updateFeed(req, res) {
     try {
       const userId = req.user.id;
       const feedId = req.params.id;
@@ -109,6 +146,11 @@ class FeedController {
         faviconUrl,
         updateFrequency
       });
+
+      // Invalidate user's feeds cache
+      if (this.redisService && this.redisService.isEnabled()) {
+        await this.redisService.invalidateUserCache(userId);
+      }
 
       res.json({
         success: true,
@@ -125,7 +167,7 @@ class FeedController {
   /**
    * DELETE /api/feeds/:id - Delete feed
    */
-  deleteFeed(req, res) {
+  async deleteFeed(req, res) {
     try {
       const userId = req.user.id;
       const feedId = req.params.id;
@@ -133,6 +175,11 @@ class FeedController {
       const deleted = this.feedRepository.deleteFeed(feedId, userId);
 
       if (deleted) {
+        // Invalidate user's feeds cache
+        if (this.redisService && this.redisService.isEnabled()) {
+          await this.redisService.invalidateUserCache(userId);
+        }
+
         res.json({
           success: true,
           message: 'Feed deleted successfully'

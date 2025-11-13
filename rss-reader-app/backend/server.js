@@ -8,6 +8,7 @@ const AppBootstrapper = require('./src/services/AppBootstrapper');
 const PassportService = require('./src/services/PassportService');
 const FeedDataService = require('./src/services/FeedDataService');
 const ProxyService = require('./src/services/ProxyService');
+const RedisService = require('./src/services/RedisService');
 
 // Database & Repositories  
 const DatabaseService = require('./database');
@@ -48,6 +49,17 @@ if (!fs.existsSync(config.DATA_DIR)) {
 
 const db = new DatabaseService();
 
+// Initialize Redis service
+const redisService = new RedisService();
+const initializeRedis = async () => {
+  try {
+    debugger;
+    await redisService.initialize();
+  } catch (error) {
+    console.warn('[Server] Redis initialization failed, continuing without cache:', error.message);
+  }
+};
+
 // Create all components
 const userRepository = new UserRepository(db);
 const settingsRepository = new SettingsRepository(db);
@@ -57,8 +69,8 @@ const authenticationService = new AuthenticationService(userRepository);
 const feedDataService = new FeedDataService(feedRepository, config);
 const passportService = new PassportService(config, userRepository, feedDataService);
 const authController = new AuthController(authenticationService, config, feedRepository, feedDataService, userRepository);
-const feedController = new FeedController(feedRepository, userRepository);
-const itemController = new ItemController(itemRepository, feedRepository);
+const feedController = new FeedController(feedRepository, userRepository, redisService);
+const itemController = new ItemController(itemRepository, feedRepository, redisService);
 const settingsController = new SettingsController(settingsRepository);
 const rssProxyService = new RssProxyService();
 const proxyController = new ProxyController(rssProxyService);
@@ -98,12 +110,19 @@ if (config.isProduction) {
 
 app.use(errorHandler);
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
+  console.log('\n[Server] Shutting down gracefully...');
+  await redisService.close();
   db.close();
   process.exit(0);
 });
 
 app.listen(config.PORT, '0.0.0.0', () => {
+});
+
+// Initialize Redis
+initializeRedis().catch(error => {
+  console.error('[Server] Failed to initialize Redis:', error);
 });
 
 module.exports = app;

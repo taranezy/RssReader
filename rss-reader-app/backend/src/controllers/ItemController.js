@@ -1,22 +1,42 @@
 /**
  * ItemController - Single Responsibility: Handle HTTP requests related to feed items/articles
- * Depends on ItemRepository and FeedRepository (Dependency Injection)
+ * Depends on ItemRepository, FeedRepository, and RedisService (Dependency Injection)
  */
 class ItemController {
-  constructor(itemRepository, feedRepository) {
+  constructor(itemRepository, feedRepository, redisService = null) {
     this.itemRepository = itemRepository;
     this.feedRepository = feedRepository;
+    this.redisService = redisService;
   }
 
   /**
    * GET /api/items - Get all items for authenticated user
    */
-  getUserItems(req, res) {
+  async getUserItems(req, res) {
     try {
       const userId = req.user.id;
-      const limit = req.query.limit ? parseInt(req.query.limit) : undefined;  // No default limit
+      const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
       const offset = parseInt(req.query.offset) || 0;
       const onlyUnread = req.query.unread === 'true';
+
+      // Generate cache key
+      const cacheKey = onlyUnread 
+        ? `user:${userId}:items:unread:${limit}:${offset}` 
+        : `user:${userId}:items:all:${limit}:${offset}`;
+
+      // Try to get from cache
+      if (this.redisService && this.redisService.isEnabled()) {
+        const cachedItems = await this.redisService.get(cacheKey);
+        if (cachedItems) {
+          return res.json({
+            success: true,
+            data: cachedItems.data,
+            count: cachedItems.count,
+            pagination: cachedItems.pagination,
+            cached: true
+          });
+        }
+      }
 
       const items = this.itemRepository.getUserItems(userId, {
         limit,
@@ -24,11 +44,20 @@ class ItemController {
         onlyUnread
       });
 
-      res.json({
-        success: true,
+      const response = {
         data: items,
         count: items.length,
         pagination: { limit, offset }
+      };
+
+      // Cache the result
+      if (this.redisService && this.redisService.isEnabled()) {
+        await this.redisService.set(cacheKey, response, this.redisService.ttl.feedItems);
+      }
+
+      res.json({
+        success: true,
+        ...response
       });
     } catch (error) {
       res.status(500).json({
@@ -41,13 +70,32 @@ class ItemController {
   /**
    * GET /api/feeds/:feedId/items - Get items for specific feed
    */
-  getFeedItems(req, res) {
+  async getFeedItems(req, res) {
     try {
       const userId = req.user.id;
       const feedId = req.params.feedId;
-      const limit = req.query.limit ? parseInt(req.query.limit) : undefined;  // No default limit
+      const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
       const offset = parseInt(req.query.offset) || 0;
       const onlyUnread = req.query.unread === 'true';
+
+      // Generate cache key
+      const cacheKey = onlyUnread
+        ? `user:${userId}:feed:${feedId}:items:unread:${limit}:${offset}`
+        : `user:${userId}:feed:${feedId}:items:all:${limit}:${offset}`;
+
+      // Try to get from cache
+      if (this.redisService && this.redisService.isEnabled()) {
+        const cachedItems = await this.redisService.get(cacheKey);
+        if (cachedItems) {
+          return res.json({
+            success: true,
+            data: cachedItems.data,
+            count: cachedItems.count,
+            pagination: cachedItems.pagination,
+            cached: true
+          });
+        }
+      }
 
       // Verify feed belongs to user
       this.feedRepository.getFeed(feedId, userId);
@@ -58,11 +106,20 @@ class ItemController {
         onlyUnread
       });
 
-      res.json({
-        success: true,
+      const response = {
         data: items,
         count: items.length,
         pagination: { limit, offset }
+      };
+
+      // Cache the result
+      if (this.redisService && this.redisService.isEnabled()) {
+        await this.redisService.set(cacheKey, response, this.redisService.ttl.feedItems);
+      }
+
+      res.json({
+        success: true,
+        ...response
       });
     } catch (error) {
       res.status(500).json({
@@ -75,13 +132,18 @@ class ItemController {
   /**
    * PUT /api/items/:id - Mark item as read/unread
    */
-  markItemAsRead(req, res) {
+  async markItemAsRead(req, res) {
     try {
       const userId = req.user.id;
       const itemId = req.params.id;
       const { isRead } = req.body;
 
       const item = this.itemRepository.markItemAsRead(itemId, userId, isRead);
+
+      // Invalidate user's items cache
+      if (this.redisService && this.redisService.isEnabled()) {
+        await this.redisService.invalidateUserCache(userId);
+      }
 
       res.json({
         success: true,

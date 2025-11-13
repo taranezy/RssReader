@@ -4,9 +4,11 @@
   "scripts": {
     "ng": "ng",
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:debug": "concurrently \"npm run start:backend:debug\" \"npm run start:frontend\"",
     "start:frontend": "ng serve --host 0.0.0.0",
     "start:backend": "node backend/server.js",
     "start:backend:dev": "nodemon backend/server.js",
+    "start:backend:debug": "nodemon --inspect backend/server.js",
     "build": "ng build",
     "build:prod": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
@@ -56,6 +58,7 @@
     "jsonwebtoken": "^9.0.2",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "redis": "^5.9.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
@@ -74,6 +77,7 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "nodemon": "^3.1.11",
     "typescript": "~5.9.2"
   }
 }
