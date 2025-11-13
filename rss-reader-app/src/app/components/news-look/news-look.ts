@@ -1,9 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Subject } from 'rxjs';
+import { Observable, Subject, of } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { UserSettingsService } from '../../services/user-settings.service';
+import { ImageCacheService } from '../../services/image-cache.service';
 import { RssItem, RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
 import { ArticleReaderComponent } from '../article-reader/article-reader';
 
@@ -29,7 +30,8 @@ export class NewsLookComponent implements OnInit, OnDestroy {
 
   constructor(
     private feedService: RssFeedService,
-    private userSettingsService: UserSettingsService
+    private userSettingsService: UserSettingsService,
+    private imageCacheService: ImageCacheService
   ) {}
 
   ngOnInit(): void {
@@ -137,5 +139,15 @@ export class NewsLookComponent implements OnInit, OnDestroy {
     } else {
       return new Date(date).toLocaleDateString();
     }
+  }
+
+  /**
+   * Get cached image URL for item
+   */
+  getCachedImageUrl(imageUrl: string | undefined): Observable<string> {
+    if (!imageUrl) {
+      return of('');
+    }
+    return this.imageCacheService.getCachedImageUrl(imageUrl);
   }
 }

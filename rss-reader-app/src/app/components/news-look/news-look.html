@@ -8,7 +8,7 @@
       
       <!-- Article Image -->
       <div class="article-image" *ngIf="showFeedImages && item.imageUrl">
-        <img [src]="item.imageUrl" [alt]="item.title" (error)="$any($event.target).style.display='none'">
+        <img [src]="getCachedImageUrl(item.imageUrl) | async" [alt]="item.title" (error)="$any($event.target).style.display='none'">
         <div class="image-overlay"></div>
       </div>
 

@@ -1,0 +1,58 @@
+{
+  "$schema": "./node_modules/@angular/service-worker/config/schema.json",
+  "index": "/index.html",
+  "assetGroups": [
+    {
+      "name": "app",
+      "installMode": "prefetch",
+      "resources": {
+        "files": [
+          "/favicon.svg",
+          "/favicon.ico",
+          "/*.css",
+          "/*.js"
+        ]
+      }
+    },
+    {
+      "name": "assets",
+      "installMode": "lazy",
+      "updateMode": "lazy",
+      "resources": {
+        "files": [
+          "/assets/**",
+          "/**/.*"
+        ]
+      }
+    }
+  ],
+  "dataGroups": [
+    {
+      "name": "api-feeds",
+      "urls": ["/api/feeds", "/api/feeds/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 100,
+        "maxAge": "10m"
+      }
+    },
+    {
+      "name": "api-items",
+      "urls": ["/api/items", "/api/items/**"],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 500,
+        "maxAge": "10m"
+      }
+    },
+    {
+      "name": "feed-images",
+      "urls": ["https://**/*.jpg", "https://**/*.jpeg", "https://**/*.png", "https://**/*.gif", "https://**/*.webp"],
+      "cacheConfig": {
+        "strategy": "cache",
+        "maxSize": 100,
+        "maxAge": "30d"
+      }
+    }
+  ]
+}

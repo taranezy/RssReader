@@ -1,10 +1,12 @@
 import { Component, OnInit, HostListener, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef, Renderer2 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { Observable, of } from 'rxjs';
 import { RssItem, RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { PipStateService } from '../../services/pip-state.service';
+import { ImageCacheService } from '../../services/image-cache.service';
 import { ArticleReaderComponent } from '../article-reader/article-reader';
 
 @Component({
@@ -103,6 +105,7 @@ export class ListViewComponent implements OnInit {
     private feedService: RssFeedService,
     private userSettingsService: UserSettingsService,
     private pipStateService: PipStateService,
+    private imageCacheService: ImageCacheService,
     private sanitizer: DomSanitizer,
     private cdr: ChangeDetectorRef,
     private renderer: Renderer2
@@ -493,4 +496,16 @@ export class ListViewComponent implements OnInit {
   trackByItemId(index: number, item: RssItem): string {
     return item.id;
   }
+
+  /**
+   * Get cached image URL for item (used in template with async pipe)
+   * Returns cached blob URL if available, otherwise original URL
+   */
+  getCachedImageUrl(imageUrl: string | undefined): Observable<string> {
+    if (!imageUrl) {
+      return of('');
+    }
+    return this.imageCacheService.getCachedImageUrl(imageUrl);
+  }
 }
+
