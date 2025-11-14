@@ -1,5 +1,5 @@
 /* Global Styles */
-@import 'styles/dark-mode.scss';
+@use 'styles/dark-mode.scss' as *;
 
 * {
   margin: 0;
