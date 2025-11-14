@@ -1,406 +1,89 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
-interface CachedImage {
-  url: string;
-  blob: Blob;
-  timestamp: number;
-}
-
 @Injectable({
   providedIn: 'root'
 })
 export class ImageCacheService {
-  private readonly DB_NAME = 'rss-reader-db';
-  private readonly DB_VERSION = 1;
-  private readonly STORE_NAME = 'images';
-  private readonly MAX_CACHE_SIZE = 52428800; // 50MB
-  private readonly MAX_IMAGE_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
   private readonly MAX_BLOB_URLS = 100; // Limit blob URL count
-  private readonly MEMORY_CACHE_SIZE = 50; // In-memory cache for fast access (last 50 images)
+  private readonly BLOB_URL_TTL = 5 * 60 * 1000; // 5 minutes TTL for blob URLs
 
-  private db: IDBDatabase | null = null;
-  private cacheInProgress = new Set<string>();
-  private blobUrlCache = new Map<string, string>(); // Track blob URLs for cleanup
-  private memoryCache = new Map<string, { blob: Blob; timestamp: number }>(); // Fast in-memory cache
+  private blobUrlCache = new Map<string, { url: string; timestamp: number }>(); // Cache ONLY the blob URLs
+  private imageLoadCache = new Set<string>(); // Track which images are loaded
 
-  constructor(private http: HttpClient) {
-    this.initializeDatabase();
-  }
+  constructor(private http: HttpClient) {}
 
   /**
-   * Initialize IndexedDB for image caching
-   */
-  private initializeDatabase(): void {
-    if (!this.isIndexedDBAvailable()) {
-      return;
-    }
-
-    const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-
-    request.onerror = () => {
-      console.error('[ImageCacheService] Failed to open IndexedDB');
-    };
-
-    request.onsuccess = () => {
-      this.db = request.result;
-    };
-
-    request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
-      const db = (event.target as IDBOpenDBRequest).result;
-      
-      if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-        const store = db.createObjectStore(this.STORE_NAME, { keyPath: 'url' });
-        store.createIndex('timestamp', 'timestamp', { unique: false });
-      }
-    };
-  }
-
-  /**
-   * Cache an already-loaded image from the DOM element
-   * This avoids re-fetching the image
-   */
-  cacheLoadedImage(imageUrl: string, imgElement: HTMLImageElement): void {
-    if (!imageUrl || !this.isIndexedDBAvailable() || this.cacheInProgress.has(imageUrl)) {
-      return;
-    }
-
-    // Check if already cached
-    this.getFromCache(imageUrl).then(cached => {
-      if (cached) {
-        return; // Already cached, nothing to do
-      }
-
-      // Mark as in-progress
-      this.cacheInProgress.add(imageUrl);
-
-      try {
-        // Create canvas and draw the image
-        const canvas = document.createElement('canvas');
-        canvas.width = imgElement.naturalWidth;
-        canvas.height = imgElement.naturalHeight;
-        const ctx = canvas.getContext('2d');
-        
-        if (ctx) {
-          ctx.drawImage(imgElement, 0, 0);
-          // Convert canvas to blob and cache
-          canvas.toBlob((blob) => {
-            if (blob) {
-              this.saveToCache(imageUrl, blob).finally(() => {
-                this.cacheInProgress.delete(imageUrl);
-              });
-            } else {
-              this.cacheInProgress.delete(imageUrl);
-            }
-          }, 'image/jpeg', 0.9);
-        } else {
-          this.cacheInProgress.delete(imageUrl);
-        }
-      } catch (error) {
-        console.error('[ImageCacheService] Error caching loaded image:', error);
-        this.cacheInProgress.delete(imageUrl);
-      }
-    }).catch(() => {
-      this.cacheInProgress.delete(imageUrl);
-    });
-  }
-
-  /**
-   * Cache image in background after it loads successfully (fallback for non-DOM images)
-   * @deprecated Use cacheLoadedImage instead
-   */
-  cacheImageInBackground(imageUrl: string): void {
-    if (!imageUrl || !this.isIndexedDBAvailable() || this.cacheInProgress.has(imageUrl)) {
-      return;
-    }
-
-    // Check if already cached
-    this.getFromCache(imageUrl).then(cached => {
-      if (cached) {
-        return;
-      }
-
-      // Mark as in-progress
-      this.cacheInProgress.add(imageUrl);
-
-      // Fetch in background
-      this.http.get(imageUrl, { responseType: 'blob' }).subscribe({
-        next: (blob: Blob) => {
-          this.saveToCache(imageUrl, blob).finally(() => {
-            this.cacheInProgress.delete(imageUrl);
-          });
-        },
-        error: () => {
-          this.cacheInProgress.delete(imageUrl);
-        }
-      });
-    }).catch(() => {
-      this.cacheInProgress.delete(imageUrl);
-    });
-  }
-
-  /**
-   * Get image from IndexedDB cache
-   */
-  private getFromCache(imageUrl: string): Promise<Blob | null> {
-    return new Promise((resolve) => {
-      if (!this.db) {
-        resolve(null);
-        return;
-      }
-
-      try {
-        const transaction = this.db.transaction([this.STORE_NAME], 'readonly');
-        const store = transaction.objectStore(this.STORE_NAME);
-        const request = store.get(imageUrl);
-
-        request.onsuccess = () => {
-          const result = request.result;
-          if (result && Date.now() - result.timestamp < this.MAX_IMAGE_AGE) {
-            resolve(result.blob);
-          } else {
-            if (result) {
-              this.deleteFromCache(imageUrl);
-            }
-            resolve(null);
-          }
-        };
-
-        request.onerror = () => {
-          resolve(null);
-        };
-      } catch (error) {
-        resolve(null);
-      }
-    });
-  }
-
-  /**
-   * Save image to IndexedDB cache
-   */
-  private saveToCache(imageUrl: string, blob: Blob): Promise<void> {
-    return new Promise((resolve) => {
-      if (!this.db) {
-        resolve();
-        return;
-      }
-
-      try {
-        this.checkCacheSize().then(() => {
-          const transaction = this.db!.transaction([this.STORE_NAME], 'readwrite');
-          const store = transaction.objectStore(this.STORE_NAME);
-          
-          const cachedImage: CachedImage = {
-            url: imageUrl,
-            blob: blob,
-            timestamp: Date.now()
-          };
-
-          store.put(cachedImage);
-          resolve();
-        }).catch(() => {
-          resolve();
-        });
-      } catch (error) {
-        resolve();
-      }
-    });
-  }
-
-  /**
-   * Delete image from cache
-   */
-  private deleteFromCache(imageUrl: string): Promise<void> {
-    return new Promise((resolve) => {
-      if (!this.db) {
-        resolve();
-        return;
-      }
-
-      try {
-        const transaction = this.db.transaction([this.STORE_NAME], 'readwrite');
-        const store = transaction.objectStore(this.STORE_NAME);
-        store.delete(imageUrl);
-        resolve();
-      } catch (error) {
-        resolve();
-      }
-    });
-  }
-
-  /**
-   * Check cache size and delete oldest if needed
-   */
-  private checkCacheSize(): Promise<void> {
-    return new Promise((resolve) => {
-      if (!this.db) {
-        resolve();
-        return;
-      }
-
-      try {
-        const transaction = this.db.transaction([this.STORE_NAME], 'readonly');
-        const store = transaction.objectStore(this.STORE_NAME);
-        const request = store.getAll();
-
-        request.onsuccess = () => {
-          const images: CachedImage[] = request.result;
-          let totalSize = 0;
-          
-          for (const image of images) {
-            totalSize += image.blob.size;
-          }
-
-          if (totalSize > this.MAX_CACHE_SIZE) {
-            images.sort((a, b) => a.timestamp - b.timestamp);
-            
-            let sizeToRemove = totalSize - (this.MAX_CACHE_SIZE * 0.8);
-            for (const image of images) {
-              if (sizeToRemove <= 0) break;
-              this.deleteFromCache(image.url);
-              sizeToRemove -= image.blob.size;
-            }
-          }
-          
-          resolve();
-        };
-
-        request.onerror = () => {
-          resolve();
-        };
-      } catch (error) {
-        resolve();
-      }
-    });
-  }
-
-  /**
-   * Clear all cached images
-   */
-  clearCache(): Promise<void> {
-    return new Promise((resolve) => {
-      if (!this.db) {
-        resolve();
-        return;
-      }
-
-      try {
-        const transaction = this.db.transaction([this.STORE_NAME], 'readwrite');
-        const store = transaction.objectStore(this.STORE_NAME);
-        store.clear();
-        resolve();
-      } catch (error) {
-        resolve();
-      }
-    });
-  }
-
-  /**
-   * Get cache statistics
-   */
-  getCacheStats(): Promise<{ count: number; size: string }> {
-    return new Promise((resolve) => {
-      if (!this.db) {
-        resolve({ count: 0, size: '0MB' });
-        return;
-      }
-
-      try {
-        const transaction = this.db.transaction([this.STORE_NAME], 'readonly');
-        const store = transaction.objectStore(this.STORE_NAME);
-        const request = store.getAll();
-
-        request.onsuccess = () => {
-          const images: CachedImage[] = request.result;
-          let totalSize = 0;
-
-          for (const image of images) {
-            totalSize += image.blob.size;
-          }
-
-          resolve({
-            count: images.length,
-            size: `${(totalSize / 1024 / 1024).toFixed(2)}MB`
-          });
-        };
-
-        request.onerror = () => {
-          resolve({ count: 0, size: '0MB' });
-        };
-      } catch (error) {
-        resolve({ count: 0, size: '0MB' });
-      }
-    });
-  }
-
-  /**
-   * Get cached image as blob URL for serving from cache
+   * Get cached blob URL for an image
    * Returns null if not cached or expired
-   * Manages blob URL lifecycle to prevent memory leaks
    * 
-   * Priority order:
-   * 1. Blob URL cache (1-5ms) - fastest, pre-made URLs
-   * 2. Memory cache (10-20ms) - medium, need to create URL from blob
-   * 3. IndexedDB (200-500ms) - slow but persistent
+   * Strategy: Cache ONLY the blob URLs (not the binary data)
+   * - Blob URLs are instant to reuse
+   * - Binary data is handled by browser's HTTP cache
+   * - Minimal memory footprint
    */
   getCachedImageUrl(imageUrl: string): Promise<string | null> {
     return new Promise((resolve) => {
-      // Step 1: Check blob URL cache first (fastest - pre-created URLs)
-      if (this.blobUrlCache.has(imageUrl)) {
-        const cachedUrl = this.blobUrlCache.get(imageUrl);
-        if (cachedUrl) {
-          resolve(cachedUrl);
-          return;
-        }
-      }
-
-      // Step 2: Check memory cache (medium speed - create URL from blob)
-      const memoryCached = this.memoryCache.get(imageUrl);
-      if (memoryCached && Date.now() - memoryCached.timestamp < 60000) { // 1 minute TTL
-        // Create blob URL from memory cached binary
-        const blobUrl = URL.createObjectURL(memoryCached.blob);
-        this.blobUrlCache.set(imageUrl, blobUrl);
-        
-        // Enforce blob URL limit
-        if (this.blobUrlCache.size > this.MAX_BLOB_URLS) {
-          this.evictOldestBlobUrl();
-        }
-        
-        resolve(blobUrl);
+      // Check if blob URL exists and is still valid
+      const cached = this.blobUrlCache.get(imageUrl);
+      if (cached && Date.now() - cached.timestamp < this.BLOB_URL_TTL) {
+        // Blob URL still valid, return it instantly (0-1ms)
+        resolve(cached.url);
         return;
       }
 
-      // Step 3: Try IndexedDB (slow but persistent across sessions)
-      this.getFromCache(imageUrl).then(blob => {
-        if (blob) {
-          // Store in memory cache for next time (fast access)
-          this.memoryCache.set(imageUrl, { blob, timestamp: Date.now() });
-          
-          // Limit memory cache size to avoid memory bloat
-          if (this.memoryCache.size > this.MEMORY_CACHE_SIZE) {
-            const firstKey = this.memoryCache.keys().next().value;
-            if (firstKey !== undefined) {
-              this.memoryCache.delete(firstKey);
-            }
-          }
-          
-          // Create blob URL and cache it (for next request, this will be instant)
-          const blobUrl = URL.createObjectURL(blob);
-          this.blobUrlCache.set(imageUrl, blobUrl);
-          
-          // Enforce blob URL limit
-          if (this.blobUrlCache.size > this.MAX_BLOB_URLS) {
-            this.evictOldestBlobUrl();
-          }
-          
-          resolve(blobUrl);
-        } else {
-          resolve(null);
+      // Blob URL expired or doesn't exist - clean up if expired
+      if (cached && Date.now() - cached.timestamp >= this.BLOB_URL_TTL) {
+        try {
+          URL.revokeObjectURL(cached.url);
+        } catch (e) {
+          console.warn('[ImageCacheService] Failed to revoke blob URL');
         }
-      }).catch(() => {
-        resolve(null);
-      });
+        this.blobUrlCache.delete(imageUrl);
+      }
+
+      // No valid cached URL - return null
+      // Browser will load from HTTP cache (fast) or network (normal speed)
+      resolve(null);
     });
+  }
+
+  /**
+   * Cache a blob URL for an image
+   * Only called after image successfully loads from network
+   * Stores URL, not binary data
+   */
+  cacheImageUrl(imageUrl: string, blobUrl: string): void {
+    // Don't cache if already cached
+    if (this.blobUrlCache.has(imageUrl)) {
+      return;
+    }
+
+    // Cache the blob URL (NOT the binary data)
+    this.blobUrlCache.set(imageUrl, {
+      url: blobUrl,
+      timestamp: Date.now()
+    });
+
+    // Enforce limit - revoke oldest if too many
+    if (this.blobUrlCache.size > this.MAX_BLOB_URLS) {
+      this.evictOldestBlobUrl();
+    }
+  }
+
+  /**
+   * Mark that an image has been loaded from network
+   * Browser HTTP cache will handle future loads
+   */
+  markImageAsLoaded(imageUrl: string): void {
+    this.imageLoadCache.add(imageUrl);
+  }
+
+  /**
+   * Check if image was previously loaded
+   */
+  wasImageLoaded(imageUrl: string): boolean {
+    return this.imageLoadCache.has(imageUrl);
   }
 
   /**
@@ -410,10 +93,10 @@ export class ImageCacheService {
     const keysIterator = this.blobUrlCache.keys();
     const firstKey = keysIterator.next().value;
     if (firstKey !== undefined) {
-      const oldUrl = this.blobUrlCache.get(firstKey);
-      if (oldUrl) {
+      const cached = this.blobUrlCache.get(firstKey);
+      if (cached) {
         try {
-          URL.revokeObjectURL(oldUrl);
+          URL.revokeObjectURL(cached.url);
         } catch (e) {
           console.warn('[ImageCacheService] Failed to revoke blob URL');
         }
@@ -423,32 +106,30 @@ export class ImageCacheService {
   }
 
   /**
-   * Check if IndexedDB is available
-   */
-  private isIndexedDBAvailable(): boolean {
-    try {
-      return typeof indexedDB !== 'undefined' && indexedDB !== null;
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Clear all cached references to free memory
+   * Clear all cached blob URLs and free memory
    * Called on app destroy or logout
    */
   clearBlobUrlCache(): void {
-    // Clear blob URLs
-    this.blobUrlCache.forEach(url => {
+    // Revoke all blob URLs
+    this.blobUrlCache.forEach(cached => {
       try {
-        URL.revokeObjectURL(url);
+        URL.revokeObjectURL(cached.url);
       } catch (e) {
         console.warn('[ImageCacheService] Failed to revoke blob URL during cleanup');
       }
     });
     this.blobUrlCache.clear();
-    
-    // Clear memory cache
-    this.memoryCache.clear();
+    this.imageLoadCache.clear();
+  }
+
+  /**
+   * Get cache statistics
+   */
+  getCacheStats(): Promise<{ count: number; size: string }> {
+    // Only blob URLs are cached, so size is negligible
+    return Promise.resolve({
+      count: this.blobUrlCache.size,
+      size: '< 1MB' // Blob URLs are just strings, not binary data
+    });
   }
 }
