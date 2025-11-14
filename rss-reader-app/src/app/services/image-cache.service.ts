@@ -53,7 +53,57 @@ export class ImageCacheService {
   }
 
   /**
-   * Cache image in background after it loads successfully
+   * Cache an already-loaded image from the DOM element
+   * This avoids re-fetching the image
+   */
+  cacheLoadedImage(imageUrl: string, imgElement: HTMLImageElement): void {
+    if (!imageUrl || !this.isIndexedDBAvailable() || this.cacheInProgress.has(imageUrl)) {
+      return;
+    }
+
+    // Check if already cached
+    this.getFromCache(imageUrl).then(cached => {
+      if (cached) {
+        return; // Already cached, nothing to do
+      }
+
+      // Mark as in-progress
+      this.cacheInProgress.add(imageUrl);
+
+      try {
+        // Create canvas and draw the image
+        const canvas = document.createElement('canvas');
+        canvas.width = imgElement.naturalWidth;
+        canvas.height = imgElement.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        
+        if (ctx) {
+          ctx.drawImage(imgElement, 0, 0);
+          // Convert canvas to blob and cache
+          canvas.toBlob((blob) => {
+            if (blob) {
+              this.saveToCache(imageUrl, blob).finally(() => {
+                this.cacheInProgress.delete(imageUrl);
+              });
+            } else {
+              this.cacheInProgress.delete(imageUrl);
+            }
+          }, 'image/jpeg', 0.9);
+        } else {
+          this.cacheInProgress.delete(imageUrl);
+        }
+      } catch (error) {
+        console.error('[ImageCacheService] Error caching loaded image:', error);
+        this.cacheInProgress.delete(imageUrl);
+      }
+    }).catch(() => {
+      this.cacheInProgress.delete(imageUrl);
+    });
+  }
+
+  /**
+   * Cache image in background after it loads successfully (fallback for non-DOM images)
+   * @deprecated Use cacheLoadedImage instead
    */
   cacheImageInBackground(imageUrl: string): void {
     if (!imageUrl || !this.isIndexedDBAvailable() || this.cacheInProgress.has(imageUrl)) {

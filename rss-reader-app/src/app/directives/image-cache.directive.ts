@@ -36,9 +36,9 @@ export class ImageCacheDirective implements OnInit {
 
   @HostListener('load')
   onImageLoad(): void {
-    // Image loaded successfully - try to cache it in background (non-blocking)
-    if (this.appImageCache) {
-      this.imageCacheService.cacheImageInBackground(this.appImageCache);
+    // Image loaded successfully - cache the loaded image (not re-fetch)
+    if (this.appImageCache && this.el.nativeElement.src) {
+      this.imageCacheService.cacheLoadedImage(this.appImageCache, this.el.nativeElement);
     }
   }
 }
