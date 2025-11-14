@@ -86,6 +86,8 @@ console.log(`isProduction: ${config.isProduction}`);
 console.log(`FRONTEND_URL: ${config.FRONTEND_URL}`);
 console.log(`CORS_ORIGINS: ${JSON.stringify(config.CORS_ORIGINS)}`);
 console.log(`SESSION_SECRET: ${config.SESSION_SECRET === 'your-secret-key-change-in-production' ? '⚠️ DEFAULT (NOT SECURE)' : '✓ Custom'}`);
+console.log(`GOOGLE_CLIENT_ID: ${config.GOOGLE_CLIENT_ID ? '✓ Configured' : '✗ Missing'}`);
+console.log(`GOOGLE_CLIENT_SECRET: ${config.GOOGLE_CLIENT_SECRET ? '✓ Configured' : '✗ Missing'}`);
 console.log('====================================\n');
 
 // Register routes
@@ -106,6 +108,21 @@ app.get('/api/health', (req, res) => {
     }
   });
 });
+
+// Debug endpoint - check config (development only)
+if (!config.isProduction) {
+  app.get('/api/debug/config', (req, res) => {
+    res.json({
+      NODE_ENV: config.NODE_ENV,
+      FRONTEND_URL: config.FRONTEND_URL,
+      GOOGLE_CLIENT_ID: config.GOOGLE_CLIENT_ID ? '✓ Set' : '✗ Missing',
+      GOOGLE_CLIENT_SECRET: config.GOOGLE_CLIENT_SECRET ? '✓ Set' : '✗ Missing',
+      GOOGLE_CALLBACK_URL: config.GOOGLE_CALLBACK_URL,
+      PORT: config.PORT,
+      CORS_ORIGINS: config.CORS_ORIGINS
+    });
+  });
+}
 
 // Static files
 if (config.isProduction) {

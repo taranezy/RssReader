@@ -10,8 +10,10 @@
 
   <!-- List view -->
   <div class="items-list" 
+       #itemsList
        [class.with-preview]="isLargeScreen && showPreviewPane"
-       [style.width.px]="(isLargeScreen && showPreviewPane) ? feedColumnWidth : null">
+       [style.width.px]="(isLargeScreen && showPreviewPane) ? feedColumnWidth : null"
+       (scroll)="onScroll($event)">
     <div *ngIf="items.length === 0" class="no-items">
       <p *ngIf="feeds.length === 0">No items to display. Add some RSS feeds and refresh them!</p>
       <p *ngIf="feeds.length > 0">
@@ -35,7 +37,7 @@
       <div class="item-indicator" [style.background-color]="getFeedColor(item)"></div>
       
       <div class="item-image" *ngIf="showFeedImages && item.imageUrl">
-        <img [appImageCache]="item.imageUrl" [alt]="item.title" (error)="$any($event.target).style.display='none'">
+        <img [src]="item.imageUrl" [alt]="item.title" (error)="$any($event.target).style.display='none'">
       </div>
       
       <div class="item-content">
@@ -85,6 +87,17 @@
           {{ item.isRead ? '✓' : '○' }}
         </button>
       </div>
+    </div>
+
+    <!-- Loading indicator when fetching more items -->
+    <div class="loading-more" *ngIf="loadingMore">
+      <div class="spinner"></div>
+      <p>Loading more articles...</p>
+    </div>
+
+    <!-- End of list indicator -->
+    <div class="end-of-list" *ngIf="!loadingMore && allItems.length > 0 && items.length >= allItems.length">
+      <p>You've reached the end!</p>
     </div>
   </div>
 
@@ -180,7 +193,7 @@
       </div>
 
       <div class="preview-image" *ngIf="selectedArticleForPreview.imageUrl && !((activeContainer === 'A' ? containerAUrl : containerBUrl))">
-        <img [appImageCache]="selectedArticleForPreview.imageUrl" [alt]="selectedArticleForPreview.title" />
+        <img [src]="selectedArticleForPreview.imageUrl" [alt]="selectedArticleForPreview.title" />
       </div>
 
       <div class="preview-body" [innerHTML]="selectedArticleForPreview.content || selectedArticleForPreview.description"></div>

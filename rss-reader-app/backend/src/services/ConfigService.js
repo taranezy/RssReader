@@ -8,11 +8,29 @@ const path = require('path');
 
 class ConfigService {
   constructor() {
-    // Load environment variables from project root
-    // __dirname = backend/src/services, so ../../ = rss-reader-app/
-    const envPath = path.join(__dirname, '../../.env');
-    console.log(`[ConfigService] Loading .env from: ${envPath}`);
-    require('dotenv').config({ path: envPath });
+    // Load environment variables from .env file
+    // Try multiple paths for flexibility (backend/.env or rss-reader-app/.env)
+    const backendEnvPath = path.join(__dirname, '../../.env');
+    const parentEnvPath = path.join(__dirname, '../../../.env');
+    
+    let envLoaded = false;
+    
+    // Try backend/.env first (most common in development)
+    if (require('fs').existsSync(backendEnvPath)) {
+      console.log(`[ConfigService] Loading .env from: ${backendEnvPath}`);
+      require('dotenv').config({ path: backendEnvPath });
+      envLoaded = true;
+    } 
+    // Fall back to parent directory
+    else if (require('fs').existsSync(parentEnvPath)) {
+      console.log(`[ConfigService] Loading .env from: ${parentEnvPath}`);
+      require('dotenv').config({ path: parentEnvPath });
+      envLoaded = true;
+    }
+    
+    if (!envLoaded) {
+      console.warn('[ConfigService] ⚠️  No .env file found. Using environment variables or defaults.');
+    }
 
     // Server config
     this.PORT = process.env.PORT || 3000;
@@ -32,6 +50,11 @@ class ConfigService {
     this.GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     this.GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
     this.GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:3000/api/auth/google/callback';
+
+    // Log OAuth config for debugging
+    console.log(`[ConfigService] GOOGLE_CLIENT_ID: ${this.GOOGLE_CLIENT_ID ? '✓ Loaded' : '✗ Missing'}`);
+    console.log(`[ConfigService] GOOGLE_CLIENT_SECRET: ${this.GOOGLE_CLIENT_SECRET ? '✓ Loaded' : '✗ Missing'}`);
+    console.log(`[ConfigService] GOOGLE_CALLBACK_URL: ${this.GOOGLE_CALLBACK_URL}`);
 
     // CORS config
     if (this.isProduction) {

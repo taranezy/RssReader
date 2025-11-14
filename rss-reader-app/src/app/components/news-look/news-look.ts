@@ -4,15 +4,13 @@ import { Observable, Subject, of } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { UserSettingsService } from '../../services/user-settings.service';
-import { ImageCacheService } from '../../services/image-cache.service';
-import { ImageCacheDirective } from '../../directives/image-cache.directive';
 import { RssItem, RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
 import { ArticleReaderComponent } from '../article-reader/article-reader';
 
 @Component({
   selector: 'app-news-look',
   standalone: true,
-  imports: [CommonModule, ArticleReaderComponent, ImageCacheDirective],
+  imports: [CommonModule, ArticleReaderComponent],
   templateUrl: './news-look.html',
   styleUrls: ['./news-look.scss']
 })
@@ -31,8 +29,7 @@ export class NewsLookComponent implements OnInit, OnDestroy {
 
   constructor(
     private feedService: RssFeedService,
-    private userSettingsService: UserSettingsService,
-    private imageCacheService: ImageCacheService
+    private userSettingsService: UserSettingsService
   ) {}
 
   ngOnInit(): void {

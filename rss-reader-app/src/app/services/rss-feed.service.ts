@@ -474,6 +474,14 @@ export class RssFeedService {
     );
   }
 
+  /**
+   * Get paginated filtered items - returns items in chunks
+   * Component will handle showing first N items and loading more on scroll
+   */
+  getPaginatedFilteredItems(pageSize: number = 20): Observable<RssItem[]> {
+    return this.getFilteredItems();
+  }
+
   // Helper Methods
   private loadFeeds(): void {
     this.apiStorage.getAllFeeds().pipe(

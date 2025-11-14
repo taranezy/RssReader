@@ -7,7 +7,6 @@ import { LoginComponent } from './login/login.component';
 import { AuthService } from './services/auth.service';
 import { UserSettingsService } from './services/user-settings.service';
 import { PipStateService } from './services/pip-state.service';
-import { ImageCacheService } from './services/image-cache.service';
 import { filter, takeUntil } from 'rxjs/operators';
 import { Observable, Subject } from 'rxjs';
 
@@ -34,7 +33,6 @@ export class App implements OnInit, OnDestroy {
     private authService: AuthService,
     private userSettingsService: UserSettingsService,
     private pipStateService: PipStateService,
-    private imageCacheService: ImageCacheService,
     private router: Router
   ) {
     this.isAuthenticated$ = this.authService.isAuthenticated();
@@ -199,9 +197,6 @@ export class App implements OnInit, OnDestroy {
     // Clean up subscriptions
     this.destroy$.next();
     this.destroy$.complete();
-    
-    // Clean up blob URLs from image cache
-    this.imageCacheService.clearBlobUrlCache();
   }
 
   loadUserSettings(): void {

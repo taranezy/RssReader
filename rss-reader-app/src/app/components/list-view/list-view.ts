@@ -1,25 +1,25 @@
-import { Component, OnInit, HostListener, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef, Renderer2 } from '@angular/core';
+import { Component, OnInit, HostListener, ChangeDetectionStrategy, ChangeDetectorRef, ViewChild, ElementRef, Renderer2, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Observable, of } from 'rxjs';
+import { Observable, of, Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { RssItem, RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { PipStateService } from '../../services/pip-state.service';
-import { ImageCacheService } from '../../services/image-cache.service';
-import { ImageCacheDirective } from '../../directives/image-cache.directive';
 import { ArticleReaderComponent } from '../article-reader/article-reader';
 
 @Component({
   selector: 'app-list-view',
   standalone: true,
-  imports: [CommonModule, ArticleReaderComponent, ImageCacheDirective],
+  imports: [CommonModule, ArticleReaderComponent],
   templateUrl: './list-view.html',
   styleUrl: './list-view.scss',
   changeDetection: ChangeDetectionStrategy.Default
 })
-export class ListViewComponent implements OnInit {
+export class ListViewComponent implements OnInit, OnDestroy {
   private _items: RssItem[] = [];
+  allItems: RssItem[] = []; // Store all items from service
   
   get items(): RssItem[] {
     // Always ensure _items is an array
@@ -67,6 +67,11 @@ export class ListViewComponent implements OnInit {
   selectedArticle: RssItem | null = null;
   selectedArticleForPreview: RssItem | null = null;
   
+  // Pagination
+  pageSize = 20;
+  currentPage = 1;
+  loadingMore = false;
+  
   // Expose global PIP state to template
   pipState$: any;
   
@@ -98,15 +103,16 @@ export class ListViewComponent implements OnInit {
 
   @ViewChild('previewVideoContainer', { read: ElementRef }) previewVideoContainer?: ElementRef;
   @ViewChild('pipVideoContainer', { read: ElementRef }) pipVideoContainer?: ElementRef;
+  @ViewChild('itemsList', { read: ElementRef }) itemsList?: ElementRef;
   
   private transitionInProgress = false; // Prevent rapid successive transitions
   private closedContainerId: 'A' | 'B' | null = null; // Track which container was closed during delay
+  private destroy$ = new Subject<void>();
 
   constructor(
     private feedService: RssFeedService,
     private userSettingsService: UserSettingsService,
     private pipStateService: PipStateService,
-    private imageCacheService: ImageCacheService,
     private sanitizer: DomSanitizer,
     private cdr: ChangeDetectorRef,
     private renderer: Renderer2
@@ -118,30 +124,43 @@ export class ListViewComponent implements OnInit {
     this.checkScreenSize();
     
     // Subscribe to filtered items - updates in real-time
-    this.feedService.getFilteredItems().subscribe((items: RssItem[]) => {
-      this.items = items;
-      // Always update - trackBy will protect iframe
+    this.feedService.getFilteredItems().pipe(
+      takeUntil(this.destroy$)
+    ).subscribe((allItems: RssItem[]) => {
+      this.allItems = allItems;
+      // Reset pagination when items change (e.g., filter/feed selection changes)
+      this.currentPage = 1;
+      this.loadingMore = false;
+      this.updateDisplayedItems();
       this.cdr.markForCheck();
     });
 
-    this.feedService.feeds$.subscribe(feeds => {
+    this.feedService.feeds$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(feeds => {
       this.feeds = feeds;
       this.cdr.markForCheck();
     });
 
-    this.feedService.preferences$.subscribe(prefs => {
+    this.feedService.preferences$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(prefs => {
       this.preferences = prefs;
       this.cdr.markForCheck();
     });
 
-    this.userSettingsService.settings$.subscribe(settings => {
+    this.userSettingsService.settings$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(settings => {
       this.showFeedImages = settings.showFeedImages;
       this.isPIPEnabled = settings.enablePIP;
       this.cdr.markForCheck();
     });
 
     // Subscribe to PIP state and restore preview when returning to list view
-    this.pipState$.subscribe((pipState: any) => {
+    this.pipState$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe((pipState: any) => {
       if (pipState.isActive && pipState.article && !this.selectedArticleForPreview) {
         // Restore the preview article from PIP state when user returns to list view
         this.selectedArticleForPreview = pipState.article;
@@ -159,6 +178,51 @@ export class ListViewComponent implements OnInit {
     const savedWidth = localStorage.getItem('feedColumnWidth');
     if (savedWidth) {
       this.feedColumnWidth = parseInt(savedWidth, 10);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /**
+   * Update displayed items based on current page
+   */
+  private updateDisplayedItems(): void {
+    const start = 0;
+    const end = this.currentPage * this.pageSize;
+    this.items = this.allItems.slice(start, end);
+  }
+
+  /**
+   * Load more items when user scrolls to bottom
+   */
+  loadMoreItems(): void {
+    if (this.loadingMore) return;
+    if (this.currentPage * this.pageSize >= this.allItems.length) return;
+    
+    this.loadingMore = true;
+    this.currentPage++;
+    
+    // Simulate loading delay
+    setTimeout(() => {
+      this.updateDisplayedItems();
+      this.loadingMore = false;
+      this.cdr.markForCheck();
+    }, 300);
+  }
+
+  /**
+   * Handle scroll event on items list
+   */
+  @HostListener('scroll', ['$event'])
+  onScroll(event: Event): void {
+    const target = event.target as HTMLElement;
+    const threshold = 200; // pixels from bottom to trigger load
+    
+    if (target.scrollHeight - target.scrollTop - target.clientHeight < threshold) {
+      this.loadMoreItems();
     }
   }
 
