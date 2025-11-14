@@ -158,7 +158,14 @@ class AppBootstrapper {
    */
   setupStaticFiles(distPath) {
     this.app.use(express.static(distPath));
+    
+    // SPA fallback - only for HTML requests, NOT for static assets
     this.app.use((req, res) => {
+      // Don't fallback for static assets
+      if (/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$/i.test(req.path)) {
+        return res.status(404).send('Not Found');
+      }
+      // Fallback to index.html for SPA routing
       res.sendFile(distPath + '/index.html');
     });
   }
