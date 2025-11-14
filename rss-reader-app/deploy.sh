@@ -16,14 +16,23 @@ echo ""
 echo "Step 1: Cleaning up old containers..."
 echo "----------------------------------------"
 
-# Remove old containers by name to avoid conflicts
-for container in rss-reader-app rss-nginx; do
-    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
-        echo "  Removing container: $container"
-        docker rm -f "$container" 2>/dev/null || true
-    fi
-done
+# Force stop and remove ALL containers
+echo "  Stopping all containers..."
+docker compose down -v 2>/dev/null || true
+sleep 2
 
+# Additional aggressive cleanup - remove by container ID if name-based removal didn't work
+echo "  Force removing container: rss-reader-app"
+docker rm -f rss-reader-app 2>/dev/null || true
+docker rm -f rss-nginx 2>/dev/null || true
+docker rm -f redis 2>/dev/null || true
+docker rm -f rss-reader-certbot 2>/dev/null || true
+
+# Prune unused networks
+echo "  Cleaning networks..."
+docker network prune -f 2>/dev/null || true
+
+sleep 2
 echo "  ✓ Cleanup complete"
 
 echo ""
@@ -31,8 +40,6 @@ echo "Step 2: Bringing up services..."
 echo "----------------------------------------"
 
 # Use docker-compose to build and start services
-docker compose down 2>/dev/null || true
-sleep 2
 
 docker compose up -d
 sleep 3
