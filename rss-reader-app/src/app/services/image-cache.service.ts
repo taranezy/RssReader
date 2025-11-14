@@ -280,6 +280,26 @@ export class ImageCacheService {
   }
 
   /**
+   * Get cached image as blob URL for serving from cache
+   * Returns null if not cached or expired
+   */
+  getCachedImageUrl(imageUrl: string): Promise<string | null> {
+    return new Promise((resolve) => {
+      this.getFromCache(imageUrl).then(blob => {
+        if (blob) {
+          // Create blob URL for serving cached image
+          const blobUrl = URL.createObjectURL(blob);
+          resolve(blobUrl);
+        } else {
+          resolve(null);
+        }
+      }).catch(() => {
+        resolve(null);
+      });
+    });
+  }
+
+  /**
    * Check if IndexedDB is available
    */
   private isIndexedDBAvailable(): boolean {

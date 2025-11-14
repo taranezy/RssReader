@@ -19,8 +19,19 @@ export class ImageCacheDirective implements OnInit {
       return;
     }
 
-    // Set original URL immediately - don't wait for cache
-    this.renderer.setAttribute(this.el.nativeElement, 'src', this.appImageCache);
+    // Try to load from cache first
+    this.imageCacheService.getCachedImageUrl(this.appImageCache).then(cachedUrl => {
+      if (cachedUrl) {
+        // Use cached blob URL
+        this.renderer.setAttribute(this.el.nativeElement, 'src', cachedUrl);
+      } else {
+        // Use original URL - will be cached on load
+        this.renderer.setAttribute(this.el.nativeElement, 'src', this.appImageCache);
+      }
+    }).catch(() => {
+      // Fallback to original URL on error
+      this.renderer.setAttribute(this.el.nativeElement, 'src', this.appImageCache);
+    });
   }
 
   @HostListener('load')
