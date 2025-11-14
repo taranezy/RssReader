@@ -11,8 +11,8 @@ COPY . .
 # Clean cache and install ALL dependencies (including dev for build)
 RUN npm cache clean --force && npm ci
 
-# Build Angular app for production
-RUN npm run build
+# Build Angular app for production with correct baseHref
+RUN npm run build:prod
 
 # Stage 2: Production image
 FROM node:20-alpine
