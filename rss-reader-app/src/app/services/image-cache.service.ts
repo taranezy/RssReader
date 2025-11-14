@@ -58,8 +58,8 @@ export class ImageCacheService {
   }
 
   /**
-   * Get cached image or fetch and cache it
-   * Returns data URL for direct use in img src
+   * Get cached image or return original URL
+   * Handles CORS issues gracefully by falling back to original
    */
   getCachedImageUrl(imageUrl: string): Observable<string> {
     if (!imageUrl || !this.isIndexedDBAvailable()) {
@@ -74,13 +74,19 @@ export class ImageCacheService {
           return of(URL.createObjectURL(cachedBlob));
         }
 
-        console.log('[ImageCacheService] Cache MISS for:', imageUrl, '- fetching from source');
+        console.log('[ImageCacheService] Cache MISS for:', imageUrl, '- will fetch from source');
         
-        // Not in cache, fetch from source
-        return this.fetchAndCacheImage(imageUrl);
+        // Try to fetch and cache, but always fallback to original URL
+        return this.fetchAndCacheImage(imageUrl).pipe(
+          catchError(() => {
+            // Silently fallback to original URL on any error
+            console.log('[ImageCacheService] Using original URL due to CORS or other issues:', imageUrl);
+            return of(imageUrl);
+          })
+        );
       }),
       catchError(error => {
-        console.warn('[ImageCacheService] Error caching image, using original URL:', error);
+        console.warn('[ImageCacheService] Error in getCachedImageUrl, using original URL:', error);
         return of(imageUrl);
       })
     );
@@ -88,17 +94,30 @@ export class ImageCacheService {
 
   /**
    * Fetch image and cache it
+   * Returns blob URL or original URL on error
    */
   private fetchAndCacheImage(imageUrl: string): Observable<string> {
-    return this.http.get(imageUrl, { responseType: 'blob' }).pipe(
+    return this.http.get(imageUrl, { 
+      responseType: 'blob'
+    }).pipe(
       switchMap(blob => {
+        // Successfully fetched, try to cache it
         return from(this.saveToCache(imageUrl, blob)).pipe(
-          switchMap(() => of(URL.createObjectURL(blob)))
+          switchMap(() => {
+            console.log('[ImageCacheService] Successfully cached image:', imageUrl);
+            return of(URL.createObjectURL(blob));
+          }),
+          catchError(cacheError => {
+            // Cache save failed, but we have the blob - use it anyway
+            console.warn('[ImageCacheService] Cache save failed, using blob URL:', cacheError);
+            return of(URL.createObjectURL(blob));
+          })
         );
       }),
       catchError(error => {
         console.warn('[ImageCacheService] Failed to fetch image:', imageUrl, error);
-        return of(imageUrl); // Fallback to original URL
+        // Return original URL - browser will try to load it directly
+        return of(imageUrl);
       })
     );
   }

@@ -7,12 +7,13 @@ import { RssFeedService } from '../../services/rss-feed.service';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { PipStateService } from '../../services/pip-state.service';
 import { ImageCacheService } from '../../services/image-cache.service';
+import { ImageCacheDirective } from '../../directives/image-cache.directive';
 import { ArticleReaderComponent } from '../article-reader/article-reader';
 
 @Component({
   selector: 'app-list-view',
   standalone: true,
-  imports: [CommonModule, ArticleReaderComponent],
+  imports: [CommonModule, ArticleReaderComponent, ImageCacheDirective],
   templateUrl: './list-view.html',
   styleUrl: './list-view.scss',
   changeDetection: ChangeDetectionStrategy.Default
@@ -495,17 +496,6 @@ export class ListViewComponent implements OnInit {
   // TrackBy function to prevent unnecessary DOM recreation
   trackByItemId(index: number, item: RssItem): string {
     return item.id;
-  }
-
-  /**
-   * Get cached image URL for item (used in template with async pipe)
-   * Returns cached blob URL if available, otherwise original URL
-   */
-  getCachedImageUrl(imageUrl: string | undefined): Observable<string> {
-    if (!imageUrl) {
-      return of('');
-    }
-    return this.imageCacheService.getCachedImageUrl(imageUrl);
   }
 }
 

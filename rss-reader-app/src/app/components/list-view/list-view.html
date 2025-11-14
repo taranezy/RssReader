@@ -35,7 +35,7 @@
       <div class="item-indicator" [style.background-color]="getFeedColor(item)"></div>
       
       <div class="item-image" *ngIf="showFeedImages && item.imageUrl">
-        <img [src]="getCachedImageUrl(item.imageUrl) | async" [alt]="item.title" (error)="$any($event.target).style.display='none'">
+        <img [appImageCache]="item.imageUrl" [alt]="item.title" (error)="$any($event.target).style.display='none'">
       </div>
       
       <div class="item-content">
@@ -180,7 +180,7 @@
       </div>
 
       <div class="preview-image" *ngIf="selectedArticleForPreview.imageUrl && !((activeContainer === 'A' ? containerAUrl : containerBUrl))">
-        <img [src]="getCachedImageUrl(selectedArticleForPreview.imageUrl) | async" [alt]="selectedArticleForPreview.title" />
+        <img [appImageCache]="selectedArticleForPreview.imageUrl" [alt]="selectedArticleForPreview.title" />
       </div>
 
       <div class="preview-body" [innerHTML]="selectedArticleForPreview.content || selectedArticleForPreview.description"></div>

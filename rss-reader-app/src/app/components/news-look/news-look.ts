@@ -5,13 +5,14 @@ import { takeUntil } from 'rxjs/operators';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { ImageCacheService } from '../../services/image-cache.service';
+import { ImageCacheDirective } from '../../directives/image-cache.directive';
 import { RssItem, RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
 import { ArticleReaderComponent } from '../article-reader/article-reader';
 
 @Component({
   selector: 'app-news-look',
   standalone: true,
-  imports: [CommonModule, ArticleReaderComponent],
+  imports: [CommonModule, ArticleReaderComponent, ImageCacheDirective],
   templateUrl: './news-look.html',
   styleUrls: ['./news-look.scss']
 })
@@ -139,15 +140,5 @@ export class NewsLookComponent implements OnInit, OnDestroy {
     } else {
       return new Date(date).toLocaleDateString();
     }
-  }
-
-  /**
-   * Get cached image URL for item
-   */
-  getCachedImageUrl(imageUrl: string | undefined): Observable<string> {
-    if (!imageUrl) {
-      return of('');
-    }
-    return this.imageCacheService.getCachedImageUrl(imageUrl);
   }
 }
