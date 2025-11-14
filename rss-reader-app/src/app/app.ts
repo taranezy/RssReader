@@ -7,8 +7,9 @@ import { LoginComponent } from './login/login.component';
 import { AuthService } from './services/auth.service';
 import { UserSettingsService } from './services/user-settings.service';
 import { PipStateService } from './services/pip-state.service';
-import { filter } from 'rxjs/operators';
-import { Observable } from 'rxjs';
+import { ImageCacheService } from './services/image-cache.service';
+import { filter, takeUntil } from 'rxjs/operators';
+import { Observable, Subject } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -27,11 +28,13 @@ export class App implements OnInit, OnDestroy {
   private isMobileScreen = false;
   private isHoveringMenu = false;
   private manuallyOpened = false;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private authService: AuthService,
     private userSettingsService: UserSettingsService,
     private pipStateService: PipStateService,
+    private imageCacheService: ImageCacheService,
     private router: Router
   ) {
     this.isAuthenticated$ = this.authService.isAuthenticated();
@@ -42,15 +45,18 @@ export class App implements OnInit, OnDestroy {
     this.checkScreenSize();
     
     // Load user settings when authenticated (handled by auth state)
-    this.isAuthenticated$.subscribe(isAuth => {
-      if (isAuth) {
-        this.loadUserSettings();
-      }
-    });
+    this.isAuthenticated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(isAuth => {
+        if (isAuth) {
+          this.loadUserSettings();
+        }
+      });
 
     // Auto-hide sidebar on mobile after navigation
     this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
+      filter(event => event instanceof NavigationEnd),
+      takeUntil(this.destroy$)
     ).subscribe(() => {
       if (this.isMobileScreen && !this.isSidebarCollapsed) {
         this.startAutoHideTimer();
@@ -189,6 +195,13 @@ export class App implements OnInit, OnDestroy {
     if (this.autoHideTimeout) {
       clearTimeout(this.autoHideTimeout);
     }
+    
+    // Clean up subscriptions
+    this.destroy$.next();
+    this.destroy$.complete();
+    
+    // Clean up blob URLs from image cache
+    this.imageCacheService.clearBlobUrlCache();
   }
 
   loadUserSettings(): void {

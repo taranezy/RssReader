@@ -1,4 +1,4 @@
-import { Component, OnInit, HostListener, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -6,6 +6,8 @@ import { RssFeed, FeedViewPreference } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { AuthService, User } from '../../services/auth.service';
 import { UserSettingsService, HEADER_COLOR_THEMES } from '../../services/user-settings.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-header',
@@ -13,7 +15,7 @@ import { UserSettingsService, HEADER_COLOR_THEMES } from '../../services/user-se
   templateUrl: './header.html',
   styleUrl: './header.scss'
 })
-export class HeaderComponent implements OnInit {
+export class HeaderComponent implements OnInit, OnDestroy {
   @Output() sidebarToggleRequested = new EventEmitter<void>();
   @Output() leftMenuToggled = new EventEmitter<boolean>();
   
@@ -33,6 +35,7 @@ export class HeaderComponent implements OnInit {
   selectedCategory: 'appearance' | 'settings' | 'data' = 'appearance';
   isMobile = false;
   isDemoUser = false;
+  private destroy$ = new Subject<void>();
 
   userSettings = {
     font: 'default',
@@ -69,23 +72,29 @@ export class HeaderComponent implements OnInit {
     // Detect mobile screen size
     this.checkScreenSize();
     
-    this.feedService.feeds$.subscribe(feeds => {
-      this.feeds = feeds.filter(f => f.isActive);
-    });
+    this.feedService.feeds$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(feeds => {
+        this.feeds = feeds.filter(f => f.isActive);
+      });
 
-    this.feedService.preferences$.subscribe(prefs => {
-      this.preferences = prefs;
-      // Don't change currentView if on news or suggested pages
-      if (this.router.url !== '/suggested' && this.router.url !== '/news') {
-        this.currentView = prefs.viewType;
-      }
-    });
+    this.feedService.preferences$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(prefs => {
+        this.preferences = prefs;
+        // Don't change currentView if on news or suggested pages
+        if (this.router.url !== '/suggested' && this.router.url !== '/news') {
+          this.currentView = prefs.viewType;
+        }
+      });
 
-    this.authService.currentUser$.subscribe(user => {
-      this.currentUser = user;
-      // Check if user is demo user
-      this.isDemoUser = user?.email === 'demo@rssreader.local';
-    });
+    this.authService.currentUser$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(user => {
+        this.currentUser = user;
+        // Check if user is demo user
+        this.isDemoUser = user?.email === 'demo@rssreader.local';
+      });
     
     // Detect current route
     if (this.router.url.includes('/suggested')) {
@@ -100,6 +109,11 @@ export class HeaderComponent implements OnInit {
 
     // Apply header color on init
     this.applyHeaderColor(this.userSettings.headerColor);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   @HostListener('window:resize')
