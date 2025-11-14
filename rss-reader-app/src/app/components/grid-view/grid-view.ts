@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RssFeed, RssItem, FeedViewPreference } from '../../models/rss-feed.model';
 import { RssFeedService } from '../../services/rss-feed.service';
 import { UserSettingsService } from '../../services/user-settings.service';
 import { ArticleReaderComponent } from '../article-reader/article-reader';
+import { Subject, combineLatest } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 interface FeedWidget {
   feed: RssFeed;
@@ -17,7 +19,7 @@ interface FeedWidget {
   templateUrl: './grid-view.html',
   styleUrl: './grid-view.scss'
 })
-export class GridViewComponent implements OnInit {
+export class GridViewComponent implements OnInit, OnDestroy {
   widgets: FeedWidget[] = [];
   currentUrl: string | null = null;
   showFeedImages = true;
@@ -29,6 +31,7 @@ export class GridViewComponent implements OnInit {
     openInNewTab: true
   };
   selectedArticle: RssItem | null = null;
+  private destroy$ = new Subject<void>();
 
   constructor(
     private feedService: RssFeedService,
@@ -36,25 +39,33 @@ export class GridViewComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Use getFilteredItems() to respect feed filter selection
-    this.feedService.getFilteredItems().subscribe(items => {
-      this.allItems = items;
-      this.feedService.feeds$.subscribe(feeds => {
+    // Combine feeds and items for efficient updates
+    combineLatest([
+      this.feedService.feeds$,
+      this.feedService.getFilteredItems()
+    ])
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(([feeds, items]) => {
+        this.allItems = items;
         this.updateWidgets(feeds);
       });
-    });
 
-    this.feedService.feeds$.subscribe(feeds => {
-      this.updateWidgets(feeds);
-    });
+    this.feedService.preferences$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(prefs => {
+        this.preferences = prefs;
+      });
 
-    this.feedService.preferences$.subscribe(prefs => {
-      this.preferences = prefs;
-    });
+    this.userSettingsService.settings$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(settings => {
+        this.showFeedImages = settings.showFeedImages;
+      });
+  }
 
-    this.userSettingsService.settings$.subscribe(settings => {
-      this.showFeedImages = settings.showFeedImages;
-    });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   private updateWidgets(feeds: RssFeed[]): void {

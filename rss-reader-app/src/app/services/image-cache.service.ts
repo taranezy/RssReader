@@ -16,9 +16,11 @@ export class ImageCacheService {
   private readonly STORE_NAME = 'images';
   private readonly MAX_CACHE_SIZE = 52428800; // 50MB
   private readonly MAX_IMAGE_AGE = 7 * 24 * 60 * 60 * 1000; // 7 days
+  private readonly MAX_BLOB_URLS = 100; // Limit blob URL count
 
   private db: IDBDatabase | null = null;
   private cacheInProgress = new Set<string>();
+  private blobUrlCache = new Map<string, string>(); // Track blob URLs for cleanup
 
   constructor(private http: HttpClient) {
     this.initializeDatabase();
@@ -332,13 +334,41 @@ export class ImageCacheService {
   /**
    * Get cached image as blob URL for serving from cache
    * Returns null if not cached or expired
+   * Manages blob URL lifecycle to prevent memory leaks
    */
   getCachedImageUrl(imageUrl: string): Promise<string | null> {
     return new Promise((resolve) => {
+      // Check if already have blob URL cached
+      if (this.blobUrlCache.has(imageUrl)) {
+        resolve(this.blobUrlCache.get(imageUrl) || null);
+        return;
+      }
+
       this.getFromCache(imageUrl).then(blob => {
         if (blob) {
           // Create blob URL for serving cached image
           const blobUrl = URL.createObjectURL(blob);
+          
+          // Store in cache
+          this.blobUrlCache.set(imageUrl, blobUrl);
+          
+          // Enforce limit - revoke oldest blob URLs if too many
+          if (this.blobUrlCache.size > this.MAX_BLOB_URLS) {
+            const keysIterator = this.blobUrlCache.keys();
+            const firstKey = keysIterator.next().value;
+            if (firstKey !== undefined) {
+              const oldUrl = this.blobUrlCache.get(firstKey);
+              if (oldUrl) {
+                try {
+                  URL.revokeObjectURL(oldUrl);
+                } catch (e) {
+                  console.warn('[ImageCacheService] Failed to revoke blob URL');
+                }
+              }
+              this.blobUrlCache.delete(firstKey);
+            }
+          }
+          
           resolve(blobUrl);
         } else {
           resolve(null);
@@ -347,6 +377,21 @@ export class ImageCacheService {
         resolve(null);
       });
     });
+  }
+
+  /**
+   * Clear all blob URL references to free memory
+   * Called on app destroy or logout
+   */
+  clearBlobUrlCache(): void {
+    this.blobUrlCache.forEach(url => {
+      try {
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.warn('[ImageCacheService] Failed to revoke blob URL during cleanup');
+      }
+    });
+    this.blobUrlCache.clear();
   }
 
   /**
