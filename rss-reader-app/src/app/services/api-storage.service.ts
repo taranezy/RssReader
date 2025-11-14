@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map, catchError, of } from 'rxjs';
+import { Observable, map, catchError, of, tap } from 'rxjs';
 import { RssFeed, RssItem, FeedViewPreference } from '../models/rss-feed.model';
+import { LocalCacheService } from './local-cache.service';
 import { environment } from '../../environments/environment';
 
 // Single Responsibility Principle - handles all API communication with SQLite backend
@@ -12,7 +13,10 @@ export class ApiStorageService {
   private readonly apiUrl = environment.apiUrl || 'http://localhost:3000/api';
   private readonly httpOptions = { withCredentials: true };
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private localCache: LocalCacheService
+  ) {}
 
   /**
    * Extract data from wrapped API response {success, data}
@@ -29,6 +33,13 @@ export class ApiStorageService {
   // ==================== FEEDS ====================
   
   getAllFeeds(): Observable<RssFeed[]> {
+    // Check local cache first
+    const cached = this.localCache.getCache('all_feeds');
+    if (cached) {
+      return of(cached);
+    }
+
+    // Not in cache, fetch from server
     return this.http.get<any>(`${this.apiUrl}/feeds`, this.httpOptions).pipe(
       map(response => {
         // Extract data from {success, data} wrapper using extractData
@@ -49,6 +60,10 @@ export class ApiStorageService {
         
         return Array.isArray(feeds) ? feeds : [];
       }),
+      tap(feeds => {
+        // Cache the result
+        this.localCache.setCache('all_feeds', feeds);
+      }),
       catchError(error => {
         console.error('Error fetching feeds:', error);
         return of([]);
@@ -68,23 +83,42 @@ export class ApiStorageService {
 
   createFeed(feed: RssFeed): Observable<RssFeed> {
     return this.http.post<any>(`${this.apiUrl}/feeds`, feed, this.httpOptions).pipe(
-      map(response => this.extractData<RssFeed>(response))
+      map(response => this.extractData<RssFeed>(response)),
+      tap(() => {
+        // Invalidate cache when feed is created
+        this.localCache.clearFeedsCache();
+      })
     );
   }
 
   updateFeed(id: string, updates: Partial<RssFeed>): Observable<RssFeed> {
     return this.http.put<any>(`${this.apiUrl}/feeds/${id}`, updates, this.httpOptions).pipe(
-      map(response => this.extractData<RssFeed>(response))
+      map(response => this.extractData<RssFeed>(response)),
+      tap(() => {
+        // Invalidate cache when feed is updated
+        this.localCache.clearFeedsCache();
+      })
     );
   }
 
   deleteFeed(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/feeds/${id}`, this.httpOptions);
+    return this.http.delete<void>(`${this.apiUrl}/feeds/${id}`, this.httpOptions).pipe(
+      tap(() => {
+        // Invalidate cache when feed is deleted
+        this.localCache.clearFeedsCache();
+      })
+    );
   }
 
   // ==================== ITEMS ====================
   
   getAllItems(): Observable<RssItem[]> {
+    // Check local cache first
+    const cached = this.localCache.getCache('all_items');
+    if (cached) {
+      return of(cached);
+    }
+
     return this.http.get<any>(`${this.apiUrl}/items`, this.httpOptions).pipe(
       map(response => {
         // Extract data from {success, data} wrapper using extractData
@@ -103,6 +137,10 @@ export class ApiStorageService {
         }
         
         return Array.isArray(items) ? items.map(item => this.convertItemDates(item)) : [];
+      }),
+      tap(items => {
+        // Cache the result
+        this.localCache.setCache('all_items', items);
       }),
       catchError(error => {
         console.error('Error fetching items:', error);
