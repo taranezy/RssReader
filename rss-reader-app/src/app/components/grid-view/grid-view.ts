@@ -63,7 +63,7 @@ export class GridViewComponent implements OnInit {
       .map(feed => {
         const feedItems = this.allItems
           .filter((item: RssItem) => item.feedId === feed.id)
-          .sort((a: RssItem, b: RssItem) => b.pubDate.getTime() - a.pubDate.getTime())
+          .sort((a: RssItem, b: RssItem) => b.pubDate.getTime() - a.())
           .slice(0, 10); // Last 10 items
 
         return {

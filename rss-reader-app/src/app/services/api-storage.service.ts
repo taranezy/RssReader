@@ -116,7 +116,8 @@ export class ApiStorageService {
     // Check local cache first
     const cached = this.localCache.getCache('all_items');
     if (cached) {
-      return of(cached);
+      // Convert dates from strings back to Date objects
+      return of(Array.isArray(cached) ? cached.map(item => this.convertItemDates(item)) : []);
     }
 
     return this.http.get<any>(`${this.apiUrl}/items`, this.httpOptions).pipe(
