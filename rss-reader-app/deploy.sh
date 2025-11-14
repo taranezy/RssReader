@@ -16,21 +16,25 @@ echo ""
 echo "Step 1: Cleaning up old containers..."
 echo "----------------------------------------"
 
-# Force stop and remove ALL containers
-echo "  Stopping all containers..."
-docker compose down -v 2>/dev/null || true
+# Stop ALL containers globally (not just from this compose file)
+echo "  Stopping all running containers..."
+docker stop $(docker ps -q) 2>/dev/null || true
 sleep 2
 
-# Additional aggressive cleanup - remove by container ID if name-based removal didn't work
-echo "  Force removing container: rss-reader-app"
-docker rm -f rss-reader-app 2>/dev/null || true
-docker rm -f rss-nginx 2>/dev/null || true
-docker rm -f redis 2>/dev/null || true
-docker rm -f rss-reader-certbot 2>/dev/null || true
+# Remove all containers
+echo "  Removing all containers..."
+docker rm $(docker ps -aq) 2>/dev/null || true
+sleep 2
 
-# Prune unused networks
-echo "  Cleaning networks..."
+# Force stop and remove from current docker-compose file
+echo "  Cleaning up current docker-compose..."
+docker compose -f docker-compose.yml down -v 2>/dev/null || true
+sleep 2
+
+# Prune unused networks and volumes
+echo "  Cleaning networks and volumes..."
 docker network prune -f 2>/dev/null || true
+docker volume prune -f 2>/dev/null || true
 
 sleep 2
 echo "  ✓ Cleanup complete"
@@ -40,8 +44,7 @@ echo "Step 2: Bringing up services..."
 echo "----------------------------------------"
 
 # Use docker-compose to build and start services
-
-docker compose up -d
+docker compose -f docker-compose.yml up -d
 sleep 3
 
 echo "  ✓ Services started"
