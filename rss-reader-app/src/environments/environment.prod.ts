@@ -1,5 +1,6 @@
 export const environment = {
   production: true,
-  // Use relative path so it works with any domain (localhost, andromeda, taranezy.ddns.net)
-  apiUrl: '/api'
+  // Use /streamlet/api path to match nginx routing configuration
+  // The nginx rewrites /streamlet/api/* to /api/* for the backend
+  apiUrl: '/streamlet/api'
 };

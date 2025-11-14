@@ -58,16 +58,28 @@ class ConfigService {
 
     // CORS config
     if (this.isProduction) {
-      // Production: Use FRONTEND_URL from .env, or default to common DDNS domains
+      // Production: Extract origin (protocol + domain + port) from FRONTEND_URL
+      // Note: Origin header doesn't include path, only protocol://domain:port
       const frontendUrl = process.env.FRONTEND_URL;
-      this.CORS_ORIGINS = frontendUrl 
-        ? [frontendUrl]
-        : [
-          'https://taranezy.ddns.net:8444',
+      if (frontendUrl) {
+        try {
+          const url = new URL(frontendUrl);
+          const origin = `${url.protocol}//${url.hostname}${url.port ? ':' + url.port : ''}`;
+          this.CORS_ORIGINS = [origin];
+        } catch (e) {
+          console.warn(`[ConfigService] Failed to parse FRONTEND_URL: ${frontendUrl}`);
+          this.CORS_ORIGINS = [
+            'https://taranezy.ddns.net',
+            'http://taranezy.ddns.net'
+          ];
+        }
+      } else {
+        // Fallback origins
+        this.CORS_ORIGINS = [
           'https://taranezy.ddns.net',
-          'http://taranezy.ddns.net:8444',
           'http://taranezy.ddns.net'
         ];
+      }
     } else {
       // Development: Allow local URLs
       this.CORS_ORIGINS = [

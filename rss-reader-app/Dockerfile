@@ -5,14 +5,11 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-
-# Install dependencies
-RUN npm ci
-
-# Copy source code
+# Copy all source files
 COPY . .
+
+# Clean cache and install ALL dependencies (including dev for build)
+RUN npm cache clean --force && npm ci
 
 # Build Angular app for production
 RUN npm run build
@@ -28,9 +25,6 @@ RUN npm ci --only=production
 
 # Copy backend code
 COPY backend ./backend
-
-# Copy environment configuration
-COPY .env ./.env
 
 # Install backend dependencies
 WORKDIR /app/backend
