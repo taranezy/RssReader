@@ -1,4 +1,4 @@
-import { Directive, ElementRef, Input, OnInit, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, Input, OnInit, Renderer2, HostListener } from '@angular/core';
 import { ImageCacheService } from '../services/image-cache.service';
 
 @Directive({
@@ -19,18 +19,15 @@ export class ImageCacheDirective implements OnInit {
       return;
     }
 
-    // Try to get cached image
-    this.imageCacheService.getCachedImageUrl(this.appImageCache).subscribe(
-      (cachedUrl: string) => {
-        if (cachedUrl) {
-          this.renderer.setAttribute(this.el.nativeElement, 'src', cachedUrl);
-        }
-      },
-      (error) => {
-        console.warn('[ImageCacheDirective] Error loading cached image:', error);
-        // Fallback to original URL
-        this.renderer.setAttribute(this.el.nativeElement, 'src', this.appImageCache);
-      }
-    );
+    // Set original URL immediately - don't wait for cache
+    this.renderer.setAttribute(this.el.nativeElement, 'src', this.appImageCache);
+  }
+
+  @HostListener('load')
+  onImageLoad(): void {
+    // Image loaded successfully - try to cache it in background (non-blocking)
+    if (this.appImageCache) {
+      this.imageCacheService.cacheImageInBackground(this.appImageCache);
+    }
   }
 }
