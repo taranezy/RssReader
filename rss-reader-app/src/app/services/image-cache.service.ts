@@ -339,20 +339,29 @@ export class ImageCacheService {
    * Manages blob URL lifecycle to prevent memory leaks
    * 
    * Priority order:
-   * 1. Memory cache (0ms) - fastest
-   * 2. Blob URL cache (1ms) - fast
+   * 1. Blob URL cache (1-5ms) - fastest, pre-made URLs
+   * 2. Memory cache (10-20ms) - medium, need to create URL from blob
    * 3. IndexedDB (200-500ms) - slow but persistent
    */
   getCachedImageUrl(imageUrl: string): Promise<string | null> {
     return new Promise((resolve) => {
-      // Step 1: Check memory cache first (fastest)
+      // Step 1: Check blob URL cache first (fastest - pre-created URLs)
+      if (this.blobUrlCache.has(imageUrl)) {
+        const cachedUrl = this.blobUrlCache.get(imageUrl);
+        if (cachedUrl) {
+          resolve(cachedUrl);
+          return;
+        }
+      }
+
+      // Step 2: Check memory cache (medium speed - create URL from blob)
       const memoryCached = this.memoryCache.get(imageUrl);
       if (memoryCached && Date.now() - memoryCached.timestamp < 60000) { // 1 minute TTL
-        // Create fresh blob URL from memory cache
+        // Create blob URL from memory cached binary
         const blobUrl = URL.createObjectURL(memoryCached.blob);
         this.blobUrlCache.set(imageUrl, blobUrl);
         
-        // Enforce limit
+        // Enforce blob URL limit
         if (this.blobUrlCache.size > this.MAX_BLOB_URLS) {
           this.evictOldestBlobUrl();
         }
@@ -361,19 +370,13 @@ export class ImageCacheService {
         return;
       }
 
-      // Step 2: Check existing blob URL cache (fast)
-      if (this.blobUrlCache.has(imageUrl)) {
-        resolve(this.blobUrlCache.get(imageUrl) || null);
-        return;
-      }
-
-      // Step 3: Try IndexedDB (slow but persistent)
+      // Step 3: Try IndexedDB (slow but persistent across sessions)
       this.getFromCache(imageUrl).then(blob => {
         if (blob) {
           // Store in memory cache for next time (fast access)
           this.memoryCache.set(imageUrl, { blob, timestamp: Date.now() });
           
-          // Limit memory cache size
+          // Limit memory cache size to avoid memory bloat
           if (this.memoryCache.size > this.MEMORY_CACHE_SIZE) {
             const firstKey = this.memoryCache.keys().next().value;
             if (firstKey !== undefined) {
@@ -381,7 +384,7 @@ export class ImageCacheService {
             }
           }
           
-          // Create blob URL
+          // Create blob URL and cache it (for next request, this will be instant)
           const blobUrl = URL.createObjectURL(blob);
           this.blobUrlCache.set(imageUrl, blobUrl);
           
