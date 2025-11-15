@@ -782,6 +782,86 @@
     cursor: not-allowed;
     pointer-events: none;
   }
+
+  // Import Progress Indicator
+  .import-progress {
+    margin-top: 12px;
+    padding: 12px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+  }
+
+  .progress-bar {
+    height: 8px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FF6B35 0%, #FF8C42 100%);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 8px rgba(255, 107, 53, 0.3);
+  }
+
+  .progress-text {
+    font-size: 13px;
+    color: #333;
+    margin: 0;
+    text-align: center;
+    font-weight: 500;
+  }
+
+  // Danger Zone Styling
+  .danger-zone {
+    margin-top: 24px;
+    padding: 16px;
+    border: 2px solid #FF5252;
+    border-radius: 8px;
+    background-color: #FFEBEE;
+  }
+
+  .danger-title {
+    color: #C62828;
+    font-size: 14px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+  }
+
+  .delete-all-btn {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 6px;
+    border: 2px solid #FF5252;
+    background: white !important;
+    color: #FF5252 !important;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s;
+    text-align: center;
+    min-width: 200px;
+
+    &:hover:not(:disabled) {
+      background: #FF5252 !important;
+      color: white !important;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 82, 82, 0.4);
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
 }
 
 .font-options {

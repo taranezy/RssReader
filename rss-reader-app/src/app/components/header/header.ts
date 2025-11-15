@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener, Output, EventEmitter } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -35,6 +35,9 @@ export class HeaderComponent implements OnInit, OnDestroy {
   selectedCategory: 'appearance' | 'settings' | 'data' = 'appearance';
   isMobile = false;
   isDemoUser = false;
+  isImporting = false;
+  importProgress = 0;
+  importTotal = 0;
   private destroy$ = new Subject<void>();
 
   userSettings = {
@@ -63,7 +66,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
     private feedService: RssFeedService,
     private authService: AuthService,
     private userSettingsService: UserSettingsService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -215,6 +219,65 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   closeSettings(): void {
     this.showSettings = false;
+  }
+
+  /**
+   * Delete all feeds with confirmation
+   */
+  deleteAllFeeds(): void {
+    if (this.isDemoUser) {
+      alert('⚠️ Demo mode is read-only. Cannot delete feeds.');
+      return;
+    }
+
+    // Show confirmation dialog
+    const confirmed = confirm(
+      '🚨 WARNING: This will PERMANENTLY DELETE all your feeds and items!\n\n' +
+      'This action CANNOT be undone.\n\n' +
+      'Are you absolutely sure you want to delete everything and start from scratch?'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    // Second confirmation for safety
+    const reconfirmed = confirm(
+      'This is your final warning. All your feeds will be permanently deleted.\n\n' +
+      'Click OK to delete everything, or Cancel to keep your feeds.'
+    );
+
+    if (!reconfirmed) {
+      return;
+    }
+
+    // Perform the deletion
+    this.feedService.removeAllFeeds().subscribe({
+      next: (response: any) => {
+        console.log('[Header] Successfully deleted all feeds:', response);
+        alert(`✅ All ${response.deletedCount} feeds have been deleted successfully!\n\nYou can now import new feeds or add them manually.`);
+        
+        // Clear ALL caches before reload
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.clear();
+            console.log('[Header] localStorage cleared');
+          }
+        } catch (e) {
+          console.warn('[Header] Could not clear localStorage:', e);
+        }
+        
+        // Reload with cache-busting parameter and small delay to ensure cache is cleared
+        setTimeout(() => {
+          const timestamp = Date.now();
+          window.location.href = window.location.origin + '/?nocache=' + timestamp;
+        }, 500);
+      },
+      error: (error) => {
+        console.error('[Header] Error deleting all feeds:', error);
+        alert('❌ Failed to delete feeds: ' + (error.error?.error || error.message));
+      }
+    });
   }
 
   changeFont(fontId: string): void {
@@ -525,27 +588,55 @@ export class HeaderComponent implements OnInit, OnDestroy {
         return;
       }
 
-      // Import feeds one by one
+      // Import feeds one by one with progress
       let importedCount = 0;
       let errorCount = 0;
+      const totalFeeds = feeds.length;
+      this.isImporting = true;
+      this.importProgress = 0;
+      this.importTotal = totalFeeds;
+      this.cdr.markForCheck();
+
+      // Store feed IDs for later live updates
+      const feedIdsToUpdate: string[] = [];
 
       const importNext = (index: number) => {
         if (index >= feeds.length) {
-          alert(`Import completed!\n\nSuccessfully imported: ${importedCount}\nFailed: ${errorCount}`);
-          // Reload the page to refresh feeds list
-          window.location.reload();
+          // Finished importing all feeds - close progress indicator immediately
+          console.log(`[Import] All feeds imported! Imported: ${importedCount}, Failed: ${errorCount}`);
+          this.isImporting = false;
+          this.cdr.markForCheck();
+          
+          // Reload feeds list to show all imported feeds
+          this.feedService.initialize();
+          
+          // Start fetching items for all imported feeds live (one by one)
+          console.log(`[Import] Starting live item fetch for ${feedIdsToUpdate.length} feeds...`);
+          this.fetchImportedFeedsLive(feedIdsToUpdate);
+          
           return;
         }
 
         const feed = feeds[index];
         this.feedService.addFeed(feed.url, feed.title, feed.category).subscribe(
-          () => {
+          (addedFeed: any) => {
             importedCount++;
+            this.importProgress = importedCount;
+            console.log(`[Import] Added feed ${importedCount}/${totalFeeds}: ${feed.title}`);
+            
+            // Store the feed ID for live item fetching
+            if (addedFeed && addedFeed.id) {
+              feedIdsToUpdate.push(addedFeed.id);
+            }
+            
+            this.cdr.markForCheck();
             importNext(index + 1);
           },
           error => {
             console.error(`Error importing feed ${feed.title}:`, error);
             errorCount++;
+            this.importProgress = importedCount + errorCount;
+            this.cdr.markForCheck();
             importNext(index + 1);
           }
         );
@@ -557,6 +648,51 @@ export class HeaderComponent implements OnInit, OnDestroy {
       console.error('Error parsing OPML:', error);
       alert('Failed to parse OPML file: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
+  }
+
+  /**
+   * Fetch items for imported feeds one by one (live updates)
+   * Shows items appearing in real-time as each feed completes
+   */
+  private fetchImportedFeedsLive(feedIds: string[]): void {
+    if (feedIds.length === 0) {
+      console.log('[Import] No feeds to fetch items for');
+      return;
+    }
+
+    console.log(`[Import] Fetching items for ${feedIds.length} imported feeds...`);
+    let fetchedCount = 0;
+
+    const fetchNext = (index: number) => {
+      if (index >= feedIds.length) {
+        console.log(`[Import] ✓ All items fetched! Total: ${fetchedCount} items`);
+        return;
+      }
+
+      const feedId = feedIds[index];
+      
+      // Fetch this feed's items and wait for completion
+      this.feedService.refreshFeed(feedId).subscribe({
+        next: (itemCount) => {
+          fetchedCount += itemCount;
+          console.log(`[Import] Feed ${index + 1}/${feedIds.length}: fetched ${itemCount} items`);
+          
+          // After fetching, explicitly reload items to ensure they're displayed live
+          this.feedService.loadItems().subscribe(() => {
+            console.log(`[Import] Items reloaded after feed ${index + 1}`);
+            // Move to next feed after items are loaded
+            fetchNext(index + 1);
+          });
+        },
+        error: (error) => {
+          console.error(`[Import] Error fetching feed ${index + 1}:`, error);
+          // Continue with next feed even if this one fails
+          fetchNext(index + 1);
+        }
+      });
+    };
+
+    fetchNext(0);
   }
 
   @HostListener('document:click', ['$event'])

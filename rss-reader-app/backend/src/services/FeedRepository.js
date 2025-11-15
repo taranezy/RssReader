@@ -103,6 +103,18 @@ class FeedRepository {
       throw new Error(`Failed to check duplicate feed: ${error.message}`);
     }
   }
+
+  /**
+   * Delete all feeds for a user
+   * WARNING: This action cascades to delete all items for those feeds
+   */
+  deleteAllFeeds(userId) {
+    try {
+      return this.db.deleteAllFeeds(userId);
+    } catch (error) {
+      throw new Error(`Failed to delete all feeds: ${error.message}`);
+    }
+  }
 }
 
 module.exports = FeedRepository;

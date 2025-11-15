@@ -24,6 +24,7 @@ const FeedController = require('./src/controllers/FeedController');
 const ItemController = require('./src/controllers/ItemController');
 const SettingsController = require('./src/controllers/SettingsController');
 const ProxyController = require('./src/controllers/ProxyController');
+const ImportExportController = require('./src/controllers/ImportExportController');
 
 // Routes
 const createAuthRoutes = require('./src/routes/authRoutes');
@@ -31,6 +32,7 @@ const createFeedRoutes = require('./src/routes/feedRoutes');
 const createItemRoutes = require('./src/routes/itemRoutes');
 const createSettingsRoutes = require('./src/routes/settingsRoutes');
 const createProxyRoutes = require('./src/routes/proxyRoutes');
+const createImportExportRoutes = require('./src/routes/importExportRoutes');
 
 // Proxy Service
 const RssProxyService = require('./rss-proxy');
@@ -53,7 +55,6 @@ const db = new DatabaseService();
 const redisService = new RedisService();
 const initializeRedis = async () => {
   try {
-    debugger;
     await redisService.initialize();
   } catch (error) {
     console.warn('[Server] Redis initialization failed, continuing without cache:', error.message);
@@ -72,6 +73,7 @@ const authController = new AuthController(authenticationService, config, feedRep
 const feedController = new FeedController(feedRepository, userRepository, redisService);
 const itemController = new ItemController(itemRepository, feedRepository, redisService);
 const settingsController = new SettingsController(settingsRepository);
+const importExportController = new ImportExportController(userRepository, feedRepository, itemRepository, db);
 const rssProxyService = new RssProxyService();
 const proxyController = new ProxyController(rssProxyService);
 
@@ -95,6 +97,7 @@ createAuthRoutes(app, authController, passportService.getPassport(), isAuthentic
 createFeedRoutes(app, feedController, isAuthenticated);
 createItemRoutes(app, itemController, isAuthenticated);
 createSettingsRoutes(app, settingsController, isAuthenticated);
+createImportExportRoutes(app, importExportController, isAuthenticated);
 createProxyRoutes(app, proxyController);
 
 // Health check
@@ -142,6 +145,8 @@ process.on('SIGINT', async () => {
 });
 
 app.listen(config.PORT, '0.0.0.0', () => {
+  console.log(`[Server] ✓ Listening on port ${config.PORT}`);
+  console.log(`[Server] ✓ Ready for requests`);
 });
 
 // Initialize Redis

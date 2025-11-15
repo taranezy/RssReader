@@ -7,6 +7,8 @@ class DatabaseService {
     const dbPath = path.join(__dirname, 'data', 'rss-reader.db');
     this.db = new Database(dbPath);
     this.db.pragma('journal_mode = WAL');
+    // Enable foreign key constraints for CASCADE deletes to work
+    this.db.pragma('foreign_keys = ON');
     this.initializeTables();
   }
 
@@ -295,6 +297,22 @@ class DatabaseService {
   deleteFeed(id, userId) {
     // This will cascade delete items due to foreign key constraint
     return this.db.prepare('DELETE FROM rss_feeds WHERE id = ? AND user_id = ?').run(id, userId);
+  }
+
+  /**
+   * Delete all feeds for a user (cascades to delete all items)
+   * Returns count of deleted feeds
+   */
+  deleteAllFeeds(userId) {
+    // Delete items first (explicit delete to ensure cleanup)
+    const itemsResult = this.db.prepare('DELETE FROM rss_items WHERE user_id = ?').run(userId);
+    console.log(`[Database] Deleted ${itemsResult.changes} items for user ${userId}`);
+    
+    // Then delete feeds
+    const feedsResult = this.db.prepare('DELETE FROM rss_feeds WHERE user_id = ?').run(userId);
+    console.log(`[Database] Deleted ${feedsResult.changes} feeds for user ${userId}`);
+    
+    return feedsResult.changes; // Returns number of feeds deleted
   }
 
   // Item operations (with user_id)

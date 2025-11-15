@@ -170,7 +170,7 @@ export class FeedManagerComponent implements OnInit {
       next: (count) => {
         // For single feed refresh, reload items immediately
         if (count > 0) {
-          this.feedService.loadItems();
+          this.feedService.loadItems().subscribe();
         }
       },
       error: (err) => {
@@ -226,7 +226,7 @@ export class FeedManagerComponent implements OnInit {
         this.feedService.updatePreferences({ showOnlyUnread: false, selectedFeeds: [] });
       }
       // Reload all items to restore normal view
-      this.feedService.loadItems();
+      this.feedService.loadItems().subscribe();
     }
   }
 
@@ -239,7 +239,7 @@ export class FeedManagerComponent implements OnInit {
     
     this.feedService.updatePreferences({ selectedFeeds: [feedId], showOnlyUnread: false });
     // Reload items to apply the feed filter
-    this.feedService.loadItems();
+    this.feedService.loadItems().subscribe();
   }
 
   isSelectedFeed(feedId: string): boolean {

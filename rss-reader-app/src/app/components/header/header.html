@@ -350,15 +350,44 @@
             <p class="setting-description">
               Import feeds from Feedly OPML export. <strong>All your existing data will stay</strong> - this only adds new feeds to your collection.
             </p>
-            <label class="import-btn feedly-import" [class.disabled]="isDemoUser">
+            <label class="import-btn feedly-import" [class.disabled]="isDemoUser || isImporting">
               🔖 Import OPML from Feedly
               <input 
                 type="file" 
                 accept=".xml,.opml"
-                [disabled]="isDemoUser"
+                [disabled]="isDemoUser || isImporting"
                 (change)="onFeedlyImportFileSelected($event)"
                 style="display: none;">
             </label>
+            <!-- Import Progress Indicator -->
+            <div *ngIf="isImporting" class="import-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="(importProgress / importTotal) * 100"></div>
+              </div>
+              <p class="progress-text" *ngIf="importProgress < importTotal || importTotal > 50">
+                Importing {{ importProgress }} of {{ importTotal }} feeds...
+              </p>
+              <p class="progress-text" *ngIf="importProgress >= importTotal && importTotal <= 50">
+                ⏳ Fetching items from imported feeds...
+              </p>
+            </div>
+          </div>
+
+          <!-- Delete All Feeds Section -->
+          <div class="delete-all-section danger-zone">
+            <h4 class="danger-title">⚠️ Danger Zone</h4>
+            <div class="settings-section">
+              <label>Delete All Feeds</label>
+              <p class="setting-description">
+                Permanently delete all your feeds and items. This action cannot be undone. You'll start with a completely empty feed list.
+              </p>
+              <button 
+                class="delete-all-btn" 
+                [disabled]="isDemoUser"
+                (click)="deleteAllFeeds()">
+                🗑️ Delete All Feeds & Start Over
+              </button>
+            </div>
           </div>
         </div>
       </div>

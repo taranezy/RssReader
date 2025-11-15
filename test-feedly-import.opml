@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml version="2.0">
+  <head>
+    <title>My Feedly Export</title>
+  </head>
+  <body>
+    <outline text="Technology" type="folder">
+      <outline type="rss" text="Hacker News" xmlUrl="https://news.ycombinator.com/rss" />
+      <outline type="rss" text="TechCrunch" xmlUrl="https://techcrunch.com/feed/" />
+    </outline>
+    <outline text="News" type="folder">
+      <outline type="rss" text="BBC News" xmlUrl="http://feeds.bbc.co.uk/news/rss.xml" />
+      <outline type="rss" text="Reuters" xmlUrl="http://feeds.reuters.com/reuters/topNews" />
+    </outline>
+    <outline text="Lifestyle" type="folder">
+      <outline type="rss" text="Medium" xmlUrl="https://medium.com/feed" />
+    </outline>
+    <outline type="rss" text="Standalone Feed" xmlUrl="https://example.com/feed.xml" />
+  </body>
+</opml>

@@ -110,6 +110,18 @@ export class ApiStorageService {
     );
   }
 
+  /**
+   * Delete all feeds for the user
+   */
+  deleteAllFeeds(): Observable<{ success: boolean; deletedCount: number }> {
+    return this.http.delete<any>(`${this.apiUrl}/feeds/delete-all`, this.httpOptions).pipe(
+      tap(() => {
+        // Invalidate all caches when feeds are deleted
+        this.localCache.clearAllCache();
+      })
+    );
+  }
+
   // ==================== ITEMS ====================
   
   getAllItems(): Observable<RssItem[]> {

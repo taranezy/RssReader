@@ -74,7 +74,7 @@ export class RssFeedService {
     }
     
     this.loadFeeds();
-    this.loadItems();
+    this.loadItems().subscribe();
     this.loadPreferences();
     // NO automatic refresh on login - only manual refresh on user request
   }
@@ -132,7 +132,7 @@ export class RssFeedService {
               return this.apiStorage.createItems(items).pipe(
                 tap(() => {
                   this.loadFeeds();
-                  this.loadItems();
+                  this.loadItems().subscribe();
                 }),
                 map(() => true)
               );
@@ -158,13 +158,42 @@ export class RssFeedService {
     this.apiStorage.deleteFeed(feedId).pipe(
       tap(() => {
         this.loadFeeds();
-        this.loadItems();
+        this.loadItems().subscribe();
       }),
       catchError(error => {
         console.error('Error removing feed:', error);
         return of(null);
       })
     ).subscribe();
+  }
+
+  /**
+   * Delete all feeds for the user
+   * Returns observable that resolves when operation completes
+   */
+  removeAllFeeds(): Observable<{ success: boolean; deletedCount: number }> {
+    return this.apiStorage.deleteAllFeeds().pipe(
+      tap((response: any) => {
+        console.log(`[RssFeedService] Deleted ${response.deletedCount} feeds`);
+        
+        // Clear local cache for feeds and items BEFORE reloading
+        console.log('[RssFeedService] Clearing local cache for feeds and items');
+        localStorage.removeItem('rss_cache_all_feeds');
+        localStorage.removeItem('rss_cache_all_items');
+        
+        // Update in-memory subjects to empty arrays immediately
+        this.feedsSubject.next([]);
+        this.itemsSubject.next([]);
+        
+        // Reload feeds and items after deletion
+        this.loadFeeds();
+        this.loadItems().subscribe();
+      }),
+      catchError(error => {
+        console.error('[RssFeedService] Error removing all feeds:', error);
+        throw error;
+      })
+    );
   }
 
   updateFeed(feedId: string, updates: Partial<RssFeed>): void {
@@ -179,7 +208,7 @@ export class RssFeedService {
     ).subscribe();
   }
 
-  refreshFeed(feedId: string): Observable<number> {
+  public refreshFeed(feedId: string): Observable<number> {
     const feed = this.feedsSubject.value.find(f => f.id === feedId);
     if (!feed) {
       return of(0);
@@ -208,7 +237,7 @@ export class RssFeedService {
                   this.loadFeeds();
                   // Emit items immediately for real-time updates
                   // Preview lock in list-view will prevent interruption
-                  this.loadItems();
+                  this.loadItems().subscribe();
                 }),
                 map(() => uniqueNewItems.length)
               );
@@ -392,7 +421,7 @@ export class RssFeedService {
         if (currentPrefs.showOnlyUnread) {
           this.updatePreferences({ ...currentPrefs, showOnlyUnread: false });
         }
-        this.loadItems();
+        this.loadItems().subscribe();
       }),
       catchError(error => {
         console.error('Error marking all as read:', error);
@@ -514,9 +543,9 @@ export class RssFeedService {
     ).subscribe();
   }
 
-  public loadItems(): void {
+  public loadItems(): Observable<RssItem[]> {
     console.log('[FeedService] Loading items...');
-    this.apiStorage.getAllItems().pipe(
+    return this.apiStorage.getAllItems().pipe(
       // Items already come with converted dates and array validation from api-storage
       tap(items => {
         console.log('[FeedService] Loaded items, count:', items.length);
@@ -526,7 +555,7 @@ export class RssFeedService {
         console.error('[FeedService] Error loading items:', error);
         return of([]);
       })
-    ).subscribe();
+    );
   }
 
   private loadPreferences(): void {
