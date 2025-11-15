@@ -60,6 +60,19 @@ export class RssFeedService {
    * Smart cache: If cache is fresh (< 10 min), returns cached data. Otherwise refreshes.
    */
   public initialize(): void {
+    // Clear stale cache from before API fix (if it existed)
+    // This ensures we get fresh data after authentication
+    if (localStorage) {
+      try {
+        // Clear the local cache entries for feeds and items to ensure fresh data
+        localStorage.removeItem('rss_cache_all_feeds');
+        localStorage.removeItem('rss_cache_all_items');
+        localStorage.removeItem('rss_cache_preferences');
+      } catch (e) {
+        // Silently fail if localStorage is not available
+      }
+    }
+    
     this.loadFeeds();
     this.loadItems();
     this.loadPreferences();
