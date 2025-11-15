@@ -515,11 +515,15 @@ export class RssFeedService {
   }
 
   public loadItems(): void {
+    console.log('[FeedService] Loading items...');
     this.apiStorage.getAllItems().pipe(
       // Items already come with converted dates and array validation from api-storage
-      tap(items => this.itemsSubject.next(items)),
+      tap(items => {
+        console.log('[FeedService] Loaded items, count:', items.length);
+        this.itemsSubject.next(items);
+      }),
       catchError(error => {
-        console.error('Error loading items:', error);
+        console.error('[FeedService] Error loading items:', error);
         return of([]);
       })
     ).subscribe();

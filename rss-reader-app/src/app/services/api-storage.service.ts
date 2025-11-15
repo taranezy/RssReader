@@ -36,7 +36,7 @@ export class ApiStorageService {
     // Check local cache first
     const cached = this.localCache.getCache('all_feeds');
     if (cached) {
-      return of(cached);
+      return of(Array.isArray(cached) ? cached : []);
     }
 
     // Not in cache, fetch from server
@@ -116,14 +116,19 @@ export class ApiStorageService {
     // Check local cache first
     const cached = this.localCache.getCache('all_items');
     if (cached) {
+      console.log('[APIStorage] Items from cache, count:', Array.isArray(cached) ? cached.length : 0);
       // Convert dates from strings back to Date objects
       return of(Array.isArray(cached) ? cached.map(item => this.convertItemDates(item)) : []);
     }
 
+    console.log('[APIStorage] Fetching items from server...');
     return this.http.get<any>(`${this.apiUrl}/items`, this.httpOptions).pipe(
+      tap(response => console.log('[APIStorage] Server response:', response)),
       map(response => {
         // Extract data from {success, data} wrapper using extractData
         let items = this.extractData<RssItem[]>(response);
+        
+        console.log('[APIStorage] Extracted items:', Array.isArray(items) ? items.length : typeof items, items);
         
         // Ensure items is an array, handle stringified JSON
         if (!Array.isArray(items)) {
@@ -140,11 +145,12 @@ export class ApiStorageService {
         return Array.isArray(items) ? items.map(item => this.convertItemDates(item)) : [];
       }),
       tap(items => {
+        console.log('[APIStorage] Caching items, count:', items.length);
         // Cache the result
         this.localCache.setCache('all_items', items);
       }),
       catchError(error => {
-        console.error('Error fetching items:', error);
+        console.error('[APIStorage] Error fetching items:', error);
         return of([]);
       })
     );

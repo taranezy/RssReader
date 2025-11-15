@@ -13,7 +13,8 @@ class UserRepository {
    */
   findByEmail(email) {
     try {
-      return this.db.findUserByEmail(email);
+      const user = this.db.findUserByEmail(email);
+      return user;
     } catch (error) {
       throw new Error(`Failed to find user by email: ${error.message}`);
     }
@@ -24,7 +25,8 @@ class UserRepository {
    */
   findByGoogleId(googleId) {
     try {
-      return this.db.findUserByGoogleId(googleId);
+      const user = this.db.findUserByGoogleId(googleId);
+      return user;
     } catch (error) {
       throw new Error(`Failed to find user by Google ID: ${error.message}`);
     }
@@ -35,7 +37,8 @@ class UserRepository {
    */
   findById(id) {
     try {
-      return this.db.findUserById(id);
+      const user = this.db.findUserById(id);
+      return user;
     } catch (error) {
       throw new Error(`Failed to find user by ID: ${error.message}`);
     }
