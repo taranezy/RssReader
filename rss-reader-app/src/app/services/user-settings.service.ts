@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
 import { tap, map, catchError } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 export interface UserSettings {
   font: string;
@@ -39,6 +40,7 @@ export const HEADER_COLOR_THEMES: { [key: string]: { primary: string; secondary:
   providedIn: 'root'
 })
 export class UserSettingsService {
+  private readonly apiUrl = environment.apiUrl || '/api';
   private settingsSubject = new BehaviorSubject<UserSettings>({
     font: 'default',
     showLeftMenu: true,
@@ -88,7 +90,7 @@ export class UserSettingsService {
   }
 
   getSettings(): Observable<UserSettings> {
-    return this.http.get<any>('/api/user-settings', { withCredentials: true }).pipe(
+    return this.http.get<any>(`${this.apiUrl}/user-settings`, { withCredentials: true }).pipe(
       map(response => {
         const settings = this.extractData<UserSettings>(response);
         return settings;
@@ -114,7 +116,7 @@ export class UserSettingsService {
   }
 
   updateSettings(settings: UserSettings): Observable<UserSettings> {
-    return this.http.put<any>('/api/user-settings', settings, { withCredentials: true }).pipe(
+    return this.http.put<any>(`${this.apiUrl}/user-settings`, settings, { withCredentials: true }).pipe(
       map(response => this.extractData<UserSettings>(response)),
       tap(updated => {
         this.settingsSubject.next(updated);
@@ -207,7 +209,7 @@ export class UserSettingsService {
    * Export all user data as XML
    */
   exportData(): Observable<any> {
-    return this.http.get<any>('/api/export', { 
+    return this.http.get<any>(`${this.apiUrl}/export`, { 
       responseType: 'json',
       withCredentials: true
     }).pipe(
@@ -223,7 +225,7 @@ export class UserSettingsService {
    * Import user data from XML
    */
   importData(xmlData: string): Observable<any> {
-    return this.http.post<any>('/api/import', { xmlData }, { withCredentials: true }).pipe(
+    return this.http.post<any>(`${this.apiUrl}/import`, { xmlData }, { withCredentials: true }).pipe(
       map(response => this.extractData<any>(response)),
       catchError((error: any) => {
         console.error('[UserSettingsService] Error importing data:', error);
