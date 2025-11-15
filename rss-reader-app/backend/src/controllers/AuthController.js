@@ -133,18 +133,23 @@ class AuthController {
       req.login(demoUser, (err) => {
         if (err) {
           console.error('[AuthController] Login error:', err.message);
-          const errorUrl = `${this.config.FRONTEND_URL}/?error=demo_login_failed`;
+          // Remove trailing slash from FRONTEND_URL before appending path
+          const basePath = this.config.FRONTEND_URL.replace(/\/$/, '');
+          const errorUrl = `${basePath}/?error=demo_login_failed`;
           return res.redirect(errorUrl);
         }
 
         console.log(`[AuthController] Demo user logged in successfully with ID: ${demoUserId}`);
-        // Redirect to frontend /list
-        const redirectUrl = `${this.config.FRONTEND_URL}/list`;
+        // Remove trailing slash from FRONTEND_URL before appending path
+        const basePath = this.config.FRONTEND_URL.replace(/\/$/, '');
+        const redirectUrl = `${basePath}/list`;
         res.redirect(redirectUrl);
       });
     } catch (error) {
       console.error('❌ Error in demoLogin:', error.message);
-      const errorUrl = `${this.config.FRONTEND_URL}/?error=demo_login_error`;
+      // Remove trailing slash from FRONTEND_URL before appending path
+      const basePath = this.config.FRONTEND_URL.replace(/\/$/, '');
+      const errorUrl = `${basePath}/?error=demo_login_error`;
       res.redirect(errorUrl);
     }
   }
@@ -194,16 +199,21 @@ class AuthController {
   googleAuthCallback(req, res) {
     try {
       if (!req.user) {
-        const errorUrl = `${this.config.FRONTEND_URL}/?error=auth_failed`;
+        // Remove trailing slash from FRONTEND_URL before appending path
+        const basePath = this.config.FRONTEND_URL.replace(/\/$/, '');
+        const errorUrl = `${basePath}/?error=auth_failed`;
         return res.redirect(errorUrl);
       }
 
-      // Redirect to frontend /list
-      const redirectUrl = `${this.config.FRONTEND_URL}/list`;
+      // Remove trailing slash from FRONTEND_URL before appending path
+      const basePath = this.config.FRONTEND_URL.replace(/\/$/, '');
+      const redirectUrl = `${basePath}/list`;
       res.redirect(redirectUrl);
     } catch (error) {
       console.error('❌ Error in googleAuthCallback:', error.message);
-      const errorUrl = `${this.config.FRONTEND_URL}/?error=auth_error`;
+      // Remove trailing slash from FRONTEND_URL before appending path
+      const basePath = this.config.FRONTEND_URL.replace(/\/$/, '');
+      const errorUrl = `${basePath}/?error=auth_error`;
       res.redirect(errorUrl);
     }
   }
