@@ -53,7 +53,9 @@ $filesToCopy = @(
     "tsconfig.app.json",
     "Dockerfile",
     "docker-compose.yml",
-    ".dockerignore"
+    ".dockerignore",
+    "../nginx",  # Add nginx config directory
+    "../docker-compose-update.yml"  # Add production docker-compose file
     # Note: .env is NOT copied to avoid overwriting production configuration
 )
 
@@ -68,6 +70,14 @@ foreach ($item in $filesToCopy) {
             Get-ChildItem -Path "backend" -Exclude "node_modules" | ForEach-Object {
                 Copy-Item -Path $_.FullName -Destination "$tempDir\backend\" -Recurse -Force
             }
+        } elseif ($item -eq "../nginx") {
+            # Copy nginx directory
+            Write-Host "  - Copying nginx configuration..." -ForegroundColor DarkGray
+            Copy-Item -Path "../nginx" -Destination "$tempDir\" -Recurse -Force
+        } elseif ($item -eq "../docker-compose-update.yml") {
+            # Copy production docker-compose file
+            Write-Host "  - Copying production docker-compose..." -ForegroundColor DarkGray
+            Copy-Item -Path "../docker-compose-update.yml" -Destination "$tempDir\" -Force
         } else {
             Copy-Item -Path $item -Destination $tempDir -Recurse -Force
         }
@@ -111,19 +121,19 @@ find . -type d -name "node_modules" -prune -exec rm -rf {} + 2>/dev/null || true
 chmod -R u+rwX . 2>/dev/null || true
 
 echo '[BUILD] Building Docker image...'
-docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose -f docker-compose-update.yml build --no-cache
 
 echo '[STOP] Stopping old container...'
-docker-compose -f docker-compose.prod.yml down || true
+docker-compose -f docker-compose-update.yml down || true
 
 echo '[START] Starting new container...'
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose-update.yml up -d
 
 echo '[STATUS] Container status:'
-docker-compose -f docker-compose.prod.yml ps
+docker-compose -f docker-compose-update.yml ps
 
 echo '[LOGS] Recent logs:'
-docker-compose -f docker-compose.prod.yml logs --tail=20
+docker-compose -f docker-compose-update.yml logs --tail=20
 
 echo '[HEALTH] Checking application health...'
 sleep 5
