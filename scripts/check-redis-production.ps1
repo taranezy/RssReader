@@ -40,7 +40,7 @@ ssh $sshHost "cd $rssReaderPath && docker-compose restart rss-reader"
 # 9. Check health
 Write-Host "`n9. Checking app health..." -ForegroundColor Yellow
 Start-Sleep -Seconds 5
-$health = Invoke-WebRequest -Uri "https://streamlet.taranezy.com/streamlet/api/health" -UseBasicParsing
+$health = Invoke-WebRequest -Uri "https://streamlet.taranezy.com/api/health" -UseBasicParsing
 Write-Host "Response:" -ForegroundColor Cyan
 $health.Content | ConvertFrom-Json | ConvertTo-Json
 

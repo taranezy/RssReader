@@ -12,11 +12,11 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - FRONTEND_URL=${FRONTEND_URL:-https://streamlet.taranezy.com/streamlet/}
+      - FRONTEND_URL=${FRONTEND_URL:-https://streamlet.taranezy.com/}
       - SESSION_SECRET=${SESSION_SECRET:-your-secret-key-change-in-production}
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
-      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL:-https://streamlet.taranezy.com/streamlet/api/auth/google/callback}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL:-https://streamlet.taranezy.com/api/auth/google/callback}
     volumes:
       # Persist database
       - rss-data:/app/backend/data

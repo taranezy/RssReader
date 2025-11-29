@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  // Use /streamlet/api path to match nginx routing configuration
-  // The nginx rewrites /streamlet/api/* to /api/* for the backend
-  apiUrl: '/streamlet/api'
+  // Use /api path directly (no nginx rewrite needed)
+  // The app now runs from root domain
+  apiUrl: '/api'
 };

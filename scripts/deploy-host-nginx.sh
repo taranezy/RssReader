@@ -23,7 +23,7 @@ if [ $? -eq 0 ]; then
     echo "✓ Nginx reloaded successfully"
     echo ""
     echo "Host nginx is now configured!"
-    echo "Application available at: https://streamlet.taranezy.com/streamlet/"
+    echo "Application available at: https://streamlet.taranezy.com/"
 else
     echo "✗ Configuration test failed"
     exit 1

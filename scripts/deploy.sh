@@ -65,7 +65,7 @@ else
 fi
 
 # Check if nginx is responsive
-if curl -s -k https://localhost:8443/streamlet/ > /dev/null; then
+if curl -s -k https://localhost:8443/ > /dev/null; then
     echo "  ✓ Nginx proxy is responsive"
 else
     echo "  ✗ Nginx proxy is not responsive yet"
@@ -85,5 +85,5 @@ echo "✓ Deployment Complete"
 echo "======================================"
 echo ""
 echo "Application is available at:"
-echo "  https://streamlet.taranezy.com:8443/streamlet/"
+echo "  https://streamlet.taranezy.com:8443/"
 echo ""

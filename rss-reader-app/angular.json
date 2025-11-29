@@ -40,7 +40,7 @@
           },
           "configurations": {
             "production": {
-              "baseHref": "/streamlet/",
+              "baseHref": "/",
               "fileReplacements": [
                 {
                   "replace": "src/environments/environment.ts",

@@ -118,24 +118,16 @@ export class AuthService {
    * Initiate Google OAuth login (redirects to backend)
    */
   loginWithGoogle(): void {
-    // Use full path including /streamlet prefix for OAuth redirects
-    // The nginx will rewrite /streamlet/api to just /api for the backend
-    const redirectUrl = window.location.pathname.includes('/streamlet/') 
-      ? '/streamlet/api/auth/google'
-      : '/api/auth/google';
-    window.location.href = redirectUrl;
+    // Use direct /api path since app now runs from root domain
+    window.location.href = '/api/auth/google';
   }
 
   /**
    * Login as demo user (read-only mode with pre-populated feeds)
    */
   loginAsDemo(): void {
-    // Use full path including /streamlet prefix for demo login redirects
-    // The nginx will rewrite /streamlet/api to just /api for the backend
-    const redirectUrl = window.location.pathname.includes('/streamlet/')
-      ? '/streamlet/api/auth/demo'
-      : '/api/auth/demo';
-    window.location.href = redirectUrl;
+    // Use direct /api path since app now runs from root domain
+    window.location.href = '/api/auth/demo';
   }
 
   /**
