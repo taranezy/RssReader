@@ -106,33 +106,50 @@ jobs:
             exit 1
           fi
           cd ~/rss-reader && git fetch origin main && git reset --hard origin/main
+          
+          # Ensure .env file exists
+          if [ ! -f .env ]; then
+            echo "Creating .env file from .env.example..."
+            cp rss-reader-app/.env.example .env
+            echo "⚠️  WARNING: Please configure .env file with production values!"
+          fi
           EOF
       
       - name: Build Docker image on remote
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "cd ~/rss-reader && docker-compose -f docker-compose.prod.yml build --no-cache rss-reader"
+            "cd ~/rss-reader && docker-compose -f docker-compose-update.yml build --no-cache"
       
       - name: Stop and remove old containers
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "cd ~/rss-reader && docker-compose -f docker-compose.prod.yml down --remove-orphans || true"
+            "cd ~/rss-reader && docker-compose -f docker-compose-update.yml down --remove-orphans --volumes || true"
+      
+      - name: Remove any leftover containers
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "cd ~/rss-reader && docker rm -f rss-reader-nginx rss-reader-app redis 2>/dev/null || true"
+      
+      - name: Clean up Docker networks
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "cd ~/rss-reader && docker network prune -f || true"
       
       - name: Start new containers
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "cd ~/rss-reader && docker-compose -f docker-compose.prod.yml up -d"
+            "cd ~/rss-reader && docker-compose -f docker-compose-update.yml up -d"
       
       - name: Verify deployment
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "cd ~/rss-reader && docker-compose -f docker-compose.prod.yml ps"
+            "cd ~/rss-reader && docker-compose -f docker-compose-update.yml ps"
       
       - name: Health check
         run: |
           sleep 10
           ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "curl -f http://localhost:3000/api/health || echo 'Health check in progress...'"
+            "curl -f http://localhost:8444/api/health || echo 'Health check in progress...'"
       
       - name: Cleanup SSH key
         if: always()
