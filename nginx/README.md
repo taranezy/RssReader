@@ -2,17 +2,14 @@
 
 This setup uses a single nginx folder to serve multiple sites including RSS Reader, Nextcloud, OpenCloud, Jellyfin, Portainer, and Vaultwarden.
 
-## Structure
+## Configuration Files
 
-```
-nginx/
-├── nginx.conf              # Main configuration (serves all sites)
-├── nginx-initial.conf      # Initial setup config (HTTP only for SSL setup)
-├── nginx-simple.conf       # Simple config (port 8444 for testing)
-├── entrypoint.sh           # Startup script
-├── README.md               # This documentation
-└── rss-reader-host-proxy.conf  # Host-based proxy config (alternative)
-```
+- **`nginx.conf`** - Single-site RSS Reader (container-based)
+- **`nginx-multi-site.conf`** - Multi-site production (external services)
+- **`nginx-initial.conf`** - HTTP-only config for SSL certificate setup
+- **`nginx-simple.conf`** - Basic config on port 8444 for testing
+- **`entrypoint.sh`** - Startup script
+- **`rss-reader-host-proxy.conf`** - Host-based proxy config (alternative)
 
 ## Supported Sites
 
@@ -31,6 +28,7 @@ Use `docker-compose.prod.yml` in the `rss-reader-app` folder:
 cd rss-reader-app
 docker-compose -f docker-compose.prod.yml up -d
 ```
+This uses `nginx.conf` which proxies to the local RSS Reader container.
 
 ### Multi-Site (All services)
 Use `docker-compose.multi-site.yml` in the root:
@@ -42,18 +40,12 @@ cp .env.multi-site.example .env
 # Start all services
 docker-compose -f docker-compose.multi-site.yml up -d
 ```
+This uses `nginx-multi-site.conf` which proxies to external services.
 
 ## SSL Certificates
 
 All domains need SSL certificates from Let's Encrypt using the `taranezy.com` certificate:
 - Certificates should be at `/etc/letsencrypt/live/taranezy.com/`
-
-## External Services
-
-Some services proxy to external IPs (not containers):
-- **OpenCloud**: `192.168.100.5:9200`
-- **Jellyfin**: `192.168.100.5:8096`
-- **RSS Reader**: `192.168.100.5:3000` (HTTPS)
 
 ## Switching Configurations
 
@@ -61,7 +53,9 @@ To use a different nginx config, modify the volume mount in docker-compose:
 
 ```yaml
 volumes:
-  - ./nginx/nginx-initial.conf:/etc/nginx/nginx.conf:ro  # For SSL setup
+  - ./nginx/nginx-multi-site.conf:/etc/nginx/nginx.conf:ro  # For multi-site
   # or
-  - ./nginx/nginx-simple.conf:/etc/nginx/nginx.conf:ro   # For testing
+  - ./nginx/nginx-initial.conf:/etc/nginx/nginx.conf:ro     # For SSL setup
+  # or
+  - ./nginx/nginx-simple.conf:/etc/nginx/nginx.conf:ro      # For testing
 ```
