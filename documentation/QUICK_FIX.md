@@ -6,7 +6,7 @@ Create `rss-reader-app/backend/.env` on production server:
 
 ```bash
 NODE_ENV=production
-FRONTEND_URL=https://taranezy.ddns.net:8444
+FRONTEND_URL=https://streamlet.taranezy.com:8444
 SESSION_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 PORT=3000
 ```
@@ -34,17 +34,17 @@ npm start
 
 # Check logs show:
 # NODE_ENV: production
-# CORS_ORIGINS: ["https://taranezy.ddns.net:8444"]
+# CORS_ORIGINS: ["https://streamlet.taranezy.com:8444"]
 # SESSION_SECRET: ✓ Custom
 ```
 
 ## Test Login
 
-1. Open `https://taranezy.ddns.net:8444`
+1. Open `https://streamlet.taranezy.com:8444`
 2. F12 → Network tab → click Demo Login
 3. Check `/api/auth/demo` response for `Set-Cookie` header
 4. F12 → Application → Cookies → should see `connect.sid`
-5. Open `https://taranezy.ddns.net:8444/api/auth/user` → should return user JSON, not 401
+5. Open `https://streamlet.taranezy.com:8444/api/auth/user` → should return user JSON, not 401
 
 ## If Still Getting 401
 

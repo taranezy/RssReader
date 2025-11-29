@@ -16,7 +16,7 @@ This will:
 
 - **Server**: Andromeda (192.168.100.5)
 - **User**: boris
-- **URL**: https://taranezy.ddns.net:8444
+- **URL**: https://streamlet.taranezy.com:8444
 - **Database**: SQLite at `/app/backend/data/rss-reader.db`
 
 ## Manual Steps
@@ -45,7 +45,7 @@ Set these on Andromeda in `~/rss-reader/.env`:
 ```
 GOOGLE_CLIENT_ID=your-google-client-id-here
 GOOGLE_CLIENT_SECRET=your-google-client-secret-here
-GOOGLE_CALLBACK_URL=https://taranezy.ddns.net:8444/api/auth/google/callback
+GOOGLE_CALLBACK_URL=https://streamlet.taranezy.com:8444/api/auth/google/callback
 SESSION_SECRET=your-session-secret-here
 NODE_ENV=production
 PORT=3000

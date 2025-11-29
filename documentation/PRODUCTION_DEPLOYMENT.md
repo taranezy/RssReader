@@ -53,7 +53,7 @@ Create a `.env` file in `/home/boris/rss-reader/rss-reader-app/`:
 # Server Configuration
 PORT=3000
 NODE_ENV=production
-FRONTEND_URL=https://taranezy.ddns.net:8443/streamlet/
+FRONTEND_URL=https://streamlet.taranezy.com:8443/streamlet/
 
 # Database
 DATABASE_PATH=./data/rss-reader.db
@@ -66,7 +66,7 @@ GOOGLE_CLIENT_ID=your-google-client-id-here
 GOOGLE_CLIENT_SECRET=your-google-client-secret-here
 
 # OAuth Callback URL
-GOOGLE_CALLBACK_URL=https://taranezy.ddns.net:8443/streamlet/api/auth/google/callback
+GOOGLE_CALLBACK_URL=https://streamlet.taranezy.com:8443/streamlet/api/auth/google/callback
 
 # Redis Configuration
 REDIS_HOST=localhost
@@ -103,8 +103,8 @@ Expected:
 ```
 NODE_ENV: production
 isProduction: true
-FRONTEND_URL: https://taranezy.ddns.net:8443/streamlet/
-CORS_ORIGINS: ["https://taranezy.ddns.net:8443"]
+FRONTEND_URL: https://streamlet.taranezy.com:8443/streamlet/
+CORS_ORIGINS: ["https://streamlet.taranezy.com:8443"]
 GOOGLE_CLIENT_ID: ✓ Configured
 GOOGLE_CLIENT_SECRET: ✓ Configured
 ```
@@ -175,7 +175,7 @@ Common issues:
 
 ### OAuth Not Working
 
-1. Verify FRONTEND_URL includes the port: `https://taranezy.ddns.net:8443/streamlet/`
+1. Verify FRONTEND_URL includes the port: `https://streamlet.taranezy.com:8443/streamlet/`
 2. Check GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are correct
 3. Verify GOOGLE_CALLBACK_URL matches Google Console settings
 4. Check CORS_ORIGINS shows the correct domain
@@ -184,7 +184,7 @@ Run: `docker logs rss-reader-app | grep -i cors`
 
 ## Application URLs
 
-- **Production**: `https://taranezy.ddns.net:8443/streamlet/`
+- **Production**: `https://streamlet.taranezy.com:8443/streamlet/`
 - **Localhost**: `https://localhost:8443/streamlet/` (for testing locally on server)
 - **Backend API**: `http://localhost:3000/api/` (internal only)
 

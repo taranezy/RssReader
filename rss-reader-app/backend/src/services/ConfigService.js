@@ -69,15 +69,15 @@ class ConfigService {
         } catch (e) {
           console.warn(`[ConfigService] Failed to parse FRONTEND_URL: ${frontendUrl}`);
           this.CORS_ORIGINS = [
-            'https://taranezy.ddns.net',
-            'http://taranezy.ddns.net'
+            'https://streamlet.taranezy.com',
+            'http://streamlet.taranezy.com'
           ];
         }
       } else {
         // Fallback origins
         this.CORS_ORIGINS = [
-          'https://taranezy.ddns.net',
-          'http://taranezy.ddns.net'
+          'https://streamlet.taranezy.com',
+          'http://streamlet.taranezy.com'
         ];
       }
     } else {

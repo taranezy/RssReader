@@ -3,7 +3,7 @@
 ## Date: November 7, 2025
 
 ## Summary
-Removed all unnecessary Android code and dependencies. The app is now a minimal WebView wrapper that loads the Angular web app at `https://taranezy.ddns.net:8444`.
+Removed all unnecessary Android code and dependencies. The app is now a minimal WebView wrapper that loads the Angular web app at `https://streamlet.taranezy.com:8444`.
 
 ---
 
@@ -142,7 +142,7 @@ res/
 ## What the App Does Now
 
 1. **Launch:** Opens directly to WebView
-2. **Load:** Displays https://taranezy.ddns.net:8444
+2. **Load:** Displays https://streamlet.taranezy.com:8444
 3. **Login:** Handled by Angular web app
 4. **Navigate:** WebView back button support
 5. **Refresh:** Toolbar menu option

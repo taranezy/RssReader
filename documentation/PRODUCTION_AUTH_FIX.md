@@ -25,7 +25,7 @@ Create `rss-reader-app/backend/.env` with the following:
 NODE_ENV=production
 
 # Set to your production domain with protocol and port
-FRONTEND_URL=https://taranezy.ddns.net:8444
+FRONTEND_URL=https://streamlet.taranezy.com:8444
 
 # Generate a random session secret:
 # Run: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -34,7 +34,7 @@ SESSION_SECRET=<your-generated-random-string>
 # Google OAuth (if using OAuth login)
 GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_SECRET=your-secret
-GOOGLE_CALLBACK_URL=https://taranezy.ddns.net:8444/api/auth/google/callback
+GOOGLE_CALLBACK_URL=https://streamlet.taranezy.com:8444/api/auth/google/callback
 
 # Server
 PORT=3000
@@ -134,12 +134,12 @@ If User shows "none", the session isn't being restored.
 | Variable | Purpose | Example |
 |----------|---------|---------|
 | NODE_ENV | Set to 'production' to enable production mode | production |
-| FRONTEND_URL | Frontend domain (must match exactly) | https://taranezy.ddns.net:8444 |
+| FRONTEND_URL | Frontend domain (must match exactly) | https://streamlet.taranezy.com:8444 |
 | SESSION_SECRET | Random string to encrypt sessions | (generated random hex) |
 | PORT | Backend server port | 3000 |
 | GOOGLE_CLIENT_ID | OAuth client ID | (from Google Cloud) |
 | GOOGLE_CLIENT_SECRET | OAuth client secret | (from Google Cloud) |
-| GOOGLE_CALLBACK_URL | OAuth callback URL | https://taranezy.ddns.net:8444/api/auth/google/callback |
+| GOOGLE_CALLBACK_URL | OAuth callback URL | https://streamlet.taranezy.com:8444/api/auth/google/callback |
 
 ---
 

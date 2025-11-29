@@ -12,7 +12,7 @@
 ### Option 1: Get Favicon from Web App (Recommended)
 
 #### Step 1: Find Your Favicon
-1. Go to: https://taranezy.ddns.net:8444
+1. Go to: https://streamlet.taranezy.com:8444
 2. Right-click on page → "View Page Source" (Ctrl+U)
 3. Look for lines containing:
    ```html
@@ -24,7 +24,7 @@
 
 #### Step 2: Download Favicon
 **In browser:**
-- Go to: `https://taranezy.ddns.net:8444/favicon.ico` (or the path you found)
+- Go to: `https://streamlet.taranezy.com:8444/favicon.ico` (or the path you found)
 - Right-click → Save image as
 - Or check your Angular project: `src/favicon.ico` or `src/assets/icons/`
 

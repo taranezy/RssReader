@@ -92,7 +92,7 @@ Added deep linking support to handle OAuth callbacks:
         <category android:name="android.intent.category.BROWSABLE" />
         <data
             android:scheme="https"
-            android:host="taranezy.ddns.net"
+            android:host="streamlet.taranezy.com"
             android:pathPrefix="/" />
     </intent-filter>
 </activity>
@@ -104,7 +104,7 @@ Added deep linking support to handle OAuth callbacks:
 
 ### User Flow:
 
-1. **App Opens** → WebView loads `https://taranezy.ddns.net:8444`
+1. **App Opens** → WebView loads `https://streamlet.taranezy.com:8444`
 2. **User Taps Google Login** → Angular app tries to open Google OAuth
 3. **Android Intercepts** → Detects Google OAuth URL
 4. **Chrome Custom Tab Opens** → Real Chrome browser window appears
@@ -117,7 +117,7 @@ Added deep linking support to handle OAuth callbacks:
 
 Chrome and WebView **share cookies** on Android (same cookie store), so:
 - User logs in via Chrome Custom Tab
-- Chrome sets authentication cookies for `taranezy.ddns.net`
+- Chrome sets authentication cookies for `streamlet.taranezy.com`
 - WebView automatically has access to those cookies
 - User is authenticated in the WebView! 🎉
 
@@ -188,12 +188,12 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 **Solution:** 
 - Check that cookies are enabled in WebView (already enabled in code)
 - Verify your Angular app uses the same domain for OAuth and app
-- Cookie domain should be `taranezy.ddns.net`
+- Cookie domain should be `streamlet.taranezy.com`
 
 ### Issue: App Doesn't Return After Login
 **Solution:**
 - User may need to manually tap back button
-- Or configure OAuth redirect to `https://taranezy.ddns.net:8444`
+- Or configure OAuth redirect to `https://streamlet.taranezy.com:8444`
 - Deep link will bring user back to app
 
 ### Issue: "This browser or app may not be secure"
@@ -218,7 +218,7 @@ MainActivity: URL loading: https://accounts.google.com/...
 MainActivity: OAuth URL detected, opening Chrome Custom Tab
 MainActivity: Chrome Custom Tab launched successfully
 MainActivity: Cookies synced
-MainActivity: Page loaded: https://taranezy.ddns.net:8444
+MainActivity: Page loaded: https://streamlet.taranezy.com:8444
 ```
 
 ---

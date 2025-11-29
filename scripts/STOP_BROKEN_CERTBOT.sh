@@ -7,7 +7,7 @@ set -e
 if [ $# -lt 2 ]; then
     echo "URGENT: Stop broken certbot container"
     echo "Usage: $0 <production-server> <user>"
-    echo "Example: $0 taranezy.ddns.net boris"
+    echo "Example: $0 streamlet.taranezy.com boris"
     exit 1
 fi
 

@@ -64,7 +64,7 @@ setNativeAppAuthenticated(email: string, idToken: string): void
    - Native Android Google Sign-In dialog opens (not browser)
    - User authenticates with Google
    - Token stored in Android SharedPreferences
-   - App opens WebView to `https://taranezy.ddns.net:8444`
+   - App opens WebView to `https://streamlet.taranezy.com:8444`
 
 2. **MainActivity.kt** (onPageStarted):
    - Intercepts page load

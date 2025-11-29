@@ -41,13 +41,13 @@ entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & w
 
 ### Quick Deploy (with automated script)
 ```bash
-bash fix-certbot-production.sh taranezy.ddns.net boris
+bash fix-certbot-production.sh streamlet.taranezy.com boris
 ```
 
 ### Manual Deploy
 ```bash
 # SSH to production
-ssh boris@taranezy.ddns.net
+ssh boris@streamlet.taranezy.com
 cd /home/boris/rss-reader-app
 
 # Update and restart

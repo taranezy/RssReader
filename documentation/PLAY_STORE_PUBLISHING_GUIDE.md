@@ -256,7 +256,7 @@ Information Collection:
 - Why: To provide personalized RSS feed experience
 
 Data Usage:
-- Stored on: Your secure servers at taranezy.ddns.net
+- Stored on: Your secure servers at streamlet.taranezy.com
 - Shared with: Not shared with third parties
 - Retention: Data retained while account is active
 
@@ -268,7 +268,7 @@ User Rights:
 Contact: [your-email@example.com]
 ```
 
-**Host this on your website** (e.g., `https://taranezy.ddns.net:8444/privacy-policy`)
+**Host this on your website** (e.g., `https://streamlet.taranezy.com:8444/privacy-policy`)
 
 ---
 
@@ -329,8 +329,8 @@ Fill in all required fields:
 
 #### Contact Details
 - **Email:** your-email@example.com
-- **Website:** https://taranezy.ddns.net:8444
-- **Privacy policy URL:** https://taranezy.ddns.net:8444/privacy-policy
+- **Website:** https://streamlet.taranezy.com:8444
+- **Privacy policy URL:** https://streamlet.taranezy.com:8444/privacy-policy
 
 Click **"Save"**
 

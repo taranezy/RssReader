@@ -5,7 +5,7 @@
 sleep 3
 
 # Check if SSL certificates exist and use appropriate config
-if [ -f /etc/letsencrypt/live/taranezy.ddns.net/fullchain.pem ] && [ -f /etc/letsencrypt/live/taranezy.ddns.net/privkey.pem ]; then
+if [ -f /etc/letsencrypt/live/streamlet.taranezy.com/fullchain.pem ] && [ -f /etc/letsencrypt/live/streamlet.taranezy.com/privkey.pem ]; then
     echo "SSL certificates found, using HTTPS configuration..."
     CONFIG_FILE="/etc/nginx/nginx-https.conf"
     if [ -f "$CONFIG_FILE" ]; then

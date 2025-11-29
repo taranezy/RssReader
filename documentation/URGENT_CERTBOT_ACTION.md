@@ -29,7 +29,7 @@ entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & w
 
 ```bash
 # From your RssReader workspace root, run:
-bash EMERGENCY_FIX_CERTBOT.sh taranezy.ddns.net boris
+bash EMERGENCY_FIX_CERTBOT.sh streamlet.taranezy.com boris
 ```
 
 This will:
@@ -42,15 +42,15 @@ This will:
 
 ```bash
 # SSH to production
-ssh boris@taranezy.ddns.net
+ssh boris@streamlet.taranezy.com
 
 # Kill broken container immediately
 docker kill rss-reader-certbot
 docker rm rss-reader-certbot
 
 # Upload files from local machine (open new terminal):
-scp ./certbot/renew.sh boris@taranezy.ddns.net:/home/boris/rss-reader-app/certbot/renew.sh
-scp ./docker-compose.prod.yml boris@taranezy.ddns.net:/home/boris/rss-reader-app/docker-compose.prod.yml
+scp ./certbot/renew.sh boris@streamlet.taranezy.com:/home/boris/rss-reader-app/certbot/renew.sh
+scp ./docker-compose.prod.yml boris@streamlet.taranezy.com:/home/boris/rss-reader-app/docker-compose.prod.yml
 
 # Back to SSH terminal - start fixed container:
 cd /home/boris/rss-reader-app
@@ -65,7 +65,7 @@ docker logs rss-reader-certbot
 
 ```bash
 # Stop the broken container immediately
-bash STOP_BROKEN_CERTBOT.sh taranezy.ddns.net boris
+bash STOP_BROKEN_CERTBOT.sh streamlet.taranezy.com boris
 ```
 
 Then deploy the fixed version later when ready.
@@ -127,7 +127,7 @@ Then nothing until next renewal check in 12 hours.
 
 ### FASTEST (Recommended):
 ```bash
-bash EMERGENCY_FIX_CERTBOT.sh taranezy.ddns.net boris
+bash EMERGENCY_FIX_CERTBOT.sh streamlet.taranezy.com boris
 ```
 
 This is the safest, fastest way. It does everything automatically.

@@ -11,7 +11,7 @@ Complete these tasks before you get your passwords. Everything will be ready whe
 ### Get Icon from Your Web App:
 
 **Step 1: Find Your Web App Icon**
-1. Go to: https://taranezy.ddns.net:8444
+1. Go to: https://streamlet.taranezy.com:8444
 2. Right-click on page → "View Page Source"
 3. Look for: `<link rel="icon"` or `manifest.json`
 4. Download the icon file
@@ -107,7 +107,7 @@ play-store-assets/screenshots/
    - **App name:** Streamlet
    - **Developer:** Boris Tarana / White Lodge Technologies
    - **Email:** your-email@example.com
-   - **Website:** https://taranezy.ddns.net:8444
+   - **Website:** https://streamlet.taranezy.com:8444
    - **Data collected:** Email address (Google OAuth), Reading preferences
    - **Third parties:** Google (authentication)
 3. Generate and download
@@ -155,7 +155,7 @@ play-store-assets/screenshots/
     
     <h2>Contact</h2>
     <p>Email: your-email@example.com</p>
-    <p>Website: https://taranezy.ddns.net:8444</p>
+    <p>Website: https://streamlet.taranezy.com:8444</p>
     
     <h2>Consent</h2>
     <p>By using Streamlet, you agree to this privacy policy.</p>
@@ -165,7 +165,7 @@ play-store-assets/screenshots/
 
 **Save as:** `privacy-policy.html`
 
-**Upload to:** `https://taranezy.ddns.net:8444/privacy-policy.html`
+**Upload to:** `https://streamlet.taranezy.com:8444/privacy-policy.html`
 
 **Make sure it's publicly accessible!**
 

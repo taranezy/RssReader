@@ -13,7 +13,7 @@ companion object {
     private const val DEBUG_MODE = true  // Set to false for production
     private const val DEV_URL = "http://10.0.2.2:4200"  // For Android Emulator
     private const val DEV_URL_DEVICE = "http://192.168.1.100:4200"  // For Physical Device
-    private const val PROD_URL = "https://taranezy.ddns.net:8444"
+    private const val PROD_URL = "https://streamlet.taranezy.com:8444"
     
     // Auto-detect: Use PROD_URL for production, DEV_URL for debug
     private val WEB_APP_URL = if (DEBUG_MODE) DEV_URL else PROD_URL
@@ -202,7 +202,7 @@ This means cleartext HTTP is blocked. Verify:
 |------------|-----|----------|
 | Emulator | `http://10.0.2.2:4200` | Default for development |
 | Physical Device | `http://192.168.1.XXX:4200` | Testing on real device |
-| Production | `https://taranezy.ddns.net:8444` | Deployed app |
+| Production | `https://streamlet.taranezy.com:8444` | Deployed app |
 
 ---
 

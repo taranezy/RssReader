@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity() {
     
     companion object {
         // For Android Emulator/Physical Device debugging: Use your PC's local IP
-        // For Production: Use https://taranezy.ddns.net:8444
+        // For Production: Use https://streamlet.taranezy.com:8444
         private const val WEB_APP_URL = "http://192.168.100.10:4200"  // Your PC's local IP
     }
     

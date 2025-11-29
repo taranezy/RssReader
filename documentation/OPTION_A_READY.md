@@ -5,14 +5,14 @@
 Your application is now configured to run on **standard HTTPS port 443** instead of `:8443`.
 
 ### URLs
-- ❌ Old: `https://taranezy.ddns.net:8443/streamlet/`
-- ✅ New: `https://taranezy.ddns.net/streamlet/`
+- ❌ Old: `https://streamlet.taranezy.com:8443/streamlet/`
+- ✅ New: `https://streamlet.taranezy.com/streamlet/`
 
 ## Files Modified
 
 1. **`docker-compose.yml`** - Updated environment variables
-   - `FRONTEND_URL=https://taranezy.ddns.net/streamlet/` (no port)
-   - `GOOGLE_CALLBACK_URL=https://taranezy.ddns.net/streamlet/api/auth/google/callback` (no port)
+   - `FRONTEND_URL=https://streamlet.taranezy.com/streamlet/` (no port)
+   - `GOOGLE_CALLBACK_URL=https://streamlet.taranezy.com/streamlet/api/auth/google/callback` (no port)
 
 2. **`docker-compose.prod.yml`** - Updated environment variables (same as above)
 
@@ -83,22 +83,22 @@ git pull origin main
 
 ```bash
 # Test from local machine
-curl -s https://taranezy.ddns.net/streamlet/ | grep '<title>'
+curl -s https://streamlet.taranezy.com/streamlet/ | grep '<title>'
 # Should return: <title>RSS Reader</title>
 
 # Test with browser
-# Open: https://taranezy.ddns.net/streamlet/
+# Open: https://streamlet.taranezy.com/streamlet/
 ```
 
 ## What Happens Behind the Scenes
 
-1. **User visits**: `https://taranezy.ddns.net/streamlet/`
+1. **User visits**: `https://streamlet.taranezy.com/streamlet/`
 2. **Host nginx receives** HTTPS request on port 443
 3. **Nginx proxies to**: `http://127.0.0.1:3000/`
 4. **Docker backend responds** with frontend HTML
 5. **Frontend JavaScript** makes API calls to `/streamlet/api/...`
 6. **Host nginx proxies** `/streamlet/api/...` → `/api/...` to backend
-7. **Backend CORS** checks origin: `https://taranezy.ddns.net` (no port needed now!)
+7. **Backend CORS** checks origin: `https://streamlet.taranezy.com` (no port needed now!)
 
 ## Key Points
 
@@ -120,7 +120,7 @@ sudo rm /etc/nginx/conf.d/rss-reader-host-proxy.conf
 sudo systemctl reload nginx
 
 # Revert docker-compose
-# Edit FRONTEND_URL back to: https://taranezy.ddns.net:8443/streamlet/
+# Edit FRONTEND_URL back to: https://streamlet.taranezy.com:8443/streamlet/
 ```
 
 ## Files Ready for Deployment
@@ -138,7 +138,7 @@ sudo systemctl reload nginx
 3. **Test nginx** with `sudo nginx -t`
 4. **Reload nginx** with `sudo systemctl reload nginx`
 5. **Redeploy Docker** with `./deploy.sh`
-6. **Verify** application loads at `https://taranezy.ddns.net/streamlet/`
+6. **Verify** application loads at `https://streamlet.taranezy.com/streamlet/`
 
 ## Need Help?
 

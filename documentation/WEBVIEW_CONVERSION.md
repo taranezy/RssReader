@@ -7,7 +7,7 @@ Successfully converted the Android RSS Reader app from native UI to WebView-base
 
 ### MainActivity.kt
 - **Before**: Complex MVVM architecture with fragments, navigation drawer, ViewModels
-- **After**: Simple WebView wrapper that loads your production Angular app at `https://taranezy.ddns.net:8444`
+- **After**: Simple WebView wrapper that loads your production Angular app at `https://streamlet.taranezy.com:8444`
 
 ### Key Features
 1. **WebView Configuration**:

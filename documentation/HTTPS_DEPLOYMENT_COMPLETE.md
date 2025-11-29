@@ -5,20 +5,20 @@
 
 ## Production URL
 ```
-https://taranezy.ddns.net:8444/
+https://streamlet.taranezy.com:8444/
 ```
 
 ## What Was Fixed
 
 ### 1. ✅ HTTPS Configuration
-- **SSL Certificates:** Using valid Let's Encrypt certs for taranezy.ddns.net
+- **SSL Certificates:** Using valid Let's Encrypt certs for streamlet.taranezy.com
 - **Nginx Configuration:** HTTPS server on port 8444 with HTTP→HTTPS redirect
 - **Smart Entrypoint:** Automatically detects certificates and applies HTTPS config
 
 ### 2. ✅ Session Security
 - **Secure Cookies:** `Secure` flag set - only transmitted over HTTPS
 - **HttpOnly:** Prevents XSS attacks accessing session cookie
-- **Domain:** Set to taranezy.ddns.net for proper cookie scope
+- **Domain:** Set to streamlet.taranezy.com for proper cookie scope
 - **SameSite:** Lax to prevent CSRF attacks
 
 ### 3. ✅ Express Configuration
@@ -27,7 +27,7 @@ https://taranezy.ddns.net:8444/
 
 ### 4. ✅ Production Environment
 - **NODE_ENV:** production
-- **FRONTEND_URL:** https://taranezy.ddns.net:8444 (with HTTPS)
+- **FRONTEND_URL:** https://streamlet.taranezy.com:8444 (with HTTPS)
 - **CORS_ORIGINS:** Configured for HTTPS domain
 
 ### 5. ✅ Docker Fixes
@@ -48,7 +48,7 @@ X-XSS-Protection: 1; mode=block
 
 ```
 Set-Cookie: connect.sid=s%3A...; 
-  Domain=taranezy.ddns.net; 
+  Domain=streamlet.taranezy.com; 
   Path=/; 
   Expires=...; 
   HttpOnly; 
@@ -94,7 +94,7 @@ curl -iks https://localhost:8444/api/auth/user --insecure | grep -i set-cookie
 
 ### Expected Result:
 ```
-set-cookie: connect.sid=...; Domain=taranezy.ddns.net; Path=/; HttpOnly; Secure; SameSite=Lax
+set-cookie: connect.sid=...; Domain=streamlet.taranezy.com; Path=/; HttpOnly; Secure; SameSite=Lax
 ```
 
 ## Known Issues Resolved
@@ -113,4 +113,4 @@ set-cookie: connect.sid=...; Domain=taranezy.ddns.net; Path=/; HttpOnly; Secure;
 
 ---
 
-**Production Site:** Ready for testing at https://taranezy.ddns.net:8444/
+**Production Site:** Ready for testing at https://streamlet.taranezy.com:8444/

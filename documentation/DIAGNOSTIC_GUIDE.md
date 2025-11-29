@@ -105,7 +105,7 @@ adb logcat | grep "MainActivity\|Streamlet"
 Look for:
 ```
 D MainActivity: Injecting auth data on page start for: user@example.com
-D MainActivity: Page started loading: https://taranezy.ddns.net:8444
+D MainActivity: Page started loading: https://streamlet.taranezy.com:8444
 ```
 
 If you DON'T see these logs, the Android app isn't properly passing credentials.

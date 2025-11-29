@@ -16,7 +16,7 @@ Previous attempts created:
 ## The Solution: Complete Redesign
 
 This new version:
-- ✅ **Connects to** `https://taranezy.ddns.net:8444/api/` production backend
+- ✅ **Connects to** `https://streamlet.taranezy.com/api/` production backend
 - ✅ **Authenticates** with Google OAuth (matching your backend)
 - ✅ **Fetches real data** from your SQLite database
 - ✅ **Uses real feeds** from real users
@@ -260,7 +260,7 @@ All 8 themes available
 
 ### API Base URL
 ```
-https://taranezy.ddns.net:8444/api/
+https://streamlet.taranezy.com:8444/api/
 ```
 
 ### Supported Endpoints

@@ -1,13 +1,13 @@
 #!/bin/bash
 # Quick deployment script to fix certbot memory issue on production
 # Usage: bash fix-certbot-production.sh <production-server> <user>
-# Example: bash fix-certbot-production.sh taranezy.ddns.net boris
+# Example: bash fix-certbot-production.sh streamlet.taranezy.com boris
 
 set -e
 
 if [ $# -lt 2 ]; then
     echo "Usage: $0 <production-server> <user>"
-    echo "Example: $0 taranezy.ddns.net boris"
+    echo "Example: $0 streamlet.taranezy.com boris"
     exit 1
 fi
 

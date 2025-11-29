@@ -42,14 +42,14 @@ This project uses **GitHub Actions** for continuous integration and deployment (
 ✅ GitHub repository set up  
 ✅ Production server with Docker and Docker Compose  
 ✅ SSH access to production server  
-✅ Domain name configured (taranezy.ddns.net)  
+✅ Domain name configured (streamlet.taranezy.com)  
 
 ### Deploy Now (3 Steps)
 
 1. **Configure GitHub Secrets** (one-time setup)
    ```
    SSH_PRIVATE_KEY - Your SSH private key
-   DEPLOY_HOST - taranezy.ddns.net
+   DEPLOY_HOST - streamlet.taranezy.com
    DEPLOY_USER - boris
    ```
 
@@ -161,7 +161,7 @@ Add these secrets:
 | Secret Name | Value | Description |
 |------------|-------|-------------|
 | `SSH_PRIVATE_KEY` | Contents of `~/.ssh/rss_reader_deploy` | Private SSH key for deployment |
-| `DEPLOY_HOST` | `taranezy.ddns.net` | Production server hostname |
+| `DEPLOY_HOST` | `streamlet.taranezy.com` | Production server hostname |
 | `DEPLOY_USER` | `boris` | SSH username |
 
 **To get the private key:**
@@ -467,7 +467,7 @@ docker-compose -f ~/rss-reader/docker-compose.prod.yml restart certbot
 
 **Check app status:**
 ```bash
-curl -I https://taranezy.ddns.net:8444
+curl -I https://streamlet.taranezy.com:8444
 ```
 
 **Check container health:**
@@ -501,9 +501,9 @@ docker-compose -f ~/rss-reader/docker-compose.prod.yml logs -f
 
 ## Production URLs
 
-- **Main App:** https://taranezy.ddns.net:8444
-- **API:** https://taranezy.ddns.net:8444/api
-- **Health Check:** https://taranezy.ddns.net:8444/api/health (if implemented)
+- **Main App:** https://streamlet.taranezy.com:8444
+- **API:** https://streamlet.taranezy.com:8444/api
+- **Health Check:** https://streamlet.taranezy.com:8444/api/health (if implemented)
 
 ---
 

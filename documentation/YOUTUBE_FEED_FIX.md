@@ -70,7 +70,7 @@ catchError(error => {
 - **Build**: Angular production build completed successfully
 - **Deploy Method**: Remote deployment to production server (andromeda)
 - **Status**: Files deployed, Docker rebuild in progress
-- **Access URL**: https://taranezy.ddns.net:8444
+- **Access URL**: https://streamlet.taranezy.com:8444
 
 ## YouTube Feeds Alternative Solutions (TODO)
 
@@ -115,5 +115,5 @@ Since YouTube has disabled RSS feeds, consider these alternatives:
 
 ---
 **Date**: 2025-11-12
-**Environment**: Production (taranezy.ddns.net:8444)
+**Environment**: Production (streamlet.taranezy.com:8444)
 **Status**: ✅ DEPLOYED

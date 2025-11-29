@@ -13,7 +13,7 @@ A modern, full-stack RSS feed reader application with Google OAuth authenticatio
 
 ## 📋 Quick Links
 
-- **Live App:** https://taranezy.ddns.net:8444
+- **Live App:** https://streamlet.taranezy.com:8444
 - **CI/CD Documentation:** [CICD_GUIDE.md](./CICD_GUIDE.md)
 - **Deployment Guide:** [rss-reader-app/DEPLOY_ANDROMEDA.md](./rss-reader-app/DEPLOY_ANDROMEDA.md)
 

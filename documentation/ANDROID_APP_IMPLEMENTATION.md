@@ -157,7 +157,7 @@ private fun setupWebView() {
 ```kotlin
 private fun loadWebApp(email: String?, idToken: String?) {
     // Construct URL with authentication parameters
-    val baseUrl = "https://taranezy.ddns.net:8444"
+    val baseUrl = "https://streamlet.taranezy.com/"
     val url = if (!email.isNullOrEmpty() && !idToken.isNullOrEmpty()) {
         // Add query parameters for native app authentication
         "$baseUrl?skip_login=true&native_app=true&email=${URLEncoder.encode(email, "UTF-8")}"
@@ -266,9 +266,9 @@ adb logcat | grep "MainActivity\|Streamlet"
 Example output:
 ```
 D MainActivity: Auth data received: email=user@example.com, hasToken=true
-D MainActivity: Page started loading: https://taranezy.ddns.net:8444
+D MainActivity: Page started loading: https://streamlet.taranezy.com
 D MainActivity: Auth data injected at page start
-D MainActivity: Page loaded: https://taranezy.ddns.net:8444
+D MainActivity: Page loaded:https://streamlet.taranezy.com/
 ```
 
 ---
@@ -341,7 +341,7 @@ export class AuthInterceptor implements HttpInterceptor {
 Or JavaScript:
 
 ```javascript
-fetch('https://taranezy.ddns.net:8444/api/feeds', {
+fetch('https://streamlet.taranezy.com/api/feeds', {
   headers: {
     'Authorization': `Bearer ${localStorage.getItem('streamlet_id_token')}`
   }

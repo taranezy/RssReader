@@ -41,7 +41,7 @@ if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Application restarted successfully" -ForegroundColor Green
     Start-Sleep -Seconds 10
     Write-Host "Checking Redis status..." -ForegroundColor Yellow
-    $response = Invoke-WebRequest -Uri "https://taranezy.ddns.net:8444/api/health" -SkipCertificateCheck
+    $response = Invoke-WebRequest -Uri "https://streamlet.taranezy.com:8444/api/health" -SkipCertificateCheck
     $health = $response.Content | ConvertFrom-Json
     
     if ($health.redis.enabled) {

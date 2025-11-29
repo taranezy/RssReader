@@ -15,7 +15,7 @@ Native Android Google Sign-In (NOT WebView)
          
 Token stored in Android SharedPreferences
          
-App opens WebView to: https://taranezy.ddns.net:8444
+App opens WebView to: https://streamlet.taranezy.com:8444
          
 MainActivity.onPageStarted() injects 5 keys into localStorage:
   - streamlet_skip_login = "true"

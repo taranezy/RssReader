@@ -375,7 +375,7 @@ adb shell pm clear com.streamlet.app
 ```bash
 # Test token validation
 curl -H "Authorization: Bearer $TOKEN" \
-  https://taranezy.ddns.net:8444/api/feeds
+  https://streamlet.taranezy.com:8444/api/feeds
 
 # Check token expiration
 jq -R 'split(".") | .[1] | @base64d | fromjson' <<< $TOKEN

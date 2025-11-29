@@ -2,12 +2,12 @@
 
 ## Project Overview
 
-**Streamlet** is a hybrid Android app with a native login screen and a WebView-based main interface. The app connects to a production backend at `https://taranezy.ddns.net:8444` and displays a responsive web interface for RSS feed management.
+**Streamlet** is a hybrid Android app with a native login screen and a WebView-based main interface. The app connects to a production backend at `https://streamlet.taranezy.com:8444` and displays a responsive web interface for RSS feed management.
 
 ### Architecture Pattern
 - **Native Layer:** Android Activities, Material Design UI, Google Sign-In authentication
 - **Web Layer:** WebView displaying responsive Angular web app
-- **Backend:** REST API at `https://taranezy.ddns.net:8444/api/`
+- **Backend:** REST API at `https://streamlet.taranezy.com:8444/api/`
 
 ---
 
@@ -203,7 +203,7 @@ Deep links configured in `AndroidManifest.xml`:
 <intent-filter>
     <action android:name="android.intent.action.VIEW" />
     <category android:name="android.intent.category.BROWSABLE" />
-    <data android:scheme="https" android:host="taranezy.ddns.net" />
+    <data android:scheme="https" android:host="streamlet.taranezy.com" />
 </intent-filter>
 ```
 
@@ -245,7 +245,7 @@ Deep links configured in `AndroidManifest.xml`:
 
 ### API Base URL
 ```
-https://taranezy.ddns.net:8444/api/
+https://streamlet.taranezy.com:8444/api/
 ```
 
 ### Authentication Flow

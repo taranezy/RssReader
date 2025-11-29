@@ -7,7 +7,7 @@ The error `/bin/sh: wait: line 0: Illegal number: 1{!}` repeating every few seco
 One command to fix everything:
 
 ```bash
-bash EMERGENCY_FIX_CERTBOT.sh taranezy.ddns.net boris
+bash EMERGENCY_FIX_CERTBOT.sh streamlet.taranezy.com boris
 ```
 
 That's it! This script will:
@@ -30,15 +30,15 @@ That's it! This script will:
 ## Verification After
 ```bash
 # Check logs (should be clean)
-ssh boris@taranezy.ddns.net "docker logs rss-reader-certbot | head -10"
+ssh boris@streamlet.taranezy.com "docker logs rss-reader-certbot | head -10"
 
 # Check memory (should be low)
-ssh boris@taranezy.ddns.net "docker stats rss-reader-certbot"
+ssh boris@streamlet.taranezy.com "docker stats rss-reader-certbot"
 ```
 
 ---
 
 **Run this NOW to fix production:**
 ```
-bash EMERGENCY_FIX_CERTBOT.sh taranezy.ddns.net boris
+bash EMERGENCY_FIX_CERTBOT.sh streamlet.taranezy.com boris
 ```

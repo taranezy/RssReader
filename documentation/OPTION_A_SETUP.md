@@ -3,8 +3,8 @@
 ## Configuration Change Summary
 
 Your application will now run on **standard HTTPS port 443** instead of `:8443`:
-- ✅ Before: `https://taranezy.ddns.net:8443/streamlet/`
-- ✅ After: `https://taranezy.ddns.net/streamlet/`
+- ✅ Before: `https://streamlet.taranezy.com:8443/streamlet/`
+- ✅ After: `https://streamlet.taranezy.com/streamlet/`
 
 ## Setup Steps
 
@@ -49,11 +49,11 @@ On the server, update your `.env` file:
 ssh boris@192.168.100.5 "cat << 'EOF' > /home/boris/rss-reader/rss-reader-app/.env
 NODE_ENV=production
 PORT=3000
-FRONTEND_URL=https://taranezy.ddns.net/streamlet/
+FRONTEND_URL=https://streamlet.taranezy.com/streamlet/
 SESSION_SECRET=your-random-secret-key-here
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_CALLBACK_URL=https://taranezy.ddns.net/streamlet/api/auth/google/callback
+GOOGLE_CALLBACK_URL=https://streamlet.taranezy.com/streamlet/api/auth/google/callback
 EOF"
 ```
 
@@ -72,7 +72,7 @@ ssh boris@192.168.100.5 "cd /home/boris/rss-reader/rss-reader-app && ./deploy.sh
 ssh boris@192.168.100.5 "curl -s -k https://localhost/streamlet/ | grep '<title>'"
 
 # From your local machine
-curl -s https://taranezy.ddns.net/streamlet/ | grep '<title>'
+curl -s https://streamlet.taranezy.com/streamlet/ | grep '<title>'
 # Should return: <title>RSS Reader</title>
 ```
 
@@ -81,7 +81,7 @@ curl -s https://taranezy.ddns.net/streamlet/ | grep '<title>'
 ```
 ┌─────────────────────────────────┐
 │     User Browser                │
-│  https://taranezy.ddns.net      │
+│  https://streamlet.taranezy.com      │
 │        /streamlet/              │
 └──────────────┬──────────────────┘
                │ HTTPS (443)
@@ -114,14 +114,14 @@ All references to `:8443` removed:
 
 **Old:**
 ```env
-FRONTEND_URL=https://taranezy.ddns.net:8443/streamlet/
-GOOGLE_CALLBACK_URL=https://taranezy.ddns.net:8443/streamlet/api/auth/google/callback
+FRONTEND_URL=https://streamlet.taranezy.com:8443/streamlet/
+GOOGLE_CALLBACK_URL=https://streamlet.taranezy.com:8443/streamlet/api/auth/google/callback
 ```
 
 **New:**
 ```env
-FRONTEND_URL=https://taranezy.ddns.net/streamlet/
-GOOGLE_CALLBACK_URL=https://taranezy.ddns.net/streamlet/api/auth/google/callback
+FRONTEND_URL=https://streamlet.taranezy.com/streamlet/
+GOOGLE_CALLBACK_URL=https://streamlet.taranezy.com/streamlet/api/auth/google/callback
 ```
 
 ## Docker Changes
@@ -143,8 +143,8 @@ ssh boris@192.168.100.5 "sudo systemctl reload nginx"
 
 2. Revert docker-compose to use `:8443`:
 ```yaml
-FRONTEND_URL=https://taranezy.ddns.net:8443/streamlet/
-GOOGLE_CALLBACK_URL=https://taranezy.ddns.net:8443/streamlet/api/auth/google/callback
+FRONTEND_URL=https://streamlet.taranezy.com:8443/streamlet/
+GOOGLE_CALLBACK_URL=https://streamlet.taranezy.com:8443/streamlet/api/auth/google/callback
 ```
 
 ## Benefits of Option A

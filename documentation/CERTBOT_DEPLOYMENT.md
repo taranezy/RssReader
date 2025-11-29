@@ -44,7 +44,7 @@ Run this from your local machine:
 
 ```bash
 # From RssReader workspace root
-bash fix-certbot-production.sh taranezy.ddns.net boris
+bash fix-certbot-production.sh streamlet.taranezy.com boris
 ```
 
 This script:
@@ -58,7 +58,7 @@ This script:
 
 ```bash
 # 1. Connect to production server
-ssh boris@taranezy.ddns.net
+ssh boris@streamlet.taranezy.com
 
 # 2. Navigate to app directory
 cd /home/boris/rss-reader-app
@@ -96,7 +96,7 @@ git commit -m "fix: resolve certbot memory leak in production"
 git push origin main
 
 # 3. On production server, pull and restart
-ssh boris@taranezy.ddns.net "cd /home/boris/rss-reader-app && git pull origin main && docker-compose -f docker-compose.prod.yml up -d certbot"
+ssh boris@streamlet.taranezy.com "cd /home/boris/rss-reader-app && git pull origin main && docker-compose -f docker-compose.prod.yml up -d certbot"
 ```
 
 ## Verification Steps
@@ -105,17 +105,17 @@ After deployment, verify the fix:
 
 ```bash
 # 1. Check container is running
-ssh boris@taranezy.ddns.net "docker ps | grep certbot"
+ssh boris@streamlet.taranezy.com "docker ps | grep certbot"
 
 # Expected: rss-reader-certbot running and healthy
 
 # 2. Monitor memory usage (should be LOW)
-ssh boris@taranezy.ddns.net "docker stats rss-reader-certbot"
+ssh boris@streamlet.taranezy.com "docker stats rss-reader-certbot"
 
 # Expected: Memory < 50MB (was consuming 1GB+ before)
 
 # 3. Check renewal logs
-ssh boris@taranezy.ddns.net "docker logs rss-reader-certbot | head -20"
+ssh boris@streamlet.taranezy.com "docker logs rss-reader-certbot | head -20"
 
 # Expected output:
 # [2025-11-12 18:50:15] Certbot renewal service started
@@ -124,12 +124,12 @@ ssh boris@taranezy.ddns.net "docker logs rss-reader-certbot | head -20"
 # [2025-11-12 18:50:20] Sleeping for 12 hours until next renewal check...
 
 # 4. Check certificate status
-ssh boris@taranezy.ddns.net "docker exec rss-reader-certbot certbot certificates"
+ssh boris@streamlet.taranezy.com "docker exec rss-reader-certbot certbot certificates"
 
 # Expected: Shows your certificate with expiry date
 
 # 5. Check healthcheck status
-ssh boris@taranezy.ddns.net "docker inspect rss-reader-certbot | grep -A 5 'Health'"
+ssh boris@streamlet.taranezy.com "docker inspect rss-reader-certbot | grep -A 5 'Health'"
 
 # Expected: "Status": "healthy"
 ```
@@ -151,7 +151,7 @@ If you encounter any issues:
 
 ```bash
 # Restore backup and restart
-ssh boris@taranezy.ddns.net "cd /home/boris/rss-reader-app && cp docker-compose.prod.yml.backup docker-compose.prod.yml && docker-compose -f docker-compose.prod.yml up -d certbot"
+ssh boris@streamlet.taranezy.com "cd /home/boris/rss-reader-app && cp docker-compose.prod.yml.backup docker-compose.prod.yml && docker-compose -f docker-compose.prod.yml up -d certbot"
 ```
 
 **Note:** NOT RECOMMENDED - the old config caused the memory issues!
@@ -161,38 +161,38 @@ ssh boris@taranezy.ddns.net "cd /home/boris/rss-reader-app && cp docker-compose.
 ### Daily Checks
 ```bash
 # Monitor memory (should be stable and low)
-watch -n 60 'ssh boris@taranezy.ddns.net "docker stats rss-reader-certbot"'
+watch -n 60 'ssh boris@streamlet.taranezy.com "docker stats rss-reader-certbot"'
 
 # Check for renewal errors
-ssh boris@taranezy.ddns.net "docker logs rss-reader-certbot | grep 'Error\|✗'"
+ssh boris@streamlet.taranezy.com "docker logs rss-reader-certbot | grep 'Error\|✗'"
 ```
 
 ### Weekly Checks
 ```bash
 # Verify certificate is still valid
-ssh boris@taranezy.ddns.net "docker exec rss-reader-certbot certbot certificates"
+ssh boris@streamlet.taranezy.com "docker exec rss-reader-certbot certbot certificates"
 
 # Check renewal log for successful renewals
-ssh boris@taranezy.ddns.net "docker logs rss-reader-certbot | grep '✓' | tail -5"
+ssh boris@streamlet.taranezy.com "docker logs rss-reader-certbot | grep '✓' | tail -5"
 ```
 
 ## Troubleshooting
 
 ### Container keeps restarting
 ```bash
-ssh boris@taranezy.ddns.net "docker logs rss-reader-certbot"
+ssh boris@streamlet.taranezy.com "docker logs rss-reader-certbot"
 # Look for errors in the output
 ```
 
 ### Renewal not happening
 ```bash
-ssh boris@taranezy.ddns.net "docker exec rss-reader-certbot tail -50 /var/log/letsencrypt/letsencrypt.log"
+ssh boris@streamlet.taranezy.com "docker exec rss-reader-certbot tail -50 /var/log/letsencrypt/letsencrypt.log"
 ```
 
 ### Nginx not using new certificate
 ```bash
 # Reload nginx to pick up new certificate
-ssh boris@taranezy.ddns.net "docker exec rss-reader-nginx nginx -s reload"
+ssh boris@streamlet.taranezy.com "docker exec rss-reader-nginx nginx -s reload"
 ```
 
 ## Files Created/Modified

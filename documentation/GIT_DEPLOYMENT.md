@@ -52,7 +52,7 @@ docker-compose logs -f rss-reader
 
 # Test API endpoints
 curl http://localhost:3000/api/health
-curl https://taranezy.ddns.net:8443/streamlet/
+curl https://streamlet.taranezy.com:8443/streamlet/
 ```
 
 ---
@@ -159,7 +159,7 @@ If login redirects to wrong URL, check `.env`:
 
 ```bash
 # Should match your deployment URL with port
-GOOGLE_CALLBACK_URL=https://taranezy.ddns.net:8443/streamlet/api/auth/google/callback
+GOOGLE_CALLBACK_URL=https://streamlet.taranezy.com:8443/streamlet/api/auth/google/callback
 
 # Restart for changes to take effect
 docker-compose down
@@ -172,7 +172,7 @@ If frontend shows CORS errors in console:
 1. Verify FRONTEND_URL includes port:
 ```bash
 grep FRONTEND_URL .env
-# Should show: https://taranezy.ddns.net:8443/streamlet/
+# Should show: https://streamlet.taranezy.com:8443/streamlet/
 ```
 
 2. Check backend logs:

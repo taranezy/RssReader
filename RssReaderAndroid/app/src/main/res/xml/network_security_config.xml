@@ -11,7 +11,7 @@
     
     <!-- Production domain uses HTTPS -->
     <domain-config cleartextTrafficPermitted="false">
-        <domain includeSubdomains="true">taranezy.ddns.net</domain>
+        <domain includeSubdomains="true">streamlet.taranezy.com</domain>
     </domain-config>
     
     <!-- Default: allow cleartext for debugging -->

@@ -129,7 +129,7 @@ Make sure `src/index.html` has these lines:
 ng build --configuration production
 ```
 
-Upload the `dist/` folder to your server at `https://taranezy.ddns.net:8444`
+Upload the `dist/` folder to your server at `https://streamlet.taranezy.com:8444`
 
 ---
 
@@ -137,7 +137,7 @@ Upload the `dist/` folder to your server at `https://taranezy.ddns.net:8444`
 
 ### On Android (Chrome):
 
-1. Visit `https://taranezy.ddns.net:8444`
+1. Visit `https://streamlet.taranezy.com:8444`
 2. Chrome shows **"Add to Home Screen"** banner
 3. Tap **"Install"** or use Chrome menu → **"Install app"**
 4. App appears on home screen like native app!

@@ -41,7 +41,7 @@
 
 ### User Flow
 1. User launches app → Sees native Android interface
-2. Website loads in WebView (`https://taranezy.ddns.net:8444`)
+2. Website loads in WebView (`https://streamlet.taranezy.com:8444`)
 3. User logs in → Chrome Custom Tab opens (real browser)
 4. After OAuth → Returns to app with session authenticated
 5. WebView displays RSS feeds in fullscreen with purple toolbar
@@ -112,7 +112,7 @@ BUILD SUCCESSFUL in 19s (Release AAB)
 ## 🔒 Security & Configuration
 
 ### HTTPS Only
-- ✅ Backend: `https://taranezy.ddns.net:8444`
+- ✅ Backend: `https://streamlet.taranezy.com:8444`
 - ✅ No cleartext traffic allowed
 - ✅ Secure cookie handling
 
