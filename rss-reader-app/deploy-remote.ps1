@@ -53,6 +53,7 @@ $filesToCopy = @(
     "tsconfig.app.json",
     "Dockerfile",
     "docker-compose.yml",
+    "docker-compose.prod.yml",
     ".dockerignore",
     "../nginx"  # Add nginx config directory
     # Note: .env is NOT copied to avoid overwriting production configuration
