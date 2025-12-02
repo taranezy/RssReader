@@ -6,7 +6,7 @@ version: '3.8'
 services:
   rss-reader:
     build:
-      context: .
+      context: ./rss-reader-app
       dockerfile: Dockerfile
     container_name: rss-reader-app
     restart: unless-stopped
