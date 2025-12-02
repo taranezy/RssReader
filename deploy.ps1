@@ -31,7 +31,7 @@ Write-Host ""
 
 Write-Host "Step 4: Extract and build..." -ForegroundColor Yellow
 ssh -i $SshKeyPath $SshConn "cd ~/rss-reader && tar -xzf ~/rss-reader.tar.gz && rm ~/rss-reader.tar.gz" 2>&1 | Out-Null
-ssh -i $SshKeyPath $SshConn "cd ~/rss-reader && docker build -t rss-reader:latest . --no-cache" 2>&1 | Out-Null
+ssh -i $SshKeyPath $SshConn "cd ~/rss-reader && docker build -t rss-reader:latest ./rss-reader-app --no-cache" 2>&1 | Out-Null
 Write-Host "OK: Build complete" -ForegroundColor Green
 Write-Host ""
 
