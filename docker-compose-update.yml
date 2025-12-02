@@ -1,5 +1,8 @@
 version: '3.8'
 
+# NOTE: Nginx reverse proxy is now managed separately in the nginx-reverse-proxy project
+# This docker-compose file only manages the RSS Reader application service
+
 services:
   rss-reader:
     build:
@@ -16,48 +19,18 @@ services:
     volumes:
       - rss-data:/app/backend/data
     networks:
-      - rss-network
-
-  nginx:
-    image: nginx:alpine
-    container_name: rss-reader-nginx
-    restart: unless-stopped
-    ports:
-      - "443:443"
-      - "80:80"
-      - "8444:8444"
-    volumes:
-      - ./nginx/nginx-multi-site.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/entrypoint.sh:/entrypoint.sh:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - /var/www/certbot:/var/www/certbot:ro
-      - /etc/ssl:/etc/ssl:ro
-    depends_on:
-      - rss-reader
-    networks:
-      - rss-network
-    entrypoint: /bin/sh /entrypoint.sh
-
-  # certbot:
-  #   image: certbot/certbot
-  #   container_name: rss-reader-certbot
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./rss-reader-app/certbot/conf:/etc/letsencrypt
-  #     - ./rss-reader-app/certbot/www:/var/www/certbot
-  #     - ./rss-reader-app/certbot/renew.sh:/scripts/renew.sh:ro
-  #   entrypoint: /bin/bash /scripts/renew.sh
-  #   healthcheck:
-  #     test: ["CMD", "test", "-f", "/etc/letsencrypt/live"]
-  #     interval: 3600s
-  #     timeout: 10s
-  #     retries: 1
-  #     start_period: 60s
+      - reverse-proxy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
 
 volumes:
   rss-data:
     driver: local
 
 networks:
-  rss-network:
-    driver: bridge
+  reverse-proxy:
+    external: true
