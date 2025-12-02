@@ -51,19 +51,23 @@ External Traffic (Port 80/443)
 
 ### Step 1: Deploy Nginx Reverse Proxy
 
-Deploy the separate nginx project first (this creates the shared network):
+Deploy the separate nginx project first:
 
 ```bash
 # Clone the nginx-reverse-proxy repository
 git clone https://github.com/taranezy/nginx-reverse-proxy.git
 cd nginx-reverse-proxy
 
-# Run deployment script (creates reverse-proxy network automatically)
-cd D:\Development\NginxReverseProxy
-.\deploy.ps1
+# Follow deployment guide
+cat DEPLOYMENT.md
 ```
 
-The deployment script automatically creates the `reverse-proxy` Docker network on Andromeda.
+### Step 2: Create Reverse Proxy Network
+
+```bash
+# Create the shared Docker network (required)
+docker network create reverse-proxy
+```
 
 ### Step 3: Configure Nginx for RSS Reader
 
@@ -72,7 +76,7 @@ In the `nginx-reverse-proxy` project, configure upstreams and SSL:
 **configs/upstreams.conf:**
 ```nginx
 upstream rss_reader {
-    server 192.168.100.5:3000 max_fails=3 fail_timeout=30s;
+    server rss-reader:3000 max_fails=3 fail_timeout=30s;
 }
 ```
 
