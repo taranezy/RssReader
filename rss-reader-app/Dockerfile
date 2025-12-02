@@ -19,6 +19,9 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Install curl for health checks
+RUN apk add --no-cache curl
+
 # Install production dependencies for root
 COPY package*.json ./
 RUN npm ci --only=production
