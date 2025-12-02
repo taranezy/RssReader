@@ -94,9 +94,21 @@ jobs:
       - name: Pull latest code on remote
         run: |
           ssh -i ~/.ssh/id_rsa ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          # Backup existing .env file before pulling new code
+          if [ -f ~/rss-reader/.env ]; then
+            echo "Backing up existing .env file..."
+            cp ~/rss-reader/.env ~/rss-reader/.env.backup
+          fi
+          
           cd ~/rss-reader
           git fetch origin main
           git reset --hard origin/main
+          
+          # Restore .env file from backup
+          if [ -f ~/rss-reader/.env.backup ]; then
+            echo "Restoring .env file from backup..."
+            mv ~/rss-reader/.env.backup ~/rss-reader/.env
+          fi
           
           # Ensure .env file exists
           if [ ! -f .env ]; then

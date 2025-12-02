@@ -24,6 +24,8 @@ Write-Host "Step 3: Transfer files..." -ForegroundColor Yellow
 $SshConn = "$SshUser@$SshHost"
 # Create network first (required for docker-compose-update.yml)
 ssh -i $SshKeyPath $SshConn "docker network create reverse-proxy 2>/dev/null || true" 2>&1 | Out-Null
+# Backup existing .env file if it exists
+ssh -i $SshKeyPath $SshConn "if [ -f ~/rss-reader/.env ]; then cp ~/rss-reader/.env ~/rss-reader/.env.backup; fi" 2>&1 | Out-Null
 ssh -i $SshKeyPath $SshConn "rm -rf ~/rss-reader; mkdir -p ~/rss-reader" 2>&1 | Out-Null
 scp -i $SshKeyPath $ArchivePath "${SshConn}:~/rss-reader.tar.gz" 2>&1 | Out-Null
 Write-Host "OK: Files transferred" -ForegroundColor Green
@@ -31,6 +33,8 @@ Write-Host ""
 
 Write-Host "Step 4: Extract and build..." -ForegroundColor Yellow
 ssh -i $SshKeyPath $SshConn "cd ~/rss-reader && tar -xzf ~/rss-reader.tar.gz && rm ~/rss-reader.tar.gz" 2>&1 | Out-Null
+# Restore .env file from backup if it exists
+ssh -i $SshKeyPath $SshConn "if [ -f ~/rss-reader/.env.backup ]; then mv ~/rss-reader/.env.backup ~/rss-reader/.env; fi" 2>&1 | Out-Null
 ssh -i $SshKeyPath $SshConn "cd ~/rss-reader && docker build -t rss-reader:latest ./rss-reader-app --no-cache" 2>&1 | Out-Null
 Write-Host "OK: Build complete" -ForegroundColor Green
 Write-Host ""
