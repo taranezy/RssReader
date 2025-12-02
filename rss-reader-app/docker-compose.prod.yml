@@ -25,27 +25,8 @@ services:
     networks:
       - rss-network
 
-  nginx:
-    image: nginx:alpine
-    container_name: rss-reader-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8444:8444"
-    volumes:
-      - ../nginx/nginx-multi-site.conf:/etc/nginx/nginx.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-      - certbot-webroot:/var/www/certbot:ro
-    networks:
-      - rss-network
-    depends_on:
-      - rss-reader
-
 volumes:
   rss-data:
-    driver: local
-  certbot-webroot:
     driver: local
 
 networks:
